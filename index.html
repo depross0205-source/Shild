@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="zh-TW">
+<!DOCTYPE html>
+
+<html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
@@ -12,14 +14,16 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;min-height:100vh;padding:16px;}
 h1{font-size:15px;letter-spacing:3px;color:var(--accent);text-align:center;margin-bottom:4px;}
-.sub{font-size:9px;color:var(--muted);text-align:center;margin-bottom:20px;letter-spacing:1px;}.card{background:var(–panel);border:1px solid var(–border);border-radius:8px;padding:14px;margin-bottom:12px;}
+.sub{font-size:9px;color:var(--muted);text-align:center;margin-bottom:20px;letter-spacing:1px;}
+
+.card{background:var(–panel);border:1px solid var(–border);border-radius:8px;padding:14px;margin-bottom:12px;}
 .card-title{font-size:9px;letter-spacing:2px;color:var(–muted);margin-bottom:10px;}
-/* Shield score big display */
+
 .shield-big{text-align:center;padding:20px 0;}
 .shield-num{font-size:72px;font-weight:900;line-height:1;transition:color .3s;}
 .shield-label{font-size:11px;letter-spacing:2px;margin-top:6px;}
 .mode-badge{display:inline-block;padding:4px 14px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:8px;}
-/* Input grid */
+
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .field{display:flex;flex-direction:column;gap:4px;}
@@ -27,23 +31,23 @@ h1{font-size:15px;letter-spacing:3px;color:var(--accent);text-align:center;margi
 .field input{background:#0d0f14;border:1px solid var(–border2);color:var(–text);padding:8px 10px;border-radius:4px;font-family:inherit;font-size:13px;width:100%;}
 .field input:focus{outline:none;border-color:var(–accent);}
 .field .src{font-size:8px;color:var(–muted);margin-top:2px;}
-/* Progress bars */
+
 .bar-wrap{margin-top:6px;}
 .bar-label{display:flex;justify-content:space-between;font-size:9px;color:var(–muted);margin-bottom:3px;}
 .bar-bg{background:#1a1f2e;border-radius:2px;height:6px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:2px;transition:width .4s,background .3s;}
-/* Fetch button */
+
 .btn{width:100%;padding:12px;background:var(–accent);color:#000;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:10px;}
 .btn:active{opacity:.8;}
 .btn-sm{padding:7px 14px;font-size:10px;background:transparent;border:1px solid var(–border2);color:var(–muted);border-radius:4px;font-family:inherit;cursor:pointer;letter-spacing:1px;}
 .btn-sm:active{background:var(–border);}
-/* Component breakdown */
+
 .comp-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(–border);}
 .comp-row:last-child{border-bottom:none;}
 .comp-name{font-size:10px;color:var(–muted);}
 .comp-val{font-size:11px;font-weight:700;}
 .comp-score{font-size:10px;padding:2px 8px;border-radius:3px;background:#1a1f2e;}
-/* State machine legend */
+
 .state-row{padding:6px 0;border-bottom:1px solid var(–border);font-size:10px;display:flex;align-items:center;gap:8px;}
 .state-row:last-child{border-bottom:none;}
 .badge{padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:1px;}
@@ -52,19 +56,41 @@ h1{font-size:15px;letter-spacing:3px;color:var(--accent);text-align:center;margi
 .bg-retreat{background:#1a1a0a;color:#f59e0b;}
 .bg-strike{background:#1a0a0a;color:#ef4444;}
 .bg-recover{background:#0a1a0f;color:#10b981;}
-/* Status */
+
 #status{font-size:9px;color:var(–muted);text-align:center;min-height:16px;margin-top:4px;}
 .ok{color:var(–green)!important;} .err{color:var(–red)!important;}
-/* API key input */
+
 .apirow{display:flex;gap:6px;align-items:center;}
 .apirow input{flex:1;background:#0d0f14;border:1px solid var(–border2);color:var(–text);padding:7px 10px;border-radius:4px;font-family:inherit;font-size:11px;}
 .apirow input::placeholder{color:var(–muted);}
+
+/* Proxy selector */
+.proxy-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;}
+.proxy-row select{flex:1;background:#0d0f14;border:1px solid var(–border2);color:var(–text);padding:6px 8px;border-radius:4px;font-family:inherit;font-size:10px;}
+.proxy-row label{font-size:9px;color:var(–muted);white-space:nowrap;}
 </style>
+
 </head>
 <body>
 <h1>矛 與 盾　即時分數</h1>
-<div class="sub">V5.0 PRO ｜ SHIELD SCORE CALCULATOR</div><!-- FRED API --><div class="card">
+<div class="sub">V5.1 PRO ｜ SHIELD SCORE CALCULATOR</div>
+
+<!-- FRED API -->
+
+<div class="card">
   <div class="card-title">[ FRED 即時數據 ]</div>
+
+  <!-- Proxy selector -->
+
+  <div class="proxy-row">
+    <label>CORS Proxy：</label>
+    <select id="proxySelect">
+      <option value="allorigins">allorigins.win（推薦）</option>
+      <option value="corsproxy">corsproxy.io</option>
+      <option value="none">不使用 Proxy（直連，可能失敗）</option>
+    </select>
+  </div>
+
   <div class="field" style="margin-bottom:8px;">
     <label>FRED API KEY（免費申請：fred.stlouisfed.org）</label>
     <div class="apirow">
@@ -73,7 +99,11 @@ h1{font-size:15px;letter-spacing:3px;color:var(--accent);text-align:center;margi
     </div>
   </div>
   <div id="status">— 輸入 API Key 後點擊拉取，或直接手動填入下方數值 —</div>
-</div><!-- Manual Inputs --><div class="card">
+</div>
+
+<!-- Manual Inputs -->
+
+<div class="card">
   <div class="card-title">[ 手動輸入數值 ]</div>
   <div class="grid2" style="margin-bottom:10px;">
     <div class="field">
@@ -114,14 +144,17 @@ h1{font-size:15px;letter-spacing:3px;color:var(--accent);text-align:center;margi
       <input type="number" id="iVixThr" value="35" step="1" oninput="calc()">
     </div>
   </div>
-</div><!-- Shield Score Display --><div class="card">
+</div>
+
+<!-- Shield Score Display -->
+
+<div class="card">
   <div class="card-title">[ 盾牌分數 ]</div>
   <div class="shield-big">
     <div class="shield-num" id="shieldNum">--</div>
     <div class="shield-label" id="shieldLabel" style="color:var(--muted)">計算中...</div>
     <div id="modeBadge" class="mode-badge" style="display:none"></div>
   </div>
-  <!-- breakdown bars -->
   <div class="bar-wrap">
     <div class="bar-label"><span>F1（ERP 估值）</span><span id="f1val">--</span></div>
     <div class="bar-bg"><div class="bar-fill" id="f1bar" style="width:0%;background:var(--green)"></div></div>
@@ -130,37 +163,24 @@ h1{font-size:15px;letter-spacing:3px;color:var(--accent);text-align:center;margi
     <div class="bar-label"><span>F5（信用利差）</span><span id="f5val">--</span></div>
     <div class="bar-bg"><div class="bar-fill" id="f5bar" style="width:0%;background:var(--blue)"></div></div>
   </div>
-</div><!-- Component Breakdown --><div class="card">
+</div>
+
+<!-- Component Breakdown -->
+
+<div class="card">
   <div class="card-title">[ 指標分解 ]</div>
-  <div class="comp-row">
-    <span class="comp-name">ERP（股票風險溢酬）</span>
-    <span class="comp-val" id="cErp">--</span>
-  </div>
-  <div class="comp-row">
-    <span class="comp-name">收益率 (100/CAPE)</span>
-    <span class="comp-val" id="cEy">--</span>
-  </div>
-  <div class="comp-row">
-    <span class="comp-name">TIPS 實質殖利率</span>
-    <span class="comp-val" id="cTips">--</span>
-  </div>
-  <div class="comp-row">
-    <span class="comp-name">HY Delta（3M 變化）</span>
-    <span class="comp-val" id="cHyD">--</span>
-  </div>
-  <div class="comp-row">
-    <span class="comp-name">VIX 回落觸發</span>
-    <span class="comp-val" id="cVixTrig">--</span>
-  </div>
-  <div class="comp-row">
-    <span class="comp-name">F1 分數</span>
-    <span class="comp-score" id="csF1">--</span>
-  </div>
-  <div class="comp-row">
-    <span class="comp-name">F5 分數</span>
-    <span class="comp-score" id="csF5">--</span>
-  </div>
-</div><!-- Threshold Settings --><div class="card">
+  <div class="comp-row"><span class="comp-name">ERP（股票風險溢酬）</span><span class="comp-val" id="cErp">--</span></div>
+  <div class="comp-row"><span class="comp-name">收益率 (100/CAPE)</span><span class="comp-val" id="cEy">--</span></div>
+  <div class="comp-row"><span class="comp-name">TIPS 實質殖利率</span><span class="comp-val" id="cTips">--</span></div>
+  <div class="comp-row"><span class="comp-name">HY Delta（3M 變化）</span><span class="comp-val" id="cHyD">--</span></div>
+  <div class="comp-row"><span class="comp-name">VIX 回落觸發</span><span class="comp-val" id="cVixTrig">--</span></div>
+  <div class="comp-row"><span class="comp-name">F1 分數</span><span class="comp-score" id="csF1">--</span></div>
+  <div class="comp-row"><span class="comp-name">F5 分數</span><span class="comp-score" id="csF5">--</span></div>
+</div>
+
+<!-- Threshold Settings -->
+
+<div class="card">
   <div class="card-title">[ 閥值設定 ]</div>
   <div class="grid2">
     <div class="field">
@@ -176,109 +196,152 @@ h1{font-size:15px;letter-spacing:3px;color:var(--accent);text-align:center;margi
     <label>HY Delta 警戒 (bp)</label>
     <input type="number" id="tHyD" value="50" step="5" oninput="calc()">
   </div>
-</div><!-- State Machine --><div class="card">
+</div>
+
+<!-- State Machine -->
+
+<div class="card">
   <div class="card-title">[ 策略狀態機 ]</div>
   <div class="state-row"><span class="badge bg-normal">NORMAL</span><span style="color:var(--muted)">盾牌分≥40，持倉 1.0x（≥60 標示 1.5x）</span></div>
   <div class="state-row"><span class="badge bg-obs">OBS</span><span style="color:var(--muted)">盾牌分首日跌破40，保持 1.0x 觀察</span></div>
   <div class="state-row"><span class="badge bg-retreat">RETREAT</span><span style="color:var(--muted)">連續第2天 &lt;40，VIX未觸發 → 清倉 0%</span></div>
   <div class="state-row"><span class="badge bg-strike">STRIKE</span><span style="color:var(--muted)">前日VIX≥35且今日回落 → 建倉 0.3x</span></div>
   <div class="state-row"><span class="badge bg-recover">RECOVER</span><span style="color:var(--muted)">低倉狀態盾牌分重回≥40 → 補滿 1.0x</span></div>
-</div><script>
+</div>
+
+<script>
+// ── CORS Proxy wrapper ────────────────────────────────────────────
+function buildProxyUrl(targetUrl) {
+  var proxy = document.getElementById('proxySelect').value;
+  if (proxy === 'allorigins') {
+    // allorigins returns JSON: { contents: "...", status: { url, content_type, ... } }
+    return 'https://api.allorigins.win/get?url=' + encodeURIComponent(targetUrl);
+  } else if (proxy === 'corsproxy') {
+    // corsproxy.io simply prepends the proxy domain
+    return 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+  } else {
+    // Direct (no proxy) — will likely fail due to CORS
+    return targetUrl;
+  }
+}
+
+async function fetchWithProxy(targetUrl) {
+  var proxy = document.getElementById('proxySelect').value;
+  var proxyUrl = buildProxyUrl(targetUrl);
+  var r = await fetch(proxyUrl);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+
+  if (proxy === 'allorigins') {
+    // allorigins wraps the real response in { contents: "..." }
+    var wrapper = await r.json();
+    if (!wrapper.contents) throw new Error('Proxy 回傳空資料');
+    return JSON.parse(wrapper.contents);
+  } else {
+    // corsproxy / direct: response is the real JSON
+    return await r.json();
+  }
+}
+
 // ── FRED fetch ────────────────────────────────────────────────────
-async function fetchFRED(){
+async function fetchFRED() {
   var key = document.getElementById('apiKey').value.trim();
-  if(!key){ setStatus('請先輸入 FRED API Key','err'); return; }
-  setStatus('拉取中...','');
+  if (!key) { setStatus('請先輸入 FRED API Key', 'err'); return; }
+  setStatus('拉取中...', '');
 
   var series = {
-    DFII10:    'iTips',
+    DFII10:       'iTips',
     BAMLH0A0HYM2: 'iHy',
-    VIXCLS:    'iVixNow'
+    VIXCLS:       'iVixNow'
   };
 
   var today = new Date();
-  var obs_end = today.toISOString().slice(0,10);
-  var obs_start_d = new Date(today); obs_start_d.setDate(today.getDate()-120);
-  var obs_start = obs_start_d.toISOString().slice(0,10);
+  var obs_end = today.toISOString().slice(0, 10);
+  var obs_start_d = new Date(today);
+  obs_start_d.setDate(today.getDate() - 120);
+  var obs_start = obs_start_d.toISOString().slice(0, 10);
 
   var fetched = 0;
   var errors = [];
 
-  for(var sid in series){
-    var inputId = series[sid];
-    var url = 'https://api.stlouisfed.org/fred/series/observations'
-      + '?series_id='+sid
-      + '&api_key='+key
+  for (var sid in series) {
+    var fredUrl = 'https://api.stlouisfed.org/fred/series/observations'
+      + '?series_id=' + sid
+      + '&api_key=' + key
       + '&file_type=json'
-      + '&observation_start='+obs_start
-      + '&observation_end='+obs_end
+      + '&observation_start=' + obs_start
+      + '&observation_end=' + obs_end
       + '&sort_order=desc&limit=70';
+
     try {
-      var r = await fetch(url);
-      var d = await r.json();
-      if(d.observations && d.observations.length){
+      var d = await fetchWithProxy(fredUrl);
+
+      if (d.error_message) {
+        errors.push(sid + ': ' + d.error_message);
+        continue;
+      }
+
+      if (d.observations && d.observations.length) {
         // Latest valid value
         var latest = null;
-        for(var i=0;i<d.observations.length;i++){
-          if(d.observations[i].value !== '.'){
+        for (var i = 0; i < d.observations.length; i++) {
+          if (d.observations[i].value !== '.') {
             latest = parseFloat(d.observations[i].value);
             break;
           }
         }
-        if(latest !== null){
-          if(sid === 'BAMLH0A0HYM2'){
-            // Convert % to bp
-            document.getElementById('iHy').value = (latest*100).toFixed(0);
-            // 3M prev: find ~63 days back (index ~63 in sorted desc)
+        if (latest !== null) {
+          if (sid === 'BAMLH0A0HYM2') {
+            document.getElementById('iHy').value = (latest * 100).toFixed(0);
             var prev = null;
-            for(var j=60;j<d.observations.length;j++){
-              if(d.observations[j].value !== '.'){
+            for (var j = 60; j < d.observations.length; j++) {
+              if (d.observations[j].value !== '.') {
                 prev = parseFloat(d.observations[j].value);
                 break;
               }
             }
-            if(prev !== null) document.getElementById('iHyPrev').value = (prev*100).toFixed(0);
-          } else if(sid === 'VIXCLS'){
-            // Latest = today, second = yesterday
+            if (prev !== null) document.getElementById('iHyPrev').value = (prev * 100).toFixed(0);
+          } else if (sid === 'VIXCLS') {
             document.getElementById('iVixNow').value = latest.toFixed(1);
             var vPrev = null;
-            for(var k=1;k<d.observations.length;k++){
-              if(d.observations[k].value !== '.'){
+            for (var k = 1; k < d.observations.length; k++) {
+              if (d.observations[k].value !== '.') {
                 vPrev = parseFloat(d.observations[k].value);
                 break;
               }
             }
-            if(vPrev !== null) document.getElementById('iVixPrev').value = vPrev.toFixed(1);
+            if (vPrev !== null) document.getElementById('iVixPrev').value = vPrev.toFixed(1);
           } else {
-            document.getElementById(inputId).value = latest.toFixed(3);
+            document.getElementById(series[sid]).value = latest.toFixed(3);
           }
           fetched++;
         }
-      } else if(d.error_message){
-        errors.push(sid+': '+d.error_message);
+      } else {
+        errors.push(sid + ': 無資料');
       }
-    } catch(e){
-      errors.push(sid+': '+e.message);
+    } catch (e) {
+      errors.push(sid + ': ' + e.message);
     }
   }
 
-  // CAPE is not on FRED - remind user
-  if(fetched > 0){
-    setStatus('拉取成功 '+fetched+'/3 項（CAPE 請手動更新：multpl.com/shiller-pe）','ok');
+  if (fetched > 0) {
+    var msg = '拉取成功 ' + fetched + '/3 項';
+    if (errors.length) msg += '（失敗：' + errors.join('、') + '）';
+    msg += '　CAPE 請手動更新：multpl.com/shiller-pe';
+    setStatus(msg, fetched === 3 ? 'ok' : '');
   } else {
-    setStatus('拉取失敗：'+errors.join(' | '),'err');
+    setStatus('拉取失敗：' + errors.join(' | '), 'err');
   }
   calc();
 }
 
 // ── Score calculation ─────────────────────────────────────────────
-function lerp(x, x0, x1, y0, y1){
+function lerp(x, x0, x1, y0, y1) {
   var t = (x - x0) / (x1 - x0);
   t = Math.max(0, Math.min(1, t));
   return y0 + t * (y1 - y0);
 }
 
-function calc(){
+function calc() {
   var cape    = parseFloat(document.getElementById('iCape').value)    || 36;
   var tips    = parseFloat(document.getElementById('iTips').value)    || 2.0;
   var hy      = parseFloat(document.getElementById('iHy').value)      || 320;
@@ -290,81 +353,69 @@ function calc(){
   var s100    = parseFloat(document.getElementById('tS100').value)    || 40;
   var hyDThr  = parseFloat(document.getElementById('tHyD').value)     || 50;
 
-  // ERP
   var ey  = 100 / cape;
   var erp = ey - tips;
-
-  // F1: lerp(ERP, 0, 4, 10, 100)
   var f1  = Math.round(lerp(erp, 0, 4, 10, 100));
-
-  // F5
-  var hyD      = hy - hyPrev;
-  var f5base   = Math.round(lerp(hy, 250, 600, 80, 20));
+  var hyD = hy - hyPrev;
+  var f5base    = Math.round(lerp(hy, 250, 600, 80, 20));
   var f5penalty = hyD > hyDThr ? 20 : 0;
-  var f5       = Math.max(0, f5base - f5penalty);
+  var f5        = Math.max(0, f5base - f5penalty);
+  var shield    = Math.round(f1 * 0.5 + f5 * 0.5);
+  var vixTrig   = vixPrev >= vixThr && vixNow < vixPrev;
 
-  // Shield
-  var shield = Math.round(f1 * 0.5 + f5 * 0.5);
-
-  // VIX trigger
-  var vixTrig = vixPrev >= vixThr && vixNow < vixPrev;
-
-  // Update display
-  var numEl = document.getElementById('shieldNum');
-  var lblEl = document.getElementById('shieldLabel');
+  var numEl   = document.getElementById('shieldNum');
+  var lblEl   = document.getElementById('shieldLabel');
   var badgeEl = document.getElementById('modeBadge');
-
   numEl.textContent = shield;
 
   var numColor, lbl, badgeClass, badgeTxt;
-  if(shield >= s150){
-    numColor = 'var(--green)'; lbl = '加碼區 ≥'+s150+'（標示 1.5x，上限 1.0x）';
-    badgeClass='bg-normal'; badgeTxt='NORMAL 1.5x';
-  } else if(shield >= s100){
-    numColor = 'var(--accent)'; lbl = '標準區 ≥'+s100+'，持倉 1.0x';
-    badgeClass='bg-normal'; badgeTxt='NORMAL 1.0x';
+  if (shield >= s150) {
+    numColor = 'var(--green)'; lbl = '加碼區 ≥' + s150 + '（標示 1.5x，上限 1.0x）';
+    badgeClass = 'bg-normal'; badgeTxt = 'NORMAL 1.5x';
+  } else if (shield >= s100) {
+    numColor = 'var(--accent)'; lbl = '標準區 ≥' + s100 + '，持倉 1.0x';
+    badgeClass = 'bg-normal'; badgeTxt = 'NORMAL 1.0x';
   } else {
-    numColor = 'var(--red)'; lbl = '警戒區 <'+s100+'，觀察或撤退';
-    if(vixTrig){ badgeClass='bg-strike'; badgeTxt='STRIKE 信號 0.3x↓VIX'; }
-    else { badgeClass='bg-retreat'; badgeTxt='RETREAT / OBS 觀察中'; }
+    numColor = 'var(--red)'; lbl = '警戒區 <' + s100 + '，觀察或撤退';
+    if (vixTrig) { badgeClass = 'bg-strike'; badgeTxt = 'STRIKE 信號 0.3x↓VIX'; }
+    else { badgeClass = 'bg-retreat'; badgeTxt = 'RETREAT / OBS 觀察中'; }
   }
-  numEl.style.color = numColor;
-  lblEl.textContent = lbl;
-  lblEl.style.color = numColor;
+  numEl.style.color  = numColor;
+  lblEl.textContent  = lbl;
+  lblEl.style.color  = numColor;
   badgeEl.style.display = '';
-  badgeEl.className = 'mode-badge ' + badgeClass;
+  badgeEl.className  = 'mode-badge ' + badgeClass;
   badgeEl.textContent = badgeTxt;
 
-  // Bars
-  document.getElementById('f1bar').style.width = Math.min(100,Math.max(0,f1))+'%';
-  document.getElementById('f1bar').style.background = f1>=60?'var(--green)':f1>=40?'var(--accent)':'var(--red)';
-  document.getElementById('f1val').textContent = f1;
-  document.getElementById('f5bar').style.width = Math.min(100,Math.max(0,f5))+'%';
-  document.getElementById('f5bar').style.background = f5>=60?'var(--green)':f5>=40?'var(--accent)':'var(--red)';
-  document.getElementById('f5val').textContent = f5;
+  document.getElementById('f1bar').style.width      = Math.min(100, Math.max(0, f1)) + '%';
+  document.getElementById('f1bar').style.background = f1 >= 60 ? 'var(--green)' : f1 >= 40 ? 'var(--accent)' : 'var(--red)';
+  document.getElementById('f1val').textContent      = f1;
+  document.getElementById('f5bar').style.width      = Math.min(100, Math.max(0, f5)) + '%';
+  document.getElementById('f5bar').style.background = f5 >= 60 ? 'var(--green)' : f5 >= 40 ? 'var(--accent)' : 'var(--red)';
+  document.getElementById('f5val').textContent      = f5;
 
-  // Components
-  document.getElementById('cErp').textContent  = erp.toFixed(2)+'%';
-  document.getElementById('cEy').textContent   = ey.toFixed(2)+'%';
-  document.getElementById('cTips').textContent = tips.toFixed(2)+'%';
+  document.getElementById('cErp').textContent  = erp.toFixed(2) + '%';
+  document.getElementById('cEy').textContent   = ey.toFixed(2) + '%';
+  document.getElementById('cTips').textContent = tips.toFixed(2) + '%';
   var hyDCol = hyD > hyDThr ? 'var(--red)' : 'var(--green)';
-  document.getElementById('cHyD').innerHTML = '<span style="color:'+hyDCol+'">'+(hyD>0?'+':'')+hyD.toFixed(0)+' bp</span>';
+  document.getElementById('cHyD').innerHTML = '<span style="color:' + hyDCol + '">' + (hyD > 0 ? '+' : '') + hyD.toFixed(0) + ' bp</span>';
   document.getElementById('cVixTrig').innerHTML = vixTrig
-    ? '<span style="color:var(--red)">觸發！前日'+vixPrev+'≥'+vixThr+' 且今日'+vixNow+'回落</span>'
-    : '<span style="color:var(--muted)">未觸發（前日'+vixPrev+' / 今日'+vixNow+'）</span>';
-  document.getElementById('csF1').textContent = f1 + ' (ERP='+erp.toFixed(2)+'%)';
-  document.getElementById('csF1').style.color = f1>=50?'var(--green)':'var(--red)';
-  document.getElementById('csF5').textContent = f5 + ' (HY='+hy+'bp, Δ'+(hyD>0?'+':'')+hyD.toFixed(0)+')';
-  document.getElementById('csF5').style.color = f5>=50?'var(--green)':'var(--red)';
+    ? '<span style="color:var(--red)">觸發！前日' + vixPrev + '≥' + vixThr + ' 且今日' + vixNow + '回落</span>'
+    : '<span style="color:var(--muted)">未觸發（前日' + vixPrev + ' / 今日' + vixNow + '）</span>';
+  document.getElementById('csF1').textContent = f1 + ' (ERP=' + erp.toFixed(2) + '%)';
+  document.getElementById('csF1').style.color = f1 >= 50 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('csF5').textContent = f5 + ' (HY=' + hy + 'bp, Δ' + (hyD > 0 ? '+' : '') + hyD.toFixed(0) + ')';
+  document.getElementById('csF5').style.color = f5 >= 50 ? 'var(--green)' : 'var(--red)';
 }
 
-function setStatus(msg, cls){
+function setStatus(msg, cls) {
   var el = document.getElementById('status');
   el.textContent = msg;
   el.className = cls;
 }
 
-// Init
 calc();
-</script></body>
+</script>
+
+</body>
 </html>
