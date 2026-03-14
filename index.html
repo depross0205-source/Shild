@@ -437,6 +437,42 @@ flex-shrink: 0;
   <div class="comp-row"><span class="comp-name">F5 分數</span><span class="comp-score" id="csF5">--</span></div>
 </div>
 
+<!-- Historical Shield Scores -->
+
+<div class="card">
+  <div class="card-title">[ 歷史盾牌分數（狀態機判斷用）]</div>
+  <div class="grid2" style="margin-bottom:14px;">
+    <div class="field">
+      <label>前兩日盾牌分（D-2）</label>
+      <input type="number" id="iShieldD2" value="" placeholder="--" step="1" oninput="calc()">
+      <div class="src">兩個交易日前的今日計算值</div>
+    </div>
+    <div class="field">
+      <label>前一日盾牌分（D-1）</label>
+      <input type="number" id="iShieldD1" value="" placeholder="--" step="1" oninput="calc()">
+      <div class="src">昨日的盾牌分計算值</div>
+    </div>
+  </div>
+
+  <!-- State verdict display -->
+
+  <div id="stateVerdictBox" style="
+    background:#0d1020;
+    border:1px solid var(--border2);
+    border-radius:8px;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  ">
+    <div id="stateBadgeBig" class="badge" style="font-size:12px;padding:6px 14px;letter-spacing:2px;flex-shrink:0;">--</div>
+    <div>
+      <div id="stateVerdictTitle" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">輸入歷史分數以判斷狀態</div>
+      <div id="stateVerdictDesc"  style="font-size:11px;color:var(--label);line-height:1.6;">請填入 D-2 與 D-1 的盾牌分，系統將自動與今日分數比對，給出精確策略指令。</div>
+    </div>
+  </div>
+</div>
+
 <!-- Threshold -->
 
 <div class="card">
@@ -636,6 +672,86 @@ function calc() {
   numEl.style.color = col;
   lblEl.textContent = lbl; lblEl.style.color = col;
   badgeEl.style.display = ''; badgeEl.className = 'mode-badge '+bc; badgeEl.textContent = bt;
+
+  /* ── 狀態機（含歷史分數）── */
+  var d1Raw = document.getElementById('iShieldD1').value;
+  var d2Raw = document.getElementById('iShieldD2').value;
+  var d1 = d1Raw !== '' ? parseFloat(d1Raw) : null;
+  var d2 = d2Raw !== '' ? parseFloat(d2Raw) : null;
+
+  var vBox   = document.getElementById('stateVerdictBox');
+  var vBadge = document.getElementById('stateBadgeBig');
+  var vTitle = document.getElementById('stateVerdictTitle');
+  var vDesc  = document.getElementById('stateVerdictDesc');
+
+  // 邊框顏色 helper
+  function setVerdict(badgeClass, badgeText, borderColor, title, desc) {
+    vBadge.className = 'badge ' + badgeClass;
+    vBadge.textContent = badgeText;
+    vBox.style.borderColor = borderColor;
+    vTitle.textContent = title;
+    vDesc.innerHTML = desc;
+  }
+
+  var todayBelow = shield < s100;
+  var d1Below    = d1 !== null && d1 < s100;
+  var d2Below    = d2 !== null && d2 < s100;
+  var todayOK    = shield >= s100;
+  var d1OK       = d1 !== null && d1 >= s100;
+
+  if (d1 === null && d2 === null) {
+    // 尚未填入歷史
+    setVerdict('bg-obs','--','var(--border2)',
+      '尚未輸入歷史分數',
+      '請填入 D-1（昨日）與 D-2（前日）的盾牌分，系統將自動推斷策略狀態。');
+
+  } else if (vixTrig) {
+    // VIX 觸發優先
+    setVerdict('bg-strike','STRIKE','var(--red)',
+      '⚡ STRIKE — 建倉 0.3x',
+      '前日 VIX ' + vixPrev + ' ≥ ' + vixThr + '，今日 ' + vixNow + ' 回落。<br>恐慌高點過後逢低建倉，倉位 <strong style="color:var(--red)">0.3x</strong>，等待 RECOVER 信號。');
+
+  } else if (todayOK && !d1OK) {
+    // 今日回升，前日曾低於門檻
+    setVerdict('bg-recover','RECOVER','var(--green)',
+      '✅ RECOVER — 補滿 1.0x',
+      '前日（D-1）盾牌分 <strong>' + d1.toFixed(0) + '</strong> 低於門檻，今日回升至 <strong>' + shield + '</strong>。<br>低倉狀態解除，補倉至 <strong style="color:var(--green)">1.0x</strong>。');
+
+  } else if (todayOK) {
+    // 今日正常
+    if (shield >= s150) {
+      setVerdict('bg-normal','NORMAL  1.5x','var(--green)',
+        '🟢 NORMAL — 持倉 1.0x，標示加碼',
+        '今日盾牌分 <strong>' + shield + '</strong> 達加碼區（≥' + s150 + '）。<br>持倉維持 <strong style="color:var(--green)">1.0x</strong>，可標記為加碼意向（實際上限仍 1.0x）。');
+    } else {
+      setVerdict('bg-normal','NORMAL  1.0x','var(--accent)',
+        '🟢 NORMAL — 持倉 1.0x',
+        '今日盾牌分 <strong>' + shield + '</strong> 在標準區（≥' + s100 + '）。<br>維持正常倉位 <strong style="color:var(--accent)">1.0x</strong>，無需操作。');
+    }
+
+  } else if (todayBelow && !d1Below) {
+    // 今日首次跌破（D-1 正常，今日異常）
+    setVerdict('bg-obs','OBS','var(--blue)',
+      '👁 OBS — 觀察，持倉不動 1.0x',
+      '今日盾牌分 <strong>' + shield + '</strong> 首次跌破門檻（< ' + s100 + '）。<br>前日（D-1）分數 <strong>' + (d1!==null?d1.toFixed(0):'--') + '</strong> 仍正常，尚不賣出。<br>保持 <strong style="color:var(--blue)">1.0x</strong>，明日再觀察。');
+
+  } else if (todayBelow && d1Below && !d2Below) {
+    // 今日 + D-1 連續兩天低於門檻 → RETREAT
+    setVerdict('bg-retreat','RETREAT','var(--gold)',
+      '⚠️ RETREAT — 清倉 0%',
+      'D-1（' + d1.toFixed(0) + '）與今日（' + shield + '）連續兩日低於 ' + s100 + ' 分。<br><strong style="color:var(--gold)">觸發賣出條件，清倉至 0%。</strong><br>等待 STRIKE 或 RECOVER 信號再重新建倉。');
+
+  } else if (todayBelow && d1Below && d2Below) {
+    // 三天以上持續低於門檻 → 維持空倉
+    setVerdict('bg-retreat','RETREAT  持續','var(--red)',
+      '🔴 RETREAT 持續 — 維持空倉 0%',
+      'D-2（' + d2.toFixed(0) + '）、D-1（' + d1.toFixed(0) + '）、今日（' + shield + '）連續三日以上低於門檻。<br>維持 <strong style="color:var(--red)">空倉 0%</strong>，持續觀察等待反轉信號。');
+
+  } else {
+    setVerdict('bg-obs','OBS','var(--blue)',
+      '👁 OBS — 觀察中',
+      '盾牌分：D-2 ' + (d2!==null?d2.toFixed(0):'--') + '　D-1 ' + (d1!==null?d1.toFixed(0):'--') + '　今日 ' + shield + '<br>維持現狀，持續監控。');
+  }
 
   function bc2(v){ return v>=60?'var(--green)':v>=40?'var(--accent)':'var(--red)'; }
   document.getElementById('f1bar').style.cssText = 'width:'+Math.min(100,Math.max(0,f1))+'%;background:'+bc2(f1);
