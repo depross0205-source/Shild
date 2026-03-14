@@ -8,331 +8,84 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:       #07090d;
-  --panel:    #0e1117;
-  --panel2:   #141820;
-  --border:   #252d3f;
-  --border2:  #303d58;
-  --text:     #f0f4ff;        /* 主文字：近白 */
-  --label:    #9baacf;        /* 標籤：明顯藍灰 */
-  --muted:    #5a6a8a;        /* 次要：不過暗 */
-  --accent:   #5eb0ff;
-  --green:    #19e89a;
-  --red:      #ff4f4f;
-  --gold:     #ffbe3d;
-  --blue:     #5eb0ff;
+  --bg:#07090d; --panel:#0e1117; --panel2:#141820;
+  --border:#252d3f; --border2:#303d58;
+  --text:#f0f4ff; --label:#9baacf; --muted:#5a6a8a;
+  --accent:#5eb0ff; --green:#19e89a; --red:#ff4f4f; --gold:#ffbe3d; --blue:#5eb0ff;
 }
-
-*{ box-sizing:border-box; margin:0; padding:0; }
-
-body{
-background: var(–bg);
-color: var(–text);
-font-family: ‘Noto Sans TC’, sans-serif;
-min-height: 100vh;
-padding: 18px 16px 40px;
-font-size: 14px;
-line-height: 1.5;
-}
-
-/* ── Header ── */
-h1{
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 17px;
-letter-spacing: 4px;
-color: var(–accent);
-text-align: center;
-margin-bottom: 4px;
-}
-.sub{
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 10px;
-color: var(–muted);
-text-align: center;
-margin-bottom: 22px;
-letter-spacing: 2px;
-}
-
-/* ── Card ── */
-.card{
-background: var(–panel);
-border: 1px solid var(–border);
-border-radius: 10px;
-padding: 16px;
-margin-bottom: 14px;
-}
-.card-title{
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 10px;
-letter-spacing: 3px;
-color: var(–muted);
-margin-bottom: 14px;
-border-bottom: 1px solid var(–border);
-padding-bottom: 8px;
-}
-
-/* ── Grid ── */
-.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
-
-/* ── Field ── */
-.field{ display:flex; flex-direction:column; gap:6px; }
-
-.field label{
-font-size: 11px;          /* 原本 9px → 11px */
-font-weight: 500;
-color: var(–label);      /* 原本 –muted → –label（更亮）*/
-letter-spacing: 0.5px;
-}
-
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;padding:18px 16px 40px;font-size:14px;line-height:1.5;}
+h1{font-family:'Share Tech Mono',monospace;font-size:17px;letter-spacing:4px;color:var(--accent);text-align:center;margin-bottom:4px;}
+.sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);text-align:center;margin-bottom:22px;letter-spacing:2px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+.card-title{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:8px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:11px;font-weight:500;color:var(--label);letter-spacing:0.5px;}
 .field input{
-background: #1c2235;
-border: 1px solid #4a5a80;
-color: #ffffff !important;
--webkit-text-fill-color: #ffffff !important;
-padding: 10px 12px;
-border-radius: 6px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 16px;
-width: 100%;
-transition: border-color .2s, background .2s;
-/* 移除瀏覽器 number 預設樣式 */
--moz-appearance: textfield;
+  background:#1c2235;border:1px solid #4a5a80;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;
+  padding:10px 12px;border-radius:6px;
+  font-family:'Share Tech Mono',monospace;font-size:16px;width:100%;
+  transition:border-color .2s,background .2s;-moz-appearance:textfield;
 }
-.field input::-webkit-outer-spin-button,
-.field input::-webkit-inner-spin-button {
--webkit-appearance: none;
-margin: 0;
-}
-.field input:focus{
-outline: none;
-border-color: var(–accent);
-background: #202840;
--webkit-text-fill-color: #ffffff !important;
-}
-
-.field .src{
-font-size: 10px;          /* 原本 8px → 10px */
-color: var(–muted);
-}
-
-/* ── Shield Big ── */
-.shield-big{ text-align:center; padding:24px 0 16px; }
-
-.shield-num{
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 88px;          /* 更大 */
-font-weight: 900;
-line-height: 1;
-transition: color .3s;
-text-shadow: 0 0 40px currentColor;
-}
-
-.shield-label{
-font-size: 13px;
-letter-spacing: 2px;
-margin-top: 10px;
-font-weight: 500;
-}
-
-.mode-badge{
-display: inline-block;
-padding: 5px 18px;
-border-radius: 4px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 12px;
-font-weight: 700;
-letter-spacing: 2px;
-margin-top: 10px;
-}
-
-/* ── Bars ── */
-.bar-wrap{ margin-top: 10px; }
-.bar-label{
-display: flex;
-justify-content: space-between;
-font-size: 11px;          /* 原本 9px */
-color: var(–label);
-margin-bottom: 5px;
-font-weight: 500;
-}
-.bar-label span:last-child{
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 13px;
-color: var(–text);
-}
-.bar-bg{
-background: #1a2035;
-border-radius: 3px;
-height: 8px;              /* 原本 6px → 8px */
-overflow: hidden;
-}
-.bar-fill{
-height: 100%;
-border-radius: 3px;
-transition: width .4s ease, background .3s;
-}
-
-/* ── Buttons ── */
-.btn-row{ display:flex; gap:8px; margin-top:6px; }
-.btn-sm{
-flex: 1;
-padding: 9px 12px;
-font-size: 11px;          /* 原本 10px */
-background: transparent;
-border: 1px solid var(–border2);
-color: var(–label);
-border-radius: 6px;
-font-family: ‘Share Tech Mono’, monospace;
-cursor: pointer;
-letter-spacing: 1px;
-transition: border-color .2s, color .2s;
-text-align: center;
-}
-.btn-sm:hover{ border-color: var(–accent); color: var(–accent); }
-.btn-sm:active{ background: var(–panel2); }
-
-/* ── Status ── */
-#status{
-font-size: 11px;          /* 原本 9px */
-color: var(–muted);
-text-align: center;
-min-height: 18px;
-margin-top: 10px;
-line-height: 1.7;
-word-break: break-all;
-}
-.ok  { color: var(–green) !important; }
-.err { color: var(–red)   !important; }
-.warn{ color: var(–gold)  !important; }
-
-/* ── Log Box ── */
-#logBox{
-display: none;
-background: #080b10;
-border: 1px solid var(–border);
-border-radius: 6px;
-padding: 10px;
-margin-top: 10px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 10px;
-color: var(–muted);
-line-height: 1.9;
-max-height: 140px;
-overflow-y: auto;
-word-break: break-all;
-}
-
-/* ── Proxy row ── */
-.proxy-row{
-display: flex;
-gap: 8px;
-align-items: center;
-margin-bottom: 12px;
-}
-.proxy-row label{
-font-size: 11px;
-color: var(–label);
-white-space: nowrap;
-font-weight: 500;
-}
-.proxy-row select{
-flex: 1;
-background: #1c2235;
-border: 1px solid #4a5a80;
-color: #ffffff;
-padding: 8px 10px;
-border-radius: 6px;
-font-family: ‘Noto Sans TC’, sans-serif;
-font-size: 12px;
-}
-
-/* ── API row ── */
-.apirow{ display:flex; gap:8px; align-items:center; }
-.apirow input{
-flex: 1;
-background: #1c2235;
-border: 1px solid #4a5a80;
-color: #ffffff;
--webkit-text-fill-color: #ffffff;
-padding: 10px 12px;
-border-radius: 6px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 13px;
-}
-.apirow input::placeholder{ color: #4a5a80; }
-.apirow input:focus{ outline:none; border-color:var(–accent); background:#202840; }
-
-/* ── Component rows ── */
-.comp-row{
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 8px 0;           /* 原本 5px → 8px，行距更鬆 */
-border-bottom: 1px solid var(–border);
-}
-.comp-row:last-child{ border-bottom: none; }
-
-.comp-name{
-font-size: 12px;          /* 原本 10px */
-color: var(–label);
-font-weight: 500;
-}
-.comp-val{
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 13px;          /* 原本 11px */
-font-weight: 700;
-color: var(–text);
-}
-.comp-score{
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 12px;
-padding: 3px 10px;
-border-radius: 4px;
-background: var(–panel2);
-color: var(–text);
-}
-
-/* ── State rows ── */
-.state-row{
-padding: 9px 0;
-border-bottom: 1px solid var(–border);
-font-size: 12px;          /* 原本 10px */
-display: flex;
-align-items: center;
-gap: 10px;
-color: var(–label);
-}
-.state-row:last-child{ border-bottom: none; }
-
-.badge{
-padding: 3px 10px;
-border-radius: 4px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 10px;
-font-weight: 700;
-letter-spacing: 1px;
-white-space: nowrap;
-flex-shrink: 0;
-}
-.bg-normal { background:#0a2016; color:#19e89a; }
-.bg-obs    { background:#0a1428; color:#5eb0ff; }
-.bg-retreat{ background:#201a06; color:#ffbe3d; }
-.bg-strike { background:#200a0a; color:#ff4f4f; }
-.bg-recover{ background:#0a2016; color:#19e89a; }
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.field input:focus{outline:none;border-color:var(--accent);background:#202840;-webkit-text-fill-color:#fff!important;}
+.field .src{font-size:10px;color:var(--muted);}
+.shield-big{text-align:center;padding:24px 0 16px;}
+.shield-num{font-family:'Share Tech Mono',monospace;font-size:88px;font-weight:900;line-height:1;transition:color .3s;text-shadow:0 0 40px currentColor;}
+.shield-label{font-size:13px;letter-spacing:2px;margin-top:10px;font-weight:500;}
+.mode-badge{display:inline-block;padding:5px 18px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;margin-top:10px;}
+.bar-wrap{margin-top:10px;}
+.bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--label);margin-bottom:5px;font-weight:500;}
+.bar-label span:last-child{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text);}
+.bar-bg{background:#1a2035;border-radius:3px;height:8px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s ease,background .3s;}
+.btn-row{display:flex;gap:8px;margin-top:6px;}
+.btn-sm{flex:1;padding:9px 12px;font-size:11px;background:transparent;border:1px solid var(--border2);color:var(--label);border-radius:6px;font-family:'Share Tech Mono',monospace;cursor:pointer;letter-spacing:1px;transition:border-color .2s,color .2s;text-align:center;}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent);}
+.btn-sm:active{background:var(--panel2);}
+.btn-save{border-color:var(--green)!important;color:var(--green)!important;}
+.btn-save:hover{background:#0a2016!important;}
+#status{font-size:11px;color:var(--muted);text-align:center;min-height:18px;margin-top:10px;line-height:1.7;word-break:break-all;}
+.ok{color:var(--green)!important;} .err{color:var(--red)!important;} .warn{color:var(--gold)!important;}
+#logBox{display:none;background:#080b10;border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);line-height:1.9;max-height:140px;overflow-y:auto;word-break:break-all;}
+.proxy-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;}
+.proxy-row label{font-size:11px;color:var(--label);white-space:nowrap;font-weight:500;}
+.proxy-row select{flex:1;background:#1c2235;border:1px solid #4a5a80;color:#fff;padding:8px 10px;border-radius:6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;}
+.apirow{display:flex;gap:8px;align-items:center;}
+.apirow input{flex:1;background:#1c2235;border:1px solid #4a5a80;color:#fff;-webkit-text-fill-color:#fff;padding:10px 12px;border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:13px;}
+.apirow input::placeholder{color:#4a5a80;}
+.apirow input:focus{outline:none;border-color:var(--accent);background:#202840;}
+.comp-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.comp-row:last-child{border-bottom:none;}
+.comp-name{font-size:12px;color:var(--label);font-weight:500;}
+.comp-val{font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:var(--text);}
+.comp-score{font-family:'Share Tech Mono',monospace;font-size:12px;padding:3px 10px;border-radius:4px;background:var(--panel2);color:var(--text);}
+.state-row{padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:10px;color:var(--label);}
+.state-row:last-child{border-bottom:none;}
+.badge{padding:3px 10px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;letter-spacing:1px;white-space:nowrap;flex-shrink:0;}
+.bg-normal{background:#0a2016;color:#19e89a;} .bg-obs{background:#0a1428;color:#5eb0ff;}
+.bg-retreat{background:#201a06;color:#ffbe3d;} .bg-strike{background:#200a0a;color:#ff4f4f;}
+.bg-recover{background:#0a2016;color:#19e89a;}
+/* history boxes */
+.hist-box{background:#0d1020;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+.hist-score{font-family:'Share Tech Mono',monospace;font-size:32px;font-weight:700;min-width:52px;text-align:center;transition:color .3s;}
+.hist-meta{display:flex;flex-direction:column;gap:4px;}
+.hist-tag{font-size:11px;font-weight:600;color:var(--label);}
+.hist-date{font-size:10px;color:var(--muted);}
 </style>
-
 </head>
 <body>
 
 <h1>矛 與 盾　即時分數</h1>
-<div class="sub">V5.3 PRO ｜ SHIELD SCORE CALCULATOR</div>
+<div class="sub">V5.4 PRO ｜ SHIELD SCORE CALCULATOR</div>
 
-<!-- FRED API -->
+<!-- FRED -->
 
 <div class="card">
   <div class="card-title">[ FRED 即時數據 ]</div>
-
   <div class="proxy-row">
     <label>CORS Proxy</label>
     <select id="proxySelect">
@@ -342,20 +95,17 @@ flex-shrink: 0;
       <option value="none">不使用 Proxy（直連）</option>
     </select>
   </div>
-
   <div class="field" style="margin-bottom:10px;">
     <label>FRED API KEY（免費申請：fred.stlouisfed.org）</label>
     <div class="apirow">
       <input type="text" id="apiKey" placeholder="貼上你的 FRED API Key..." autocomplete="off">
     </div>
   </div>
-
   <div class="btn-row">
     <button class="btn-sm" onclick="fetchFRED()">▶ 拉取數據</button>
     <button class="btn-sm" onclick="testProxy()">🔍 測試 Proxy</button>
     <button class="btn-sm" onclick="toggleLog()">📋 診斷記錄</button>
   </div>
-
   <div id="status">— 輸入 API Key 後點擊拉取，或直接手動填入下方數值 —</div>
   <div id="logBox"></div>
 </div>
@@ -380,7 +130,7 @@ flex-shrink: 0;
     <div class="field">
       <label>HY Spread 現值 (bp)</label>
       <input type="number" id="iHy" value="320" step="1" oninput="calc()">
-      <div class="src">FRED: BAMLH0A0HYM2 ×100</div>
+      <div class="src">FRED: BAMLH0A0HYM2 x100</div>
     </div>
     <div class="field">
       <label>HY Spread 3個月前 (bp)</label>
@@ -440,35 +190,41 @@ flex-shrink: 0;
 <!-- Historical Shield Scores -->
 
 <div class="card">
-  <div class="card-title">[ 歷史盾牌分數（狀態機判斷用）]</div>
-  <div class="grid2" style="margin-bottom:14px;">
-    <div class="field">
-      <label>前兩日盾牌分（D-2）</label>
-      <input type="number" id="iShieldD2" value="" placeholder="--" step="1" oninput="calc()">
-      <div class="src">兩個交易日前的今日計算值</div>
+  <div class="card-title">[ 歷史盾牌分數　自動記錄 ]</div>
+
+  <div class="grid2" style="margin-bottom:12px;">
+    <div>
+      <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;">D-2　前兩日</div>
+      <div class="hist-box">
+        <div class="hist-score" id="dispD2" style="color:var(--muted)">--</div>
+        <div class="hist-meta">
+          <div class="hist-tag" id="dispD2Tag">尚無記錄</div>
+          <div class="hist-date" id="dispD2Date">—</div>
+        </div>
+      </div>
     </div>
-    <div class="field">
-      <label>前一日盾牌分（D-1）</label>
-      <input type="number" id="iShieldD1" value="" placeholder="--" step="1" oninput="calc()">
-      <div class="src">昨日的盾牌分計算值</div>
+    <div>
+      <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;">D-1　前一日</div>
+      <div class="hist-box">
+        <div class="hist-score" id="dispD1" style="color:var(--muted)">--</div>
+        <div class="hist-meta">
+          <div class="hist-tag" id="dispD1Tag">尚無記錄</div>
+          <div class="hist-date" id="dispD1Date">—</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- State verdict display -->
+  <div class="btn-row" style="margin-bottom:14px;">
+    <button class="btn-sm btn-save" onclick="saveToday()">💾 收盤後：存今日分數為 D-1</button>
+    <button class="btn-sm" style="flex:0 0 auto;padding:9px 16px;" onclick="clearHistory()">🗑 清除</button>
+  </div>
 
-  <div id="stateVerdictBox" style="
-    background:#0d1020;
-    border:1px solid var(--border2);
-    border-radius:8px;
-    padding:14px 16px;
-    display:flex;
-    align-items:center;
-    gap:14px;
-  ">
-    <div id="stateBadgeBig" class="badge" style="font-size:12px;padding:6px 14px;letter-spacing:2px;flex-shrink:0;">--</div>
+  <div id="stateVerdictBox" style="background:#0d1020;border:1px solid var(--border2);border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+    <div id="stateBadgeBig" class="badge bg-obs" style="font-size:12px;padding:6px 14px;letter-spacing:2px;flex-shrink:0;">--</div>
     <div>
-      <div id="stateVerdictTitle" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">輸入歷史分數以判斷狀態</div>
-      <div id="stateVerdictDesc"  style="font-size:11px;color:var(--label);line-height:1.6;">請填入 D-2 與 D-1 的盾牌分，系統將自動與今日分數比對，給出精確策略指令。</div>
+      <div id="stateVerdictTitle" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">尚無歷史記錄</div>
+      <div id="stateVerdictDesc" style="font-size:11px;color:var(--label);line-height:1.7;">每日收盤後按「💾 存今日分數為 D-1」，系統自動將昨日推為 D-2，不需手動填寫。</div>
     </div>
   </div>
 </div>
@@ -479,309 +235,226 @@ flex-shrink: 0;
   <div class="card-title">[ 閥值設定 ]</div>
   <div class="grid2">
     <div class="field">
-      <label>加碼門檻（≥ 此分 → 1.5x）</label>
+      <label>加碼門檻（>= 此分 1.5x）</label>
       <input type="number" id="tS150" value="60" step="1" oninput="calc()">
     </div>
     <div class="field">
-      <label>標準門檻（≥ 此分 → 1.0x）</label>
+      <label>標準門檻（>= 此分 1.0x）</label>
       <input type="number" id="tS100" value="40" step="1" oninput="calc()">
     </div>
   </div>
 </div>
 
-<!-- State Machine -->
+<!-- State Machine Reference -->
 
 <div class="card">
   <div class="card-title">[ 策略狀態機 ]</div>
-  <div class="state-row"><span class="badge bg-normal">NORMAL</span>盾牌分 ≥ 40，持倉 1.0x（≥ 60 標示 1.5x）</div>
+  <div class="state-row"><span class="badge bg-normal">NORMAL</span>盾牌分 >= 40，持倉 1.0x（>= 60 標示 1.5x）</div>
   <div class="state-row"><span class="badge bg-obs">OBS</span>盾牌分首日跌破 40，保持 1.0x 觀察</div>
   <div class="state-row"><span class="badge bg-retreat">RETREAT</span>連續第 2 天 &lt; 40，VIX 未觸發 → 清倉 0%</div>
-  <div class="state-row"><span class="badge bg-strike">STRIKE</span>前日 VIX ≥ 35 且今日回落 → 建倉 0.3x</div>
-  <div class="state-row"><span class="badge bg-recover">RECOVER</span>低倉狀態盾牌分重回 ≥ 40 → 補滿 1.0x</div>
+  <div class="state-row"><span class="badge bg-strike">STRIKE</span>前日 VIX >= 35 且今日回落 → 建倉 0.3x</div>
+  <div class="state-row"><span class="badge bg-recover">RECOVER</span>低倉狀態盾牌分重回 >= 40 → 補滿 1.0x</div>
 </div>
 
 <script>
-/* ── Log ── */
+var LS_D1 = 'shield_d1';
+var LS_D2 = 'shield_d2';
+
+/* log */
 var logs = [];
-function log(msg) {
-  var t = new Date().toTimeString().slice(0,8);
-  logs.push('[' + t + '] ' + msg);
-  var box = document.getElementById('logBox');
-  if (box.style.display !== 'none') renderLog();
-}
-function renderLog() {
-  document.getElementById('logBox').innerHTML = logs.slice(-30).join('<br>');
-}
-function toggleLog() {
-  var box = document.getElementById('logBox');
-  box.style.display = box.style.display === 'none' ? 'block' : 'none';
-  if (box.style.display === 'block') renderLog();
-}
+function log(msg){ var t=new Date().toTimeString().slice(0,8); logs.push('['+t+'] '+msg); var b=document.getElementById('logBox'); if(b.style.display!=='none') renderLog(); }
+function renderLog(){ document.getElementById('logBox').innerHTML=logs.slice(-30).join('<br>'); }
+function toggleLog(){ var b=document.getElementById('logBox'); b.style.display=b.style.display==='none'?'block':'none'; if(b.style.display==='block') renderLog(); }
 
-/* ── Proxy ── */
-async function testProxy() {
-  setStatus('測試 Proxy 連線中...', 'warn');
-  log('=== Proxy 測試 ===');
-  var testUrl = 'https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFF&vintage_date=2020-01-01';
-  try {
-    await fetchWithProxy(testUrl);
-    setStatus('✓ Proxy 連線正常，可拉取數據', 'ok');
-  } catch(e) {
-    log('失敗: ' + e.message);
-    setStatus('✗ Proxy 失敗：' + e.message + '　請換其他 Proxy', 'err');
+/* proxy */
+async function testProxy(){ setStatus('測試 Proxy 中...','warn'); try{ await fetchWithProxy('https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFF&vintage_date=2020-01-01'); setStatus('Proxy 正常','ok'); }catch(e){ setStatus('Proxy 失敗：'+e.message,'err'); } }
+function buildProxyUrl(u){ var p=document.getElementById('proxySelect').value; if(p==='allorigins') return 'https://api.allorigins.win/get?url='+encodeURIComponent(u); if(p==='corsproxy') return 'https://corsproxy.io/?'+encodeURIComponent(u); if(p==='thingproxy') return 'https://thingproxy.freeboard.io/fetch/'+u; return u; }
+async function fetchWithProxy(targetUrl){ var p=document.getElementById('proxySelect').value; var pu=buildProxyUrl(targetUrl); log('GET '+pu.slice(0,100)+'...'); var r=await fetch(pu,{cache:'no-store'}); log('HTTP '+r.status); if(!r.ok) throw new Error('HTTP '+r.status); var text=await r.text(); log('len:'+text.length); if(p==='allorigins'){ var w; try{w=JSON.parse(text);}catch(e){throw new Error('allorigins JSON err');} if(!w.contents) throw new Error('allorigins empty'); try{return JSON.parse(w.contents);}catch(e){throw new Error('contents err:'+w.contents.slice(0,60));} } try{return JSON.parse(text);}catch(e){throw new Error('JSON err:'+text.slice(0,60));} }
+
+/* FRED */
+async function fetchFRED(){
+  var key=document.getElementById('apiKey').value.trim();
+  if(!key){setStatus('請輸入 FRED API Key','err');return;}
+  logs=[]; log('fetchFRED key:'+key.slice(0,4)); setStatus('拉取中...','warn');
+  var today=new Date(), ed=today.toISOString().slice(0,10);
+  var sd=new Date(today); sd.setDate(today.getDate()-120);
+  var st=sd.toISOString().slice(0,10);
+  var tasks=[{sid:'DFII10',field:'iTips'},{sid:'BAMLH0A0HYM2',field:'iHy'},{sid:'VIXCLS',field:'iVixNow'}];
+  var ok=0,errs=[];
+  for(var ti=0;ti<tasks.length;ti++){
+    var t=tasks[ti];
+    var url='https://api.stlouisfed.org/fred/series/observations?series_id='+t.sid+'&api_key='+key+'&file_type=json&observation_start='+st+'&observation_end='+ed+'&sort_order=desc&limit=70';
+    try{
+      var d=await fetchWithProxy(url);
+      if(d.error_message){errs.push(t.sid+':'+d.error_message);continue;}
+      if(!d.observations||!d.observations.length){errs.push(t.sid+':no data');continue;}
+      var latest=null;
+      for(var i=0;i<d.observations.length;i++){if(d.observations[i].value!=='.'){latest=parseFloat(d.observations[i].value);break;}}
+      if(latest===null){errs.push(t.sid+':all null');continue;}
+      if(t.sid==='BAMLH0A0HYM2'){
+        document.getElementById('iHy').value=(latest*100).toFixed(0);
+        var prev=null; for(var j=60;j<d.observations.length;j++){if(d.observations[j].value!=='.'){prev=parseFloat(d.observations[j].value);break;}}
+        if(prev!==null) document.getElementById('iHyPrev').value=(prev*100).toFixed(0);
+      } else if(t.sid==='VIXCLS'){
+        document.getElementById('iVixNow').value=latest.toFixed(1);
+        var vp=null; for(var k=1;k<d.observations.length;k++){if(d.observations[k].value!=='.'){vp=parseFloat(d.observations[k].value);break;}}
+        if(vp!==null) document.getElementById('iVixPrev').value=vp.toFixed(1);
+      } else { document.getElementById(t.field).value=latest.toFixed(3); }
+      ok++;
+    }catch(e){log('ERR:'+e.message);errs.push(t.sid+':'+e.message);}
   }
-}
-
-function buildProxyUrl(url) {
-  var p = document.getElementById('proxySelect').value;
-  if (p === 'allorigins')  return 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-  if (p === 'corsproxy')   return 'https://corsproxy.io/?' + encodeURIComponent(url);
-  if (p === 'thingproxy')  return 'https://thingproxy.freeboard.io/fetch/' + url;
-  return url;
-}
-
-async function fetchWithProxy(targetUrl) {
-  var p = document.getElementById('proxySelect').value;
-  var proxyUrl = buildProxyUrl(targetUrl);
-  log('GET → ' + proxyUrl.slice(0,120) + '...');
-  var r = await fetch(proxyUrl, { cache:'no-store' });
-  log('HTTP ' + r.status);
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  var text = await r.text();
-  log('回傳長度: ' + text.length);
-  if (p === 'allorigins') {
-    var w;
-    try { w = JSON.parse(text); } catch(e) { throw new Error('allorigins JSON 解析失敗'); }
-    if (!w.contents) throw new Error('allorigins contents 空（API Key 可能被擋）');
-    try { return JSON.parse(w.contents); } catch(e) { throw new Error('contents 解析失敗: ' + w.contents.slice(0,80)); }
-  }
-  try { return JSON.parse(text); } catch(e) { throw new Error('JSON 解析失敗: ' + text.slice(0,80)); }
-}
-
-/* ── FRED ── */
-async function fetchFRED() {
-  var key = document.getElementById('apiKey').value.trim();
-  if (!key) { setStatus('請先輸入 FRED API Key', 'err'); return; }
-  logs = [];
-  log('=== fetchFRED ===  key前4: ' + key.slice(0,4));
-  setStatus('拉取中... 請稍候', 'warn');
-
-  var today = new Date();
-  var obs_end = today.toISOString().slice(0,10);
-  var d2 = new Date(today); d2.setDate(today.getDate()-120);
-  var obs_start = d2.toISOString().slice(0,10);
-
-  var tasks = [
-    { sid:'DFII10',       field:'iTips',   label:'TIPS' },
-    { sid:'BAMLH0A0HYM2', field:'iHy',     label:'HY'   },
-    { sid:'VIXCLS',       field:'iVixNow', label:'VIX'  }
-  ];
-
-  var fetched = 0, errors = [];
-
-  for (var ti = 0; ti < tasks.length; ti++) {
-    var t = tasks[ti];
-    var url = 'https://api.stlouisfed.org/fred/series/observations'
-      + '?series_id=' + t.sid + '&api_key=' + key
-      + '&file_type=json&observation_start=' + obs_start
-      + '&observation_end=' + obs_end + '&sort_order=desc&limit=70';
-    log('--- ' + t.sid + ' ---');
-    try {
-      var d = await fetchWithProxy(url);
-      if (d.error_message) { errors.push(t.sid + ': ' + d.error_message); log('FRED err: ' + d.error_message); continue; }
-      if (!d.observations || !d.observations.length) { errors.push(t.sid + ': 無資料'); continue; }
-      log(t.sid + ' 筆數:' + d.observations.length + ' 最新:' + d.observations[0].date);
-
-      var latest = null;
-      for (var i = 0; i < d.observations.length; i++) {
-        if (d.observations[i].value !== '.') { latest = parseFloat(d.observations[i].value); break; }
-      }
-      if (latest === null) { errors.push(t.sid + ': 全空值'); continue; }
-      log(t.sid + ' 值: ' + latest);
-
-      if (t.sid === 'BAMLH0A0HYM2') {
-        document.getElementById('iHy').value = (latest*100).toFixed(0);
-        var prev = null;
-        for (var j = 60; j < d.observations.length; j++) {
-          if (d.observations[j].value !== '.') { prev = parseFloat(d.observations[j].value); break; }
-        }
-        if (prev !== null) document.getElementById('iHyPrev').value = (prev*100).toFixed(0);
-      } else if (t.sid === 'VIXCLS') {
-        document.getElementById('iVixNow').value = latest.toFixed(1);
-        var vp = null;
-        for (var k = 1; k < d.observations.length; k++) {
-          if (d.observations[k].value !== '.') { vp = parseFloat(d.observations[k].value); break; }
-        }
-        if (vp !== null) document.getElementById('iVixPrev').value = vp.toFixed(1);
-      } else {
-        document.getElementById(t.field).value = latest.toFixed(3);
-      }
-      fetched++;
-    } catch(e) {
-      log('CATCH: ' + e.message);
-      errors.push(t.sid + ': ' + e.message);
-    }
-  }
-
-  log('=== 完成 ' + fetched + '/3 ===');
-  if (fetched === 3)      setStatus('✓ 全部成功（3/3）　CAPE 請手動更新 multpl.com/shiller-pe', 'ok');
-  else if (fetched > 0)   setStatus('⚠ 部分成功 ' + fetched + '/3　失敗：' + errors.join(' | '), 'warn');
-  else                    setStatus('✗ 全部失敗　' + errors.join(' | ') + '　→ 開診斷記錄查看詳情', 'err');
+  if(ok===3) setStatus('全部成功（3/3）  CAPE 請手動更新 multpl.com/shiller-pe','ok');
+  else if(ok>0) setStatus('部分成功 '+ok+'/3  失敗：'+errs.join(' | '),'warn');
+  else setStatus('全部失敗  '+errs.join(' | ')+'  開診斷記錄查看詳情','err');
   calc();
 }
 
-/* ── Calc ── */
+/* history */
+function todayStr(){ var d=new Date(),m=d.getMonth()+1,dd=d.getDate(); return d.getFullYear()+'/'+(m<10?'0'+m:m)+'/'+(dd<10?'0'+dd:dd); }
+
+function saveToday(){
+  var score=parseInt(document.getElementById('shieldNum').textContent);
+  if(isNaN(score)){ alert('今日分數尚未計算'); return; }
+  var oldD1=null;
+  try{ var r=localStorage.getItem(LS_D1); if(r) oldD1=r; }catch(e){}
+  try{
+    if(oldD1) localStorage.setItem(LS_D2, oldD1);
+    localStorage.setItem(LS_D1, JSON.stringify({score:score, date:todayStr()}));
+  }catch(e){ alert('localStorage 不可用：'+e.message); return; }
+  loadHistory();
+  calc();
+}
+
+function clearHistory(){
+  if(!confirm('確定清除所有歷史記錄？')) return;
+  try{ localStorage.removeItem(LS_D1); localStorage.removeItem(LS_D2); }catch(e){}
+  window._hD1=null; window._hD2=null;
+  loadHistory(); calc();
+}
+
+function loadHistory(){
+  var d1=null, d2=null;
+  try{ var r1=localStorage.getItem(LS_D1); if(r1) d1=JSON.parse(r1); }catch(e){}
+  try{ var r2=localStorage.getItem(LS_D2); if(r2) d2=JSON.parse(r2); }catch(e){}
+  window._hD1 = d1 ? d1.score : null;
+  window._hD2 = d2 ? d2.score : null;
+
+  function renderBox(numId, tagId, dateId, rec, threshold){
+    var numEl=document.getElementById(numId);
+    var tagEl=document.getElementById(tagId);
+    var dtEl=document.getElementById(dateId);
+    if(rec){
+      numEl.textContent=rec.score;
+      numEl.style.color=rec.score>=threshold?'var(--green)':'var(--red)';
+      tagEl.textContent=rec.score>=threshold?'正常區 (>= '+threshold+')':'警戒區 (< '+threshold+')';
+      tagEl.style.color=rec.score>=threshold?'var(--green)':'var(--gold)';
+      dtEl.textContent=rec.date;
+    } else {
+      numEl.textContent='--'; numEl.style.color='var(--muted)';
+      tagEl.textContent='尚無記錄'; tagEl.style.color='var(--muted)';
+      dtEl.textContent='—';
+    }
+  }
+  var s100=parseFloat(document.getElementById('tS100').value)||40;
+  renderBox('dispD1','dispD1Tag','dispD1Date', d1, s100);
+  renderBox('dispD2','dispD2Tag','dispD2Date', d2, s100);
+}
+
+/* calc */
 function lerp(x,x0,x1,y0,y1){ var t=Math.max(0,Math.min(1,(x-x0)/(x1-x0))); return y0+t*(y1-y0); }
 
-function calc() {
-  var cape    = parseFloat(document.getElementById('iCape').value)    || 36;
-  var tips    = parseFloat(document.getElementById('iTips').value)    || 2.0;
-  var hy      = parseFloat(document.getElementById('iHy').value)      || 320;
-  var hyPrev  = parseFloat(document.getElementById('iHyPrev').value)  || 300;
-  var vixNow  = parseFloat(document.getElementById('iVixNow').value)  || 18;
-  var vixPrev = parseFloat(document.getElementById('iVixPrev').value) || 18;
-  var vixThr  = parseFloat(document.getElementById('iVixThr').value)  || 35;
-  var s150    = parseFloat(document.getElementById('tS150').value)    || 60;
-  var s100    = parseFloat(document.getElementById('tS100').value)    || 40;
+function calc(){
+  var cape   =parseFloat(document.getElementById('iCape').value)||36;
+  var tips   =parseFloat(document.getElementById('iTips').value)||2.0;
+  var hy     =parseFloat(document.getElementById('iHy').value)||320;
+  var hyPrev =parseFloat(document.getElementById('iHyPrev').value)||300;
+  var vixNow =parseFloat(document.getElementById('iVixNow').value)||18;
+  var vixPrev=parseFloat(document.getElementById('iVixPrev').value)||18;
+  var vixThr =parseFloat(document.getElementById('iVixThr').value)||35;
+  var s150   =parseFloat(document.getElementById('tS150').value)||60;
+  var s100   =parseFloat(document.getElementById('tS100').value)||40;
 
-  var ey  = 100 / cape;
-  var erp = ey - tips;
-  var f1  = Math.round(lerp(erp, 0, 4, 10, 100));
-  var hyD = hy - hyPrev;
-  var f5_level = Math.round(lerp(hy, 250, 800, 90, 10));
-  var f5_delta = hyD > 0 ? Math.round(lerp(hyD, 0, 200, 50, 0)) : 50;
-  var f5      = Math.max(0, Math.round(f5_level*0.6 + f5_delta*0.4));
-  var shield  = Math.round(f1*0.5 + f5*0.5);
-  var vixTrig = vixPrev >= vixThr && vixNow < vixPrev;
+  var ey=100/cape, erp=ey-tips;
+  var f1=Math.round(lerp(erp,0,4,10,100));
+  var hyD=hy-hyPrev;
+  var f5l=Math.round(lerp(hy,250,800,90,10));
+  var f5d=hyD>0?Math.round(lerp(hyD,0,200,50,0)):50;
+  var f5=Math.max(0,Math.round(f5l*0.6+f5d*0.4));
+  var shield=Math.round(f1*0.5+f5*0.5);
+  var vixTrig=vixPrev>=vixThr&&vixNow<vixPrev;
 
-  var numEl   = document.getElementById('shieldNum');
-  var lblEl   = document.getElementById('shieldLabel');
-  var badgeEl = document.getElementById('modeBadge');
-  numEl.textContent = shield;
+  document.getElementById('shieldNum').textContent=shield;
+  var col,lbl,bc,bt;
+  if(shield>=s150){col='var(--green)';lbl='加碼區 >='+s150+'  建議 1.5x';bc='bg-normal';bt='NORMAL 1.5x';}
+  else if(shield>=s100){col='var(--accent)';lbl='標準區 >='+s100+'  持倉 1.0x';bc='bg-normal';bt='NORMAL 1.0x';}
+  else{col='var(--red)';lbl='警戒區 <'+s100+'  觀察或撤退';bc=vixTrig?'bg-strike':'bg-retreat';bt=vixTrig?'STRIKE 0.3x':'RETREAT/OBS';}
+  document.getElementById('shieldNum').style.color=col;
+  document.getElementById('shieldLabel').textContent=lbl;
+  document.getElementById('shieldLabel').style.color=col;
+  document.getElementById('modeBadge').style.display='';
+  document.getElementById('modeBadge').className='mode-badge '+bc;
+  document.getElementById('modeBadge').textContent=bt;
 
-  var col, lbl, bc, bt;
-  if (shield >= s150) {
-    col='var(--green)'; lbl='加碼區 ≥'+s150+'　建議 1.5x'; bc='bg-normal'; bt='NORMAL  1.5x';
-  } else if (shield >= s100) {
-    col='var(--accent)'; lbl='標準區 ≥'+s100+'　持倉 1.0x'; bc='bg-normal'; bt='NORMAL  1.0x';
+  /* state machine */
+  var d1=window._hD1, d2=window._hD2;
+  var vBox=document.getElementById('stateVerdictBox');
+  var vBadge=document.getElementById('stateBadgeBig');
+  var vTitle=document.getElementById('stateVerdictTitle');
+  var vDesc=document.getElementById('stateVerdictDesc');
+  function sv(bc,bt,border,title,desc){
+    vBadge.className='badge '+bc; vBadge.textContent=bt;
+    vBox.style.borderColor=border; vTitle.textContent=title; vDesc.innerHTML=desc;
+  }
+  var tOK=shield>=s100, d1OK=d1!==null&&d1>=s100;
+  var tLow=shield<s100, d1Low=d1!==null&&d1<s100, d2Low=d2!==null&&d2<s100;
+
+  if(d1===null){
+    sv('bg-obs','--','var(--border2)','尚無歷史記錄','每日收盤後按「💾 存今日分數為 D-1」，系統自動推進 D-1 → D-2，無需手動填寫。');
+  } else if(vixTrig){
+    sv('bg-strike','STRIKE','var(--red)','STRIKE — 建倉 0.3x','前日 VIX '+vixPrev+' >= '+vixThr+'，今日 '+vixNow+' 回落。逢恐慌高點後建倉 <strong style="color:var(--red)">0.3x</strong>。');
+  } else if(tOK&&!d1OK){
+    sv('bg-recover','RECOVER','var(--green)','RECOVER — 補滿 1.0x','D-1（'+d1.toFixed(0)+'）低於門檻，今日回升至 '+shield+'。補倉至 <strong style="color:var(--green)">1.0x</strong>。');
+  } else if(tOK){
+    if(shield>=s150) sv('bg-normal','NORMAL 1.5x','var(--green)','NORMAL — 加碼標示 1.5x','今日 '+shield+' >= '+s150+'，維持 <strong style="color:var(--green)">1.0x</strong>，可標記加碼意向。');
+    else sv('bg-normal','NORMAL 1.0x','var(--accent)','NORMAL — 持倉 1.0x','今日 '+shield+' 在標準區 >= '+s100+'。維持 <strong style="color:var(--accent)">1.0x</strong>，無需操作。');
+  } else if(tLow&&!d1Low){
+    sv('bg-obs','OBS','var(--blue)','OBS — 觀察，持倉不動 1.0x','今日（'+shield+'）首次跌破 '+s100+'，D-1（'+d1.toFixed(0)+'）仍正常。<br>保持 <strong style="color:var(--blue)">1.0x</strong>，明日再確認。');
+  } else if(tLow&&d1Low&&!d2Low){
+    sv('bg-retreat','RETREAT','var(--gold)','RETREAT — 清倉 0%','D-1（'+d1.toFixed(0)+'）與今日（'+shield+'）連續兩日 < '+s100+'。<br><strong style="color:var(--gold)">觸發賣出，清倉至 0%。</strong>等待 STRIKE 或 RECOVER。');
+  } else if(tLow&&d1Low&&d2Low){
+    sv('bg-retreat','RETREAT 持續','var(--red)','RETREAT 持續 — 維持空倉 0%','D-2（'+d2.toFixed(0)+'）、D-1（'+d1.toFixed(0)+'）、今日（'+shield+'）連續三日以上 < '+s100+'。維持 <strong style="color:var(--red)">0%</strong>。');
   } else {
-    col='var(--red)'; lbl='警戒區 <'+s100+'　觀察或撤退';
-    bc = vixTrig ? 'bg-strike' : 'bg-retreat';
-    bt = vixTrig ? 'STRIKE  0.3x' : 'RETREAT / OBS';
-  }
-  numEl.style.color = col;
-  lblEl.textContent = lbl; lblEl.style.color = col;
-  badgeEl.style.display = ''; badgeEl.className = 'mode-badge '+bc; badgeEl.textContent = bt;
-
-  /* ── 狀態機（含歷史分數）── */
-  var d1Raw = document.getElementById('iShieldD1').value;
-  var d2Raw = document.getElementById('iShieldD2').value;
-  var d1 = d1Raw !== '' ? parseFloat(d1Raw) : null;
-  var d2 = d2Raw !== '' ? parseFloat(d2Raw) : null;
-
-  var vBox   = document.getElementById('stateVerdictBox');
-  var vBadge = document.getElementById('stateBadgeBig');
-  var vTitle = document.getElementById('stateVerdictTitle');
-  var vDesc  = document.getElementById('stateVerdictDesc');
-
-  // 邊框顏色 helper
-  function setVerdict(badgeClass, badgeText, borderColor, title, desc) {
-    vBadge.className = 'badge ' + badgeClass;
-    vBadge.textContent = badgeText;
-    vBox.style.borderColor = borderColor;
-    vTitle.textContent = title;
-    vDesc.innerHTML = desc;
+    sv('bg-obs','OBS','var(--blue)','OBS — 觀察中','D-2 '+(d2!==null?d2.toFixed(0):'--')+'  D-1 '+(d1!==null?d1.toFixed(0):'--')+'  今日 '+shield+'。持續監控。');
   }
 
-  var todayBelow = shield < s100;
-  var d1Below    = d1 !== null && d1 < s100;
-  var d2Below    = d2 !== null && d2 < s100;
-  var todayOK    = shield >= s100;
-  var d1OK       = d1 !== null && d1 >= s100;
+  /* bars + components */
+  function bc2(v){return v>=60?'var(--green)':v>=40?'var(--accent)':'var(--red)';}
+  document.getElementById('f1bar').style.cssText='width:'+Math.min(100,Math.max(0,f1))+'%;background:'+bc2(f1);
+  document.getElementById('f1val').textContent=f1;
+  document.getElementById('f5bar').style.cssText='width:'+Math.min(100,Math.max(0,f5))+'%;background:'+bc2(f5);
+  document.getElementById('f5val').textContent=f5;
+  document.getElementById('cErp').textContent=erp.toFixed(2)+'%';
+  document.getElementById('cEy').textContent=ey.toFixed(2)+'%';
+  document.getElementById('cTips').textContent=tips.toFixed(2)+'%';
+  var hyDCol=hyD>50?'var(--red)':'var(--green)';
+  document.getElementById('cHyD').innerHTML='<span style="color:'+hyDCol+'">'+(hyD>0?'+':'')+hyD.toFixed(0)+' bp</span>';
+  document.getElementById('cVixTrig').innerHTML=vixTrig
+    ?'<span style="color:var(--red)">觸發  前日 '+vixPrev+' >= '+vixThr+'，今日 '+vixNow+' 回落</span>'
+    :'<span style="color:var(--muted)">未觸發（前日 '+vixPrev+' / 今日 '+vixNow+'）</span>';
+  document.getElementById('csF1').textContent=f1+' ( ERP='+erp.toFixed(2)+'% )';
+  document.getElementById('csF1').style.color=f1>=50?'var(--green)':'var(--red)';
+  document.getElementById('csF5').textContent=f5+' ( 水位='+f5l+' 動態='+f5d+' D'+(hyD>0?'+':'')+hyD.toFixed(0)+'bp )';
+  document.getElementById('csF5').style.color=f5>=50?'var(--green)':'var(--red)';
 
-  if (d1 === null && d2 === null) {
-    // 尚未填入歷史
-    setVerdict('bg-obs','--','var(--border2)',
-      '尚未輸入歷史分數',
-      '請填入 D-1（昨日）與 D-2（前日）的盾牌分，系統將自動推斷策略狀態。');
-
-  } else if (vixTrig) {
-    // VIX 觸發優先
-    setVerdict('bg-strike','STRIKE','var(--red)',
-      '⚡ STRIKE — 建倉 0.3x',
-      '前日 VIX ' + vixPrev + ' ≥ ' + vixThr + '，今日 ' + vixNow + ' 回落。<br>恐慌高點過後逢低建倉，倉位 <strong style="color:var(--red)">0.3x</strong>，等待 RECOVER 信號。');
-
-  } else if (todayOK && !d1OK) {
-    // 今日回升，前日曾低於門檻
-    setVerdict('bg-recover','RECOVER','var(--green)',
-      '✅ RECOVER — 補滿 1.0x',
-      '前日（D-1）盾牌分 <strong>' + d1.toFixed(0) + '</strong> 低於門檻，今日回升至 <strong>' + shield + '</strong>。<br>低倉狀態解除，補倉至 <strong style="color:var(--green)">1.0x</strong>。');
-
-  } else if (todayOK) {
-    // 今日正常
-    if (shield >= s150) {
-      setVerdict('bg-normal','NORMAL  1.5x','var(--green)',
-        '🟢 NORMAL — 持倉 1.0x，標示加碼',
-        '今日盾牌分 <strong>' + shield + '</strong> 達加碼區（≥' + s150 + '）。<br>持倉維持 <strong style="color:var(--green)">1.0x</strong>，可標記為加碼意向（實際上限仍 1.0x）。');
-    } else {
-      setVerdict('bg-normal','NORMAL  1.0x','var(--accent)',
-        '🟢 NORMAL — 持倉 1.0x',
-        '今日盾牌分 <strong>' + shield + '</strong> 在標準區（≥' + s100 + '）。<br>維持正常倉位 <strong style="color:var(--accent)">1.0x</strong>，無需操作。');
-    }
-
-  } else if (todayBelow && !d1Below) {
-    // 今日首次跌破（D-1 正常，今日異常）
-    setVerdict('bg-obs','OBS','var(--blue)',
-      '👁 OBS — 觀察，持倉不動 1.0x',
-      '今日盾牌分 <strong>' + shield + '</strong> 首次跌破門檻（< ' + s100 + '）。<br>前日（D-1）分數 <strong>' + (d1!==null?d1.toFixed(0):'--') + '</strong> 仍正常，尚不賣出。<br>保持 <strong style="color:var(--blue)">1.0x</strong>，明日再觀察。');
-
-  } else if (todayBelow && d1Below && !d2Below) {
-    // 今日 + D-1 連續兩天低於門檻 → RETREAT
-    setVerdict('bg-retreat','RETREAT','var(--gold)',
-      '⚠️ RETREAT — 清倉 0%',
-      'D-1（' + d1.toFixed(0) + '）與今日（' + shield + '）連續兩日低於 ' + s100 + ' 分。<br><strong style="color:var(--gold)">觸發賣出條件，清倉至 0%。</strong><br>等待 STRIKE 或 RECOVER 信號再重新建倉。');
-
-  } else if (todayBelow && d1Below && d2Below) {
-    // 三天以上持續低於門檻 → 維持空倉
-    setVerdict('bg-retreat','RETREAT  持續','var(--red)',
-      '🔴 RETREAT 持續 — 維持空倉 0%',
-      'D-2（' + d2.toFixed(0) + '）、D-1（' + d1.toFixed(0) + '）、今日（' + shield + '）連續三日以上低於門檻。<br>維持 <strong style="color:var(--red)">空倉 0%</strong>，持續觀察等待反轉信號。');
-
-  } else {
-    setVerdict('bg-obs','OBS','var(--blue)',
-      '👁 OBS — 觀察中',
-      '盾牌分：D-2 ' + (d2!==null?d2.toFixed(0):'--') + '　D-1 ' + (d1!==null?d1.toFixed(0):'--') + '　今日 ' + shield + '<br>維持現狀，持續監控。');
-  }
-
-  function bc2(v){ return v>=60?'var(--green)':v>=40?'var(--accent)':'var(--red)'; }
-  document.getElementById('f1bar').style.cssText = 'width:'+Math.min(100,Math.max(0,f1))+'%;background:'+bc2(f1);
-  document.getElementById('f1val').textContent = f1;
-  document.getElementById('f5bar').style.cssText = 'width:'+Math.min(100,Math.max(0,f5))+'%;background:'+bc2(f5);
-  document.getElementById('f5val').textContent = f5;
-
-  document.getElementById('cErp').textContent  = erp.toFixed(2)+'%';
-  document.getElementById('cEy').textContent   = ey.toFixed(2)+'%';
-  document.getElementById('cTips').textContent = tips.toFixed(2)+'%';
-
-  var hyDCol = hyD > 50 ? 'var(--red)' : 'var(--green)';
-  document.getElementById('cHyD').innerHTML =
-    '<span style="color:'+hyDCol+'">'+(hyD>0?'+':'')+hyD.toFixed(0)+' bp</span>';
-
-  document.getElementById('cVixTrig').innerHTML = vixTrig
-    ? '<span style="color:var(--red)">觸發　前日 '+vixPrev+' ≥ '+vixThr+'，今日 '+vixNow+' 回落</span>'
-    : '<span style="color:var(--muted)">未觸發（前日 '+vixPrev+' / 今日 '+vixNow+'）</span>';
-
-  document.getElementById('csF1').textContent = f1+' ( ERP = '+erp.toFixed(2)+'% )';
-  document.getElementById('csF1').style.color = f1>=50?'var(--green)':'var(--red)';
-  document.getElementById('csF5').textContent = f5+' ( 水位='+f5_level+' 動態='+f5_delta+' Δ'+(hyD>0?'+':'')+hyD.toFixed(0)+'bp )';
-  document.getElementById('csF5').style.color = f5>=50?'var(--green)':'var(--red)';
+  /* refresh history display in case threshold changed */
+  loadHistory();
 }
 
-function setStatus(msg, cls) {
-  var el = document.getElementById('status');
-  el.textContent = msg; el.className = cls||'';
-}
+function setStatus(msg,cls){ var el=document.getElementById('status'); el.textContent=msg; el.className=cls||''; }
 
+/* init */
+window._hD1=null; window._hD2=null;
+loadHistory();
 calc();
 </script>
 
