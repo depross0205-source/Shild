@@ -86,20 +86,29 @@ letter-spacing: 0.5px;
 }
 
 .field input{
-background: var(–panel2);
-border: 1px solid var(–border2);
-color: var(–text);
-padding: 10px 12px;       /* 更大 padding */
+background: #1c2235;
+border: 1px solid #4a5a80;
+color: #ffffff !important;
+-webkit-text-fill-color: #ffffff !important;
+padding: 10px 12px;
 border-radius: 6px;
 font-family: ‘Share Tech Mono’, monospace;
-font-size: 15px;          /* 原本 13px → 15px */
+font-size: 16px;
 width: 100%;
-transition: border-color .2s;
+transition: border-color .2s, background .2s;
+/* 移除瀏覽器 number 預設樣式 */
+-moz-appearance: textfield;
+}
+.field input::-webkit-outer-spin-button,
+.field input::-webkit-inner-spin-button {
+-webkit-appearance: none;
+margin: 0;
 }
 .field input:focus{
 outline: none;
 border-color: var(–accent);
-background: #131922;
+background: #202840;
+-webkit-text-fill-color: #ffffff !important;
 }
 
 .field .src{
@@ -229,9 +238,9 @@ font-weight: 500;
 }
 .proxy-row select{
 flex: 1;
-background: var(–panel2);
-border: 1px solid var(–border2);
-color: var(–text);
+background: #1c2235;
+border: 1px solid #4a5a80;
+color: #ffffff;
 padding: 8px 10px;
 border-radius: 6px;
 font-family: ‘Noto Sans TC’, sans-serif;
@@ -242,16 +251,17 @@ font-size: 12px;
 .apirow{ display:flex; gap:8px; align-items:center; }
 .apirow input{
 flex: 1;
-background: var(–panel2);
-border: 1px solid var(–border2);
-color: var(–text);
+background: #1c2235;
+border: 1px solid #4a5a80;
+color: #ffffff;
+-webkit-text-fill-color: #ffffff;
 padding: 10px 12px;
 border-radius: 6px;
 font-family: ‘Share Tech Mono’, monospace;
-font-size: 12px;
+font-size: 13px;
 }
-.apirow input::placeholder{ color: var(–muted); }
-.apirow input:focus{ outline:none; border-color:var(–accent); }
+.apirow input::placeholder{ color: #4a5a80; }
+.apirow input:focus{ outline:none; border-color:var(–accent); background:#202840; }
 
 /* ── Component rows ── */
 .comp-row{
