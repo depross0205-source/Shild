@@ -553,9 +553,13 @@ function calcShield(r_i, rPrev, cfg){
 function getPos(shield,reg,rsiVal,vixVal,cfg){
   if(!cfg.useV8){ return shield>cfg.shieldHi?1.5:shield>cfg.shieldLo?1:0; }
   const max=reg==='ON'?cfg.posOn:reg==='OFF'?0.5:cfg.posMid;
-  if(reg==='OFF'&&shield<cfg.shieldLo) return 0;
-  if(reg!=='ON'&&rsiVal<35&&vixVal>cfg.strkVix) return cfg.posStrk;
-  return shield>cfg.shieldHi?max:shield>cfg.shieldLo?1:0;
+  // 短打：Shield < 40（空倉區）且同時滿足恐慌條件
+  if(shield<cfg.shieldLo && rsiVal<35 && vixVal>cfg.strkVix) return cfg.posStrk;
+  // 正常空倉
+  if(shield<cfg.shieldLo) return 0;
+  // OFF + 盾低已被上方攔截，這裡 shield >= shieldLo
+  if(reg==='OFF') return Math.min(0.5, shield>cfg.shieldHi?cfg.posOn:1);
+  return shield>cfg.shieldHi?max:1;
 }
 
 function calcStats(curve){
@@ -626,7 +630,7 @@ function renderStatusPanel(today, yesterday, cfg){
   const states=[
     {color:'#00e5a0', name:'ON 牛市 · 滿倉', desc:'RSI>60、YC>0、VIX<20，持有 '+cfg.posOn+'×', pos:cfg.posOn, active:today.regime==='ON'&&today.pos===cfg.posOn},
     {color:'#7eb8ff', name:'MID 標準 · 正常倉', desc:'中性環境，盾>40，持有 1.0×', pos:1.0, active:today.regime==='MID'&&today.pos===1.0},
-    {color:'#c084fc', name:'短打模式', desc:'RSI<35 且 VIX>'+cfg.strkVix+'，持有 '+cfg.posStrk+'×', pos:cfg.posStrk, active:today.pos===cfg.posStrk},
+    {color:'#c084fc', name:'短打模式', desc:'盾<'+cfg.shieldLo+' 且 RSI<35 且 VIX>'+cfg.strkVix+'，持有 '+cfg.posStrk+'×', pos:cfg.posStrk, active:today.pos===cfg.posStrk},
     {color:'#ffb830', name:'OFF 縮手', desc:'熊市但盾>40，上限 0.5×', pos:0.5, active:today.regime==='OFF'&&today.pos===0.5},
     {color:'#ff4d6d', name:'空倉', desc:'盾<40 或 OFF+盾<40，持有 0×', pos:0, active:today.pos===0},
   ];
