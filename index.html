@@ -370,15 +370,12 @@ td{padding:9px;border-bottom:1px solid var(--border)}
     <div class="cfg-label" style="color:var(--teal)">動能參數</div>
     <div class="cfg-row"><span>現金緩衝 (%)</span><input type="number" id="momBuffer" value="2" step="0.5" min="0" max="10" style="width:60px"></div>
     <div class="cfg-row"><span>最大持有標的</span><input type="number" id="momMaxHold" value="5" min="1" max="8" style="width:60px"></div>
-    <div class="cfg-row"><span>μ 計算範圍</span>
-      <select id="momMuScope" style="width:120px;padding:4px 6px;font-size:12px">
-        <option value="all">全部資產</option>
-        <option value="filtered">已通過時序</option>
-      </select>
-    </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.6">
-      μ 全部資產：橫截面標準定義，比較基準含跌的資產<br>
-      μ 已通過時序：在「跑贏現金的資產」裡再挑較強的
+    <div style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.7;background:var(--surface2);padding:6px 8px;border-radius:3px">
+      <b style="color:var(--teal)">選股邏輯</b><br>
+      ① 市場門檻：任一資產 12M報酬 &gt; 現金+緩衝<br>
+      &nbsp;&nbsp;&nbsp;→ 否：全部轉 BIL<br>
+      ② 選股：全部資產中，R_i &gt; 平均報酬 μ 的入選<br>
+      &nbsp;&nbsp;&nbsp;→ 等權重，最多 5 個
     </div>
   </div>
   <div class="cfg-box" style="border-color:var(--teal)">
@@ -435,7 +432,11 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 
 <div id="momSignalSection" class="hidden">
   <div class="mom-signal-card">
-    <div class="mom-signal-title">📡 當月動能信號（最新資料）</div>
+    <div class="mom-signal-title">📡 當月動能信號（最新資料）
+      <span style="font-size:10px;font-weight:400;color:var(--muted)">
+        ● 超過現金門檻　▲ 高於資產平均（入選條件）
+      </span>
+    </div>
     <div id="momSignalRows"></div>
     <div style="margin-top:10px;font-size:11px;color:var(--muted)">
       現金利率（DGS2）：<span id="momCashRateDisplay" style="color:var(--green);font-family:monospace;font-weight:700"></span>
@@ -870,53 +871,56 @@ function calc12mReturn(ticker, months, currentIdx){
 function calcMomSignalAt(months, idx, cfg){
   const enabledAssets=MOM_ASSET_DEFS.filter(a=>a.enabled).map(a=>a.ticker);
   const buffer=cfg.buffer;
-  const muScope=cfg.muScope;
   const maxHold=cfg.maxHold;
   const currentMonth=months[idx];
 
-  // 現金利率
+  // 現金利率（年化，DGS2 近似）
   const cashRate=getCashRate(currentMonth);
+  const threshold=cashRate+buffer;
 
-  // 計算各資產報酬
+  // 計算各資產的 12M 報酬（跳過最後1個月）
   const returns={};
   for(const ticker of enabledAssets){
     const r=calc12mReturn(ticker, months, idx);
-    returns[ticker]= r!==null ? r : null;
+    returns[ticker]=r!==null?r:null;
   }
-  // BIL 也計算
-  const bilReturn=calc12mReturn(MOM_CASH_TICKER, months, idx);
 
-  // 可用資產（有報酬值的）
+  // 可用資產（有報酬值的非現金資產）
   const valid=Object.entries(returns).filter(([t,r])=>r!==null);
-  if(valid.length===0) return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,mu:0,returns,reason:'無有效資料→現金'};
+  if(valid.length===0)
+    return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,mu:0,returns,reason:'無有效資料→現金'};
 
-  // 時間序列過濾：R_i > R_cash + buffer
-  const threshold=cashRate+buffer;
-  const passed=valid.filter(([t,r])=>r>threshold);
-
-  // 計算 μ
-  let mu;
-  if(muScope==='filtered'){
-    mu=passed.length>0 ? passed.reduce((s,[t,r])=>s+r,0)/passed.length : 0;
-  } else {
-    mu=valid.reduce((s,[t,r])=>s+r,0)/valid.length;
+  // ── 第一步：市場門檻（時間序列）────────────────────────
+  // 只要有任一資產顯著超過現金，就進入第二步選股
+  // 否則代表整體市場都跑不贏現金，全部轉 BIL
+  const anyBeatCash=valid.some(([t,r])=>r>threshold);
+  if(!anyBeatCash){
+    const best=Math.max(...valid.map(([t,r])=>r));
+    return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,mu:0,returns,
+            reason:`最佳資產 ${(best*100).toFixed(1)}% ≤ 門檻 ${(threshold*100).toFixed(1)}%→現金`};
   }
 
-  // 橫截面過濾：R_i > μ
-  const selected=passed.filter(([t,r])=>r>mu);
+  // ── 第二步：橫截面選擇（μ 用全部資產平均）────────────
+  // μ 恆以「全部非現金資產」計算，確保比較基準客觀
+  const mu=valid.reduce((s,[t,r])=>s+r,0)/valid.length;
 
-  if(selected.length===0){
-    return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,mu,returns,threshold,reason:'無資產通過雙重篩選→現金'};
+  // 選出 R_i > μ 的資產，排序後取前 maxHold
+  const aboveAvg=valid
+    .filter(([t,r])=>r>mu)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,maxHold);
+
+  if(aboveAvg.length===0){
+    return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,mu,returns,
+            reason:`無資產高於平均 ${(mu*100).toFixed(1)}%→現金`};
   }
 
-  // 排序，取前 maxHold
-  selected.sort((a,b)=>b[1]-a[1]);
-  const top=selected.slice(0,maxHold);
-  const w=1.0/top.length;
+  const w=1.0/aboveAvg.length;
   const holdings={};
-  top.forEach(([t,r])=>{holdings[t]=w;});
+  aboveAvg.forEach(([t])=>{holdings[t]=w;});
 
-  return {holdings, cashRate, mu, threshold, returns, reason:`持有 ${top.map(([t])=>t).join(', ')}`};
+  return {holdings,cashRate,threshold,mu,returns,
+          reason:`持有 ${aboveAvg.map(([t])=>t).join(', ')}（均高於平均 ${(mu*100).toFixed(1)}%）`};
 }
 
 // ── 計算即時信號（最新月份） ──
@@ -933,7 +937,7 @@ function calcMomCurrentSignal(){
 
   const months=spyPrices.map(p=>p.date).sort();
   const lastIdx=months.length-1;
-  const cfg={buffer:gv('momBuffer')/100, muScope:$('momMuScope').value, maxHold:parseInt($('momMaxHold').value)||5};
+  const cfg={buffer:gv('momBuffer')/100, maxHold:parseInt($('momMaxHold').value)||5};
 
   const signal=calcMomSignalAt(months, lastIdx, cfg);
 
@@ -950,19 +954,23 @@ function calcMomCurrentSignal(){
   const maxAbs=Math.max(...valid.map(([t,r])=>Math.abs(r)),0.01);
 
   $('momSignalRows').innerHTML=valid.map(([t,r])=>{
-    const passed1=r>(signal.threshold||signal.cashRate);
-    const passed2=r>signal.mu;
-    const selected=!gated&&passed1&&passed2;
-    const barW=Math.round(Math.min(100, Math.abs(r)/maxAbs*100));
+    const beatsCash = r > (signal.threshold || signal.cashRate);  // 是否超過現金門檻
+    const aboveAvg  = r > signal.mu;                              // 是否高於所有資產平均
+    const selected  = !gated && aboveAvg && signal.holdings[t];  // 實際被選中
+    const barW=Math.round(Math.min(100, Math.abs(r)/(Math.max(...valid.map(([t,r2])=>Math.abs(r2)),0.01))*100));
     const barColor=r>0?'var(--teal)':'var(--red)';
     return `<div class="mom-signal-row">
       <span style="width:38px;font-weight:700;color:${selected?'var(--teal)':'var(--muted)'}">${t}</span>
-      <span style="width:58px;color:${r>0?'var(--green)':'var(--red)'}">${(r*100).toFixed(1)}%</span>
+      <span style="width:64px;color:${r>0?'var(--green)':'var(--red)'}">${(r*100).toFixed(1)}%</span>
       <div class="mom-bar-wrap"><div class="mom-bar-fill" style="width:${barW}%;background:${barColor}"></div></div>
-      <span style="width:16px;text-align:center">${passed1?'✓':'✗'}</span>
-      <span style="width:16px;text-align:center;color:var(--muted)">${passed2?'✓':'✗'}</span>
-      <span style="font-size:10px;color:${selected?'var(--teal)':'var(--dim)'}">
-        ${selected?'●選中':''}
+      <span style="width:14px;text-align:center;font-size:10px;color:${beatsCash?'var(--green)':'var(--dim)'}">
+        ${beatsCash?'●':'○'}
+      </span>
+      <span style="width:14px;text-align:center;font-size:10px;color:${aboveAvg?'var(--accent)':'var(--dim)'}">
+        ${aboveAvg?'▲':'▽'}
+      </span>
+      <span style="font-size:10px;font-weight:700;color:${selected?'var(--teal)':'var(--dim)'}">
+        ${selected?'入選':''}
       </span>
     </div>`;
   }).join('');
@@ -989,7 +997,7 @@ function runMomBacktest(){
 
   const cfg={
     buffer:   gv('momBuffer')/100,
-    muScope:  $('momMuScope').value,
+    
     maxHold:  parseInt($('momMaxHold').value)||5,
     shieldGate: gc('momShieldGate'),
     shieldThreshold: gv('momShieldThreshold'),
