@@ -358,10 +358,9 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   <b>時間序列動能輪動模組（學術嚴謹版）</b><br>
   每月末計算所有候選資產的「過去12個月報酬（跳過最後1個月）」，對照現金利率（DGS2）。<br>
   <b>① TS 過濾（Moskowitz et al. 2012）：</b>
-  每個資產獨立判斷 R_i &gt; R_cash + 緩衝 → 通過者進入候選池（eligible）；
-  <b>候選池為空 → 全部 BIL。</b><br>
-  <b>② CS 選擇（Asness et al. 2013）：</b>
-  在候選池內計算 μ_eligible，選出 R_i &gt; μ 者，等權重，最多 5 個。<br>
+  每個資產獨立判斷 R_i &gt; R_cash + 緩衝 → 通過者進入候選池；<b>候選池空 → 全部 BIL。</b><br>
+  <b>② 遞減加權（前N名，歸一化 40/30/20...）：</b>
+  候選池依報酬排序，取前 N 名，以固定遞減比例分配權重（自動歸一化至100%）。<br>
   <b>方案二整合：</b>盾牌分數 &lt; 門檻時，強制轉 BIL（覆蓋動能信號）。
 </div>
 
@@ -437,11 +436,11 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   <div class="mom-signal-card">
     <div class="mom-signal-title">📡 當月動能信號（最新資料）
       <span style="font-size:10px;font-weight:400;color:var(--muted)">
-        TS = R_i &gt; 現金+緩衝（個別過濾）&nbsp; CS = R_i &gt; μ_eligible（候選池平均）
+        TS = R_i &gt; 現金+緩衝（個別過濾）&nbsp;｜&nbsp; 入選 = 候選池前N名，歸一化遞減權重
       </span>
     </div>
-    <div style="display:grid;grid-template-columns:42px 68px 1fr 28px 28px 40px;gap:0;font-size:10px;color:var(--dim);padding:0 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px">
-      <span>代碼</span><span>12M報酬</span><span></span><span style="text-align:center">TS</span><span style="text-align:center">CS</span><span></span>
+    <div style="display:grid;grid-template-columns:42px 68px 1fr 28px 60px 70px;gap:0;font-size:10px;color:var(--dim);padding:0 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px">
+      <span>代碼</span><span>12M報酬</span><span></span><span style="text-align:center">TS</span><span style="text-align:center">排名</span><span style="text-align:center">持倉權重</span>
     </div>
     <div id="momSignalRows"></div>
     <div style="margin-top:10px;font-size:11px;color:var(--muted)">
@@ -472,9 +471,11 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th>月份</th><th style="color:var(--teal)">持倉（等權）</th>
-        <th>盾牌分數</th><th>現金利率</th><th>月報酬</th>
-        <th style="color:var(--teal)">MOM NAV</th><th>SPY NAV</th>
+        <th>換倉月</th><th style="color:var(--teal)">持倉（遞減加權）</th>
+        <th>TS候選</th><th>門檻</th>
+        <th style="color:var(--accent)">月報酬</th>
+        <th style="color:var(--teal)">MOM 淨值</th>
+        <th>SPY 淨值</th><th style="color:var(--yellow)">超額</th>
       </tr></thead>
       <tbody id="momLogBody"></tbody>
     </table>
@@ -874,6 +875,8 @@ function calc12mReturn(ticker, months, currentIdx){
 }
 
 // ── 動能信號計算核心 ──
+// 學術依據：Moskowitz et al. 2012 (TS) + Asness et al. 2013 (CS)
+// 選股方式：候選池排序取前 N，歸一化遞減權重（40/30/20 → 44.4%/33.3%/22.2%）
 function calcMomSignalAt(months, idx, cfg){
   const enabledAssets=MOM_ASSET_DEFS.filter(a=>a.enabled).map(a=>a.ticker);
   const buffer=cfg.buffer;
@@ -884,24 +887,25 @@ function calcMomSignalAt(months, idx, cfg){
   const cashRate=getCashRate(currentMonth);
   const threshold=cashRate+buffer;
 
-  // ── 步驟一：計算各資產 12M 報酬（跳過最後1個月） ──
+  // ── 步驟一：計算各資產 12M 報酬（跳過最後1個月）──
+  // 使用 P[t-2] / P[t-14] - 1，完全符合 Jegadeesh & Titman 1993
   const returns={};
   for(const ticker of enabledAssets){
     const r=calc12mReturn(ticker, months, idx);
     returns[ticker]=r!==null?r:null;
   }
 
-  // 有報酬值的資產才進入評估
   const valid=Object.entries(returns).filter(([t,r])=>r!==null);
   if(valid.length===0)
     return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,
             eligible:[],mu:null,returns,reason:'無有效資料→現金'};
 
-  // ── 步驟二：時間序列過濾（每個資產獨立判斷）──────────
-  // Moskowitz et al. 2012 / Antonacci GEM：
-  // R_i > R_cash + buffer → 進入候選池（eligible）
-  // 否則直接排除，不進入下一步
-  const eligible=valid.filter(([t,r])=>r>threshold);
+  // ── 步驟二：時間序列過濾（Moskowitz 2012，每個資產獨立判斷）──
+  // R_i > R_cash + buffer → 進入候選池
+  // 候選池為空 → 全部持 BIL
+  const eligible=valid
+    .filter(([t,r])=>r>threshold)
+    .sort((a,b)=>b[1]-a[1]);  // 排序供步驟三直接使用
 
   if(eligible.length===0){
     const best=Math.max(...valid.map(([t,r])=>r));
@@ -910,31 +914,27 @@ function calcMomSignalAt(months, idx, cfg){
             reason:`所有資產未通過 TS（最高 ${(best*100).toFixed(1)}% ≤ 門檻 ${(threshold*100).toFixed(1)}%）→現金`};
   }
 
-  // ── 步驟三：橫截面選擇（μ 在候選池內計算）────────────
-  // Asness, Moskowitz & Pedersen 2013：
-  // 在「值得持有的資產」裡挑最強的，μ 用候選池而非全部資產
+  // ── 步驟三：橫截面選擇──取前 N 名，歸一化遞減權重 ──
+  // 取前 min(maxHold, eligible.length) 個
+  // 權重基準：第1名=40, 第2名=30, 第3名=20, 第4名=15, 第5名=10...（遞減5）
+  // 實際使用時歸一化至總和=1，確保滿倉
+  const RAW_WEIGHTS=[40,30,20,15,10,8,6,5];  // 最多支援8個
+  const top=eligible.slice(0,maxHold);
+  const rawW=top.map((_,i)=>RAW_WEIGHTS[i]||Math.max(5-i,1));
+  const sumW=rawW.reduce((a,b)=>a+b,0);
+  const holdings={};
+  top.forEach(([t],i)=>{holdings[t]=rawW[i]/sumW;});
+
+  // μ 仍計算供顯示用（候選池平均）
   const mu=eligible.reduce((s,[t,r])=>s+r,0)/eligible.length;
 
-  // R_i > μ_eligible → 最終入選
-  let selected=eligible.filter(([t,r])=>r>mu);
-
-  // 邊界情況：所有候選資產報酬完全相同（μ = 全部）
-  // → 持有全部候選，不應空手
-  if(selected.length===0) selected=[...eligible];
-
-  // 排序，取前 maxHold 個
-  selected.sort((a,b)=>b[1]-a[1]);
-  const top=selected.slice(0,maxHold);
-
-  const w=1.0/top.length;
-  const holdings={};
-  top.forEach(([t])=>{holdings[t]=w;});
-
+  const wPct=top.map(([t],i)=>`${t}(${(rawW[i]/sumW*100).toFixed(0)}%)`).join(' + ');
   return {
     holdings, cashRate, threshold, mu,
     eligible: eligible.map(([t])=>t),
     returns,
-    reason:`${top.map(([t])=>t).join('+')}（TS通過:${eligible.length}個，μ=${(mu*100).toFixed(1)}%）`
+    topReturns: top.map(([t,r])=>({ticker:t, ret:r})),
+    reason:`${wPct}（TS候選:${eligible.length}個）`
   };
 }
 
@@ -964,38 +964,46 @@ function calcMomCurrentSignal(){
   $('momSignalSection').classList.remove('hidden');
   $('momCashRateDisplay').textContent=(signal.cashRate*100).toFixed(2)+'%';
   // μ 只在候選池非空時有意義
-  $('momMuDisplay').textContent=signal.mu!==null?(signal.mu*100).toFixed(2)+'%（候選池）':'--';
+  $('momMuDisplay').textContent=signal.mu!==null?(signal.mu*100).toFixed(2)+'%（候選池均）':'--';
 
   const allValid=Object.entries(signal.returns||{})
     .filter(([t,r])=>r!==null)
     .sort((a,b)=>b[1]-a[1]);
   const maxAbs=Math.max(...allValid.map(([t,r])=>Math.abs(r)),0.01);
   const eligibleSet=new Set(signal.eligible||[]);
+  // 建立持倉排名與權重對照表
+  const holdingInfo={};
+  const finalH=gated?{[MOM_CASH_TICKER]:1.0}:signal.holdings;
+  Object.entries(finalH).filter(([t])=>t!==MOM_CASH_TICKER)
+    .forEach(([t,w],i)=>{ holdingInfo[t]={rank:i+1,weight:w}; });
 
   $('momSignalRows').innerHTML=allValid.map(([t,r])=>{
-    const tsPass   = r>(signal.threshold||signal.cashRate); // 個別通過 TS
-    const inElig   = eligibleSet.has(t);                    // 進入候選池
-    const csPass   = inElig && signal.mu!==null && r>signal.mu; // 通過 CS（只在候選池內比較）
-    const selected = !gated && !!signal.holdings[t];        // 最終入選
+    const tsPass  = r>(signal.threshold||signal.cashRate);
+    const inElig  = eligibleSet.has(t);
+    const hInfo   = !gated && holdingInfo[t];
+    const selected= !!hInfo;
+    const eligRank= inElig ? signal.eligible.indexOf(t)+1 : null;
 
     const barW=Math.round(Math.min(100,Math.abs(r)/maxAbs*100));
     const barColor=r>=0?'var(--teal)':'var(--red)';
-    const nameColor=selected?'var(--teal)':inElig?'var(--accent)':tsPass?'var(--muted)':'var(--dim)';
+    const nameColor=selected?'var(--teal)':inElig?'var(--accent)':'var(--dim)';
+    const rankLabel=selected?`#${hInfo.rank}`:inElig?`#${eligRank}→淘汰`:'—';
+    const wLabel=selected?`${(hInfo.weight*100).toFixed(1)}%`:'';
 
     return `<div class="mom-signal-row">
       <span style="width:42px;font-weight:700;color:${nameColor}">${t}</span>
       <span style="width:68px;font-family:monospace;color:${r>=0?'var(--green)':'var(--red)'}">${r>=0?'+':''}${(r*100).toFixed(1)}%</span>
       <div class="mom-bar-wrap">
-        <div class="mom-bar-fill" style="width:${barW}%;background:${barColor};opacity:${inElig?1:0.28}"></div>
+        <div class="mom-bar-fill" style="width:${barW}%;background:${barColor};opacity:${inElig?1:0.2}"></div>
       </div>
       <span style="width:28px;text-align:center;font-size:12px;font-weight:700;color:${tsPass?'var(--green)':'var(--red)'}">
         ${tsPass?'✓':'✗'}
       </span>
-      <span style="width:28px;text-align:center;font-size:12px;font-weight:700;color:${inElig?(csPass?'var(--teal)':'var(--muted)'):'var(--dim)'}">
-        ${inElig?(csPass?'✓':'—'):'—'}
+      <span style="width:70px;text-align:center;font-size:11px;color:${selected?'var(--teal)':inElig?'var(--muted)':'var(--dim)'}">
+        ${rankLabel}
       </span>
-      <span style="font-size:11px;font-weight:700;color:${selected?'var(--teal)':'var(--dim)'}">
-        ${selected?'● 入選':''}
+      <span style="width:60px;text-align:right;font-size:12px;font-weight:700;color:${selected?'var(--teal)':'var(--dim)'}">
+        ${selected?'●&nbsp;'+wLabel:''}
       </span>
     </div>`;
   }).join('');
@@ -1180,19 +1188,53 @@ function renderMomUI(){
     {label:'SPY',data:mddSpy,borderColor:'#3d4a66',borderWidth:1,pointRadius:0},
   ]},options:{...opt,plugins:{legend:{display:false}},scales:sc}});
 
-  // 換倉紀錄表
-  $('momLogBody').innerHTML=[...records].reverse().slice(0,120).map(r=>{
-    const hChips=Object.entries(r.holdings).map(([t,w])=>
-      `<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t}</span>`).join('');
+  // ── 換倉歷程表（完整版：含持倉權重、TS候選數、累積NAV）──
+  // 表頭
+  const logTable=document.querySelector('#momLogBody').closest('table');
+  logTable.querySelector('thead tr').innerHTML=`
+    <th>換倉月</th>
+    <th style="color:var(--teal)">持倉（遞減加權）</th>
+    <th>TS候選</th>
+    <th>門檻</th>
+    <th style="color:var(--accent)">月報酬</th>
+    <th style="color:var(--teal)">MOM 淨值</th>
+    <th>SPY 淨值</th>
+    <th style="color:var(--yellow)">超額</th>
+  `;
+
+  $('momLogBody').innerHTML=[...records].reverse().map((r,revIdx)=>{
+    const idx=records.length-1-revIdx;
+    const prevNav=idx>0?records[idx-1].nav:initial;
+    const prevSpy=idx>0?records[idx-1].spyNav:initial;
+
+    // 持倉顯示（含權重）
+    const hChips=r.gated
+      ? `<span class="holding-chip gated">BIL 盾牌 100%</span>`
+      : Object.entries(r.holdings).map(([t,w])=>
+          `<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t}&nbsp;<span style="opacity:.7">${(w*100).toFixed(0)}%</span></span>`
+        ).join('');
+
     const retColor=r.portRet>=0?'var(--green)':'var(--red)';
+    const excess=r.portRet-(r.spyNav/prevSpy-1);
+    const excColor=excess>=0?'var(--green)':'var(--red)';
+    const tsCount=r.signal?.eligible?.length??'--';
+    const threshStr=r.cashRate!=null?(r.cashRate*100+gv('momBuffer')).toFixed(2)+'%':'--';
+
     return `<tr class="log-row">
-      <td class="mono">${r.month}</td>
-      <td>${r.gated?`<span class="holding-chip gated">BIL 盾牌</span>`:hChips}</td>
-      <td class="mono" style="color:${r.shieldScore<gv('momShieldThreshold')?'var(--red)':'var(--muted)'}">${r.shieldScore.toFixed(0)}</td>
-      <td class="mono" style="color:var(--muted)">${(r.cashRate*100).toFixed(2)}%</td>
-      <td class="mono" style="color:${retColor}">${r.portRet>=0?'+':''}${(r.portRet*100).toFixed(2)}%</td>
-      <td class="mono tt">$${Math.round(r.nav).toLocaleString()}</td>
+      <td class="mono" style="font-weight:700">${r.month}</td>
+      <td style="white-space:nowrap">${hChips}</td>
+      <td class="mono" style="text-align:center;color:${tsCount>0?'var(--teal)':'var(--red)'}">
+        ${tsCount}
+      </td>
+      <td class="mono" style="color:var(--muted)">${threshStr}</td>
+      <td class="mono" style="color:${retColor};font-weight:700">
+        ${r.portRet>=0?'+':''}${(r.portRet*100).toFixed(2)}%
+      </td>
+      <td class="mono tt" style="font-weight:700">$${Math.round(r.nav).toLocaleString()}</td>
       <td class="mono" style="color:var(--muted)">$${Math.round(r.spyNav).toLocaleString()}</td>
+      <td class="mono" style="color:${excColor};font-weight:700">
+        ${excess>=0?'+':''}${(excess*100).toFixed(2)}pp
+      </td>
     </tr>`;
   }).join('');
 }
