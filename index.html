@@ -356,12 +356,10 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 
 <div class="mom-note">
   <b>時間序列動能輪動模組（學術嚴謹版）</b><br>
-  每月末計算所有候選資產的「過去12個月報酬（跳過最後1個月）」，對照現金利率（DGS2）。<br>
-  <b>① TS 過濾（Moskowitz et al. 2012）：</b>
-  每個資產獨立判斷 R_i &gt; R_cash + 緩衝 → 通過者進入候選池；<b>候選池空 → 全部 BIL。</b><br>
-  <b>② 遞減加權（前N名，歸一化 40/30/20...）：</b>
-  候選池依報酬排序，取前 N 名，以固定遞減比例分配權重（自動歸一化至100%）。<br>
-  <b>方案二整合：</b>盾牌分數 &lt; 門檻時，強制轉 BIL（覆蓋動能信號）。
+  每月末計算所有候選資產的「過去N個月報酬（跳過最後1個月）」，對照現金利率（DGS2）。<br>
+  <b>① TS 過濾（Moskowitz et al. 2012）：</b>每個資產獨立判斷 R_i &gt; R_cash + 緩衝；<b>候選池空 → 全部 BIL。</b><br>
+  <b>② 報酬比例加權（上限50%）：</b>候選池依報酬排序，取前N名，比例加權後各標的上限50%，自動歸一化至100%。<br>
+  <b>方案二整合：</b>盾牌分數 &lt; 門檻時強制轉 BIL。
 </div>
 
 <!-- 設定 -->
@@ -369,15 +367,19 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">
   <div class="cfg-box" style="border-color:var(--teal)">
     <div class="cfg-label" style="color:var(--teal)">動能參數</div>
-    <div class="cfg-row"><span>現金緩衝 (%)</span><input type="number" id="momBuffer" value="2" step="0.5" min="0" max="10" style="width:60px"></div>
-    <div class="cfg-row"><span>最大持有標的</span><input type="number" id="momMaxHold" value="5" min="1" max="8" style="width:60px"></div>
+    <div class="cfg-row"><span>回顧週期</span>
+      <select id="momLookback" style="width:80px;padding:4px 6px;font-size:12px">
+        <option value="12m">12個月</option>
+        <option value="6m">6個月</option>
+      </select>
+    </div>
+    <div class="cfg-row"><span>現金緩衝 (%)</span><input type="number" id="momBuffer" value="0.5" step="0.5" min="0" max="10" style="width:60px"></div>
+    <div class="cfg-row"><span>最大持有標的</span><input type="number" id="momMaxHold" value="5" min="1" max="11" style="width:60px"></div>
     <div style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.7;background:var(--surface2);padding:6px 8px;border-radius:3px">
-      <b style="color:var(--teal)">正確選股流程</b><br>
-      ① TS（個別）：R_i &gt; 現金+緩衝 → 進候選池<br>
-      &nbsp;&nbsp;&nbsp;候選池空 → 全部 BIL<br>
-      ② CS（候選池內）：μ = 候選池平均<br>
-      &nbsp;&nbsp;&nbsp;R_i &gt; μ → 入選，等權重，最多 N 個<br>
-      <b style="color:var(--muted)">參考：Moskowitz 2012 + Asness 2013</b>
+      <b style="color:var(--teal)">選股流程</b><br>
+      ① TS：R_i &gt; 現金+緩衝 → 進候選池<br>
+      ② 加權：報酬比例加權（上限50%），取前N名<br>
+      <b style="color:var(--muted)">Moskowitz 2012 + 比例加權</b>
     </div>
   </div>
   <div class="cfg-box" style="border-color:var(--teal)">
@@ -475,13 +477,30 @@ td{padding:9px;border-bottom:1px solid var(--border)}
     <div class="chart-title">最大回撤</div>
     <canvas id="momDdChart" height="160"></canvas>
   </div>
-  <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-    每月換倉紀錄
+  <div style="font-size:13px;font-weight:700;color:var(--teal);margin:16px 0 8px;padding:6px 0;border-bottom:1px solid var(--border)">
+    📋 交易明細（每筆持倉進出紀錄）
   </div>
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th>換倉月</th><th style="color:var(--teal)">持倉（遞減加權）</th>
+        <th>進場月</th><th>出場月</th>
+        <th style="color:var(--teal)">標的</th>
+        <th>配重</th>
+        <th>進場價</th><th>出場價</th>
+        <th style="color:var(--accent)">持倉報酬</th>
+        <th style="color:var(--teal)">貢獻（對組合）</th>
+        <th>備注</th>
+      </tr></thead>
+      <tbody id="momTradeBody"></tbody>
+    </table>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+    📅 每月換倉紀錄
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>換倉月</th><th style="color:var(--teal)">持倉（比例加權）</th>
         <th>TS候選</th><th>門檻</th>
         <th style="color:var(--accent)">月報酬</th>
         <th style="color:var(--teal)">MOM 淨值</th>
@@ -534,16 +553,19 @@ window.onerror=(m,u,l)=>{ alert('⚠️ 錯誤: '+m+'\n行: '+l); return false; 
 let DB=[], BT_RESULT=null, charts={}, logFilter='ALL';
 let MOM_PRICES={}, MOM_RESULT=null, MOM_CHART={};
 
-// 動能資產池設定
+// 動能資產池設定（完整版）
 const MOM_ASSET_DEFS=[
-  {ticker:'SPY', name:'美國大型股', enabled:true},
-  {ticker:'QQQ', name:'科技成長',   enabled:true},
-  {ticker:'IWM', name:'美國小型股', enabled:true},
-  {ticker:'EFA', name:'已開發國際', enabled:true},
-  {ticker:'EEM', name:'新興市場',   enabled:true},
-  {ticker:'GLD', name:'黃金',       enabled:true},
-  {ticker:'TLT', name:'美國長債',   enabled:true},
-  {ticker:'GSG', name:'商品',       enabled:true},
+  {ticker:'SPY', name:'美國大型股',  enabled:true,  group:'股票'},
+  {ticker:'QQQ', name:'科技成長',    enabled:true,  group:'股票'},
+  {ticker:'IWM', name:'美國小型股',  enabled:false, group:'股票'},
+  {ticker:'VEU', name:'全球ex-US',   enabled:true,  group:'國際'},
+  {ticker:'EFA', name:'已開發國際',  enabled:false, group:'國際'},
+  {ticker:'EEM', name:'新興市場',    enabled:false, group:'國際'},
+  {ticker:'TLT', name:'長債20Y',     enabled:true,  group:'債券'},
+  {ticker:'IEF', name:'中債7Y',      enabled:false, group:'債券'},
+  {ticker:'GLD', name:'黃金',        enabled:true,  group:'實物'},
+  {ticker:'VNQ', name:'REIT',        enabled:false, group:'實物'},
+  {ticker:'GSG', name:'商品指數',    enabled:false, group:'實物'},
 ];
 const MOM_CASH_TICKER='BIL';
 
@@ -561,12 +583,22 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 function initAssetChips(){
   const wrap=$('assetChips');
-  wrap.innerHTML=MOM_ASSET_DEFS.map((a,i)=>
-    `<div class="asset-chip ${a.enabled?'enabled':''}" id="chip_${a.ticker}" onclick="toggleAsset('${a.ticker}')">
-      <span>${a.ticker}</span><span style="font-size:10px;color:var(--muted)">${a.name.slice(0,4)}</span>
-    </div>`
+  // 依 group 分組顯示
+  const groups={};
+  MOM_ASSET_DEFS.forEach(a=>{
+    if(!groups[a.group]) groups[a.group]=[];
+    groups[a.group].push(a);
+  });
+  wrap.innerHTML=Object.entries(groups).map(([g,assets])=>
+    `<div style="font-size:9px;color:var(--dim);text-transform:uppercase;grid-column:1/-1;margin-top:4px;margin-bottom:1px">${g}</div>`+
+    assets.map(a=>
+      `<div class="asset-chip ${a.enabled?'enabled':''}" id="chip_${a.ticker}" onclick="toggleAsset('${a.ticker}')">
+        <span>${a.ticker}</span><span style="font-size:9px;color:var(--muted)">${a.name.slice(0,5)}</span>
+      </div>`
+    ).join('')
   ).join('')+
-  `<div class="asset-chip cash">BIL <span style="font-size:10px">現金</span></div>`;
+  `<div style="font-size:9px;color:var(--dim);text-transform:uppercase;grid-column:1/-1;margin-top:4px;margin-bottom:1px">現金</div>
+   <div class="asset-chip cash">BIL <span style="font-size:9px">停泊</span></div>`;
   updateMomStatusBar();
 }
 
@@ -870,81 +902,99 @@ function getMomPrice(ticker, yyyymm){
   return best?.close||null;
 }
 
-// ── 計算12個月報酬（跳過最後1個月） ──
-// 使用 P[t-2] / P[t-14] - 1  （t=當前月，跳過t-1，往前12個月）
+// ── 計算12個月報酬（跳過最後1個月）──
 function calc12mReturn(ticker, months, currentIdx){
-  // months: 排序好的 YYYY-MM 陣列
-  // currentIdx: 當前月在 months 的位置
-  if(currentIdx < 13) return null;  // 需要至少14個月
-  const targetMonth  = months[currentIdx - 1];  // 1個月前（跳過）
-  const baseMonth    = months[currentIdx - 13]; // 13個月前（12個月報酬基礎）
-  const p1 = getMomPrice(ticker, targetMonth);
-  const p0 = getMomPrice(ticker, baseMonth);
+  if(currentIdx < 13) return null;
+  const endMonth   = months[currentIdx - 1];
+  const startMonth = months[currentIdx - 13];
+  const p1=getMomPrice(ticker,endMonth), p0=getMomPrice(ticker,startMonth);
   if(!p1||!p0||p0<=0) return null;
-  return p1/p0 - 1;
+  return p1/p0-1;
 }
 
-// ── 動能信號計算核心 ──
-// 學術依據：Moskowitz et al. 2012 (TS) + Asness et al. 2013 (CS)
-// 選股方式：候選池排序取前 N，歸一化遞減權重（40/30/20 → 44.4%/33.3%/22.2%）
+// ── 計算6個月報酬（跳過最後1個月）──
+function calc6mReturn(ticker, months, currentIdx){
+  if(currentIdx < 7) return null;
+  const endMonth   = months[currentIdx - 1];
+  const startMonth = months[currentIdx - 7];
+  const p1=getMomPrice(ticker,endMonth), p0=getMomPrice(ticker,startMonth);
+  if(!p1||!p0||p0<=0) return null;
+  return p1/p0-1;
+}
+
+// ── 依 lookback 選擇報酬計算 ──
+function calcMomReturn(ticker, months, idx, lookback){
+  return lookback==='6m'
+    ? calc6mReturn(ticker,months,idx)
+    : calc12mReturn(ticker,months,idx);
+}
+
+// ── 報酬比例加權（50% 上限，反覆迭代歸一化）──
+function calcProportionalWeights(rets){
+  // rets: 數值陣列（已按強到弱排序），對應 top N 標的
+  const n=rets.length;
+  if(n===0) return [];
+  if(n===1) return [1.0];
+  const CAP=0.5;
+  // 平移讓最小值為 0.001
+  const minR=Math.min(...rets);
+  let shifted=rets.map(r=>r-minR+0.001);
+  // 迭代：超過50%的先固定，其餘按比例縮放
+  let weights=shifted.map(s=>s/shifted.reduce((a,b)=>a+b,0));
+  for(let iter=0;iter<20;iter++){
+    const capped=weights.map(w=>w>=CAP);
+    const cappedTotal=capped.filter(Boolean).length*CAP;
+    const freeRets=shifted.filter((_,i)=>!capped[i]);
+    const freeTotal=freeRets.reduce((a,b)=>a+b,0)||1;
+    const remain=1-cappedTotal;
+    weights=weights.map((w,i)=>capped[i]?CAP:(shifted[i]/freeTotal)*remain);
+    if(!capped.some(Boolean)) break;
+  }
+  return weights;
+}
+
+// ── 動能信號計算核心（報酬比例加權，50%上限）──
 function calcMomSignalAt(months, idx, cfg){
   const enabledAssets=MOM_ASSET_DEFS.filter(a=>a.enabled).map(a=>a.ticker);
-  const buffer=cfg.buffer;
-  const maxHold=cfg.maxHold;
+  const {buffer, maxHold, lookback='12m'}=cfg;
   const currentMonth=months[idx];
-
-  // 現金利率（DGS2 年化近似）
   const cashRate=getCashRate(currentMonth);
   const threshold=cashRate+buffer;
 
-  // ── 步驟一：計算各資產 12M 報酬（跳過最後1個月）──
-  // 使用 P[t-2] / P[t-14] - 1，完全符合 Jegadeesh & Titman 1993
+  // 步驟一：計算各資產 N 個月報酬（跳過最後1個月）
   const returns={};
   for(const ticker of enabledAssets){
-    const r=calc12mReturn(ticker, months, idx);
+    const r=calcMomReturn(ticker,months,idx,lookback);
     returns[ticker]=r!==null?r:null;
   }
 
   const valid=Object.entries(returns).filter(([t,r])=>r!==null);
   if(valid.length===0)
-    return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,
-            eligible:[],mu:null,returns,reason:'無有效資料→現金'};
+    return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:[],mu:null,returns,reason:'無有效資料→現金'};
 
-  // ── 步驟二：時間序列過濾（Moskowitz 2012，每個資產獨立判斷）──
-  // R_i > R_cash + buffer → 進入候選池
-  // 候選池為空 → 全部持 BIL
-  const eligible=valid
-    .filter(([t,r])=>r>threshold)
-    .sort((a,b)=>b[1]-a[1]);  // 排序供步驟三直接使用
-
+  // 步驟二：TS 過濾（Moskowitz 2012）
+  const eligible=valid.filter(([t,r])=>r>threshold).sort((a,b)=>b[1]-a[1]);
   if(eligible.length===0){
     const best=Math.max(...valid.map(([t,r])=>r));
-    return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,
-            eligible:[],mu:null,returns,
-            reason:`所有資產未通過 TS（最高 ${(best*100).toFixed(1)}% ≤ 門檻 ${(threshold*100).toFixed(1)}%）→現金`};
+    return {holdings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:[],mu:null,returns,
+            reason:`所有資產未通過 TS（最高 ${(best*100).toFixed(1)}% ≤ 門檻 ${(threshold*100).toFixed(1)}%）`};
   }
 
-  // ── 步驟三：橫截面選擇──取前 N 名，歸一化遞減權重 ──
-  // 取前 min(maxHold, eligible.length) 個
-  // 權重基準：第1名=40, 第2名=30, 第3名=20, 第4名=15, 第5名=10...（遞減5）
-  // 實際使用時歸一化至總和=1，確保滿倉
-  const RAW_WEIGHTS=[40,30,20,15,10,8,6,5];  // 最多支援8個
+  // 步驟三：報酬比例加權（50%上限），取前 maxHold 名
   const top=eligible.slice(0,maxHold);
-  const rawW=top.map((_,i)=>RAW_WEIGHTS[i]||Math.max(5-i,1));
-  const sumW=rawW.reduce((a,b)=>a+b,0);
+  const topRets=top.map(([t,r])=>r);
+  const weights=calcProportionalWeights(topRets);
   const holdings={};
-  top.forEach(([t],i)=>{holdings[t]=rawW[i]/sumW;});
-
-  // μ 仍計算供顯示用（候選池平均）
+  top.forEach(([t],i)=>{holdings[t]=weights[i];});
   const mu=eligible.reduce((s,[t,r])=>s+r,0)/eligible.length;
 
-  const wPct=top.map(([t],i)=>`${t}(${(rawW[i]/sumW*100).toFixed(0)}%)`).join(' + ');
+  const wPct=top.map(([t],i)=>`${t}(${(weights[i]*100).toFixed(0)}%)`).join('+');
   return {
     holdings, cashRate, threshold, mu,
     eligible: eligible.map(([t])=>t),
     returns,
-    topReturns: top.map(([t,r])=>({ticker:t, ret:r})),
-    reason:`${wPct}（TS候選:${eligible.length}個）`
+    topReturns: top.map(([t,r],i)=>({ticker:t, ret:r, weight:weights[i]})),
+    reason:`${wPct}（候選${eligible.length}個）`
   };
 }
 
@@ -962,7 +1012,7 @@ function calcMomCurrentSignal(){
 
   const months=spyPrices.map(p=>p.date).sort();
   const lastIdx=months.length-1;
-  const cfg={buffer:gv('momBuffer')/100, maxHold:parseInt($('momMaxHold').value)||5};
+  const cfg={buffer:gv('momBuffer')/100, maxHold:parseInt($('momMaxHold').value)||5, lookback:$('momLookback').value||'12m'};
 
   const signal=calcMomSignalAt(months, lastIdx, cfg);
 
@@ -1043,7 +1093,9 @@ function runMomBacktest(){
     maxHold: parseInt($('momMaxHold').value)||5,
     shieldGate: gc('momShieldGate'),
     shieldThreshold: gv('momShieldThreshold'),
+    lookback: $('momLookback').value||'12m',
   };
+  const minWarm=cfg.lookback==='6m'?7:13;  // 6M需要7個月預熱，12M需要13個月
 
   const rawStart=($('momStart').value||'').trim().slice(0,7);
   const rawEnd  =($('momEnd').value||'').trim().slice(0,7);
@@ -1055,19 +1107,16 @@ function runMomBacktest(){
   setTimeout(()=>{
     try{
       const months=spyPrices.map(p=>p.date).sort();
-      const filterEnd=rawEnd||'9999-12';
 
-      // 找起始計算索引：需要 idx>=13（預熱），且 months[idx] >= rawStart
-      let calcStart=13;
+      let calcStart=minWarm;
       if(rawStart){
-        for(let i=13;i<months.length;i++){
+        for(let i=minWarm;i<months.length;i++){
           if(months[i]>=rawStart){calcStart=i;break;}
         }
       }
-      // 找結束計算索引
       let calcEnd=months.length-2;
       if(rawEnd){
-        for(let i=months.length-2;i>=13;i--){
+        for(let i=months.length-2;i>=minWarm;i--){
           if(months[i]<=rawEnd){calcEnd=i;break;}
         }
       }
@@ -1076,6 +1125,7 @@ function runMomBacktest(){
       const INIT=100000;
       let nav=INIT, spyNav=INIT;
       const records=[];
+      const trades=[];   // 交易明細
       let holdings={[MOM_CASH_TICKER]:1.0};
 
       for(let i=calcStart;i<=calcEnd;i++){
@@ -1086,11 +1136,27 @@ function runMomBacktest(){
         const gated=cfg.shieldGate&&shieldScore<cfg.shieldThreshold;
         const newHoldings=gated?{[MOM_CASH_TICKER]:1.0}:signal.holdings;
 
+        // ── 計算本月持倉報酬 + 記錄每筆交易明細 ──
         let portRet=0;
         for(const [ticker,w] of Object.entries(holdings)){
           const p0=getMomPrice(ticker,signalMonth);
           const p1=getMomPrice(ticker,nextMonth);
-          if(p0&&p1&&p0>0) portRet+=w*(p1/p0-1);
+          if(p0&&p1&&p0>0){
+            const tickerRet=p1/p0-1;
+            portRet+=w*tickerRet;
+            trades.push({
+              entryMonth: signalMonth,
+              exitMonth:  nextMonth,
+              ticker,
+              weight:     w,
+              entryPrice: p0,
+              exitPrice:  p1,
+              tickerRet,
+              contribution: w*tickerRet,
+              isCash: ticker===MOM_CASH_TICKER,
+              gated,
+            });
+          }
         }
         nav*=(1+portRet);
 
@@ -1111,7 +1177,7 @@ function runMomBacktest(){
       // 擷取同期 ABCD 月頻淨值
       const shieldMonthly=buildShieldMonthly(records[0].month, records[records.length-1].month);
 
-      MOM_RESULT={records, initial:INIT, cfg, shieldMonthly};
+      MOM_RESULT={records, initial:INIT, cfg, shieldMonthly, trades};
       renderMomUI();
       overlaymomOnShieldChart();
 
@@ -1291,55 +1357,62 @@ function renderMomUI(){
     {label:'SPY',data:mddSpy,borderColor:'#3d4a66',borderWidth:1,pointRadius:0},
   ]},options:{...opt,plugins:{legend:{display:false}},scales:sc}});
 
-  // ── 換倉歷程表（完整版：含持倉權重、TS候選數、累積NAV）──
-  // 表頭
+  // ── 換倉歷程表 ──
   const logTable=document.querySelector('#momLogBody').closest('table');
   logTable.querySelector('thead tr').innerHTML=`
     <th>換倉月</th>
-    <th style="color:var(--teal)">持倉（遞減加權）</th>
-    <th>TS候選</th>
-    <th>門檻</th>
+    <th style="color:var(--teal)">持倉（比例加權）</th>
+    <th>TS候選</th><th>門檻</th>
     <th style="color:var(--accent)">月報酬</th>
     <th style="color:var(--teal)">MOM 淨值</th>
-    <th>SPY 淨值</th>
-    <th style="color:var(--yellow)">超額</th>
+    <th>SPY 淨值</th><th style="color:var(--yellow)">超額</th>
   `;
-
   $('momLogBody').innerHTML=[...records].reverse().map((r,revIdx)=>{
     const idx=records.length-1-revIdx;
-    const prevNav=idx>0?records[idx-1].nav:initial;
     const prevSpy=idx>0?records[idx-1].spyNav:initial;
-
-    // 持倉顯示（含權重）
     const hChips=r.gated
-      ? `<span class="holding-chip gated">BIL 盾牌 100%</span>`
-      : Object.entries(r.holdings).map(([t,w])=>
-          `<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t}&nbsp;<span style="opacity:.7">${(w*100).toFixed(0)}%</span></span>`
+      ?`<span class="holding-chip gated">BIL 盾牌 100%</span>`
+      :Object.entries(r.holdings).map(([t,w])=>
+          `<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t} <span style="opacity:.7">${(w*100).toFixed(0)}%</span></span>`
         ).join('');
-
     const retColor=r.portRet>=0?'var(--green)':'var(--red)';
     const excess=r.portRet-(r.spyNav/prevSpy-1);
     const excColor=excess>=0?'var(--green)':'var(--red)';
     const tsCount=r.signal?.eligible?.length??'--';
-    const threshStr=r.cashRate!=null?(r.cashRate*100+gv('momBuffer')).toFixed(2)+'%':'--';
-
+    const thresh=r.cashRate!=null?((r.cashRate+cfg.buffer)*100).toFixed(2)+'%':'--';
     return `<tr class="log-row">
       <td class="mono" style="font-weight:700">${r.month}</td>
       <td style="white-space:nowrap">${hChips}</td>
-      <td class="mono" style="text-align:center;color:${tsCount>0?'var(--teal)':'var(--red)'}">
-        ${tsCount}
-      </td>
-      <td class="mono" style="color:var(--muted)">${threshStr}</td>
-      <td class="mono" style="color:${retColor};font-weight:700">
-        ${r.portRet>=0?'+':''}${(r.portRet*100).toFixed(2)}%
-      </td>
+      <td class="mono" style="text-align:center;color:${tsCount>0?'var(--teal)':'var(--red)'}">${tsCount}</td>
+      <td class="mono" style="color:var(--muted)">${thresh}</td>
+      <td class="mono" style="color:${retColor};font-weight:700">${r.portRet>=0?'+':''}${(r.portRet*100).toFixed(2)}%</td>
       <td class="mono tt" style="font-weight:700">$${Math.round(r.nav).toLocaleString()}</td>
       <td class="mono" style="color:var(--muted)">$${Math.round(r.spyNav).toLocaleString()}</td>
-      <td class="mono" style="color:${excColor};font-weight:700">
-        ${excess>=0?'+':''}${(excess*100).toFixed(2)}pp
-      </td>
+      <td class="mono" style="color:${excColor};font-weight:700">${excess>=0?'+':''}${(excess*100).toFixed(2)}pp</td>
     </tr>`;
   }).join('');
+
+  // ── 交易明細表 ──
+  const trades=MOM_RESULT.trades||[];
+  if($('momTradeBody')){
+    $('momTradeBody').innerHTML=[...trades].reverse().map(t=>{
+      const rc=t.tickerRet>=0?'var(--green)':'var(--red)';
+      const cc=t.contribution>=0?'var(--green)':'var(--red)';
+      const note=t.gated?'盾牌強制':t.isCash?'現金停泊':'';
+      const noteStyle=t.gated?'color:var(--red)':t.isCash?'color:var(--muted)':'color:var(--dim)';
+      return `<tr class="log-row">
+        <td class="mono">${t.entryMonth}</td>
+        <td class="mono">${t.exitMonth}</td>
+        <td style="font-weight:700;color:${t.isCash?'var(--green)':t.gated?'var(--red)':'var(--teal)'}">${t.ticker}</td>
+        <td class="mono" style="color:var(--muted)">${(t.weight*100).toFixed(1)}%</td>
+        <td class="mono" style="color:var(--dim)">${t.entryPrice.toFixed(2)}</td>
+        <td class="mono" style="color:var(--dim)">${t.exitPrice.toFixed(2)}</td>
+        <td class="mono" style="color:${rc};font-weight:700">${t.tickerRet>=0?'+':''}${(t.tickerRet*100).toFixed(2)}%</td>
+        <td class="mono" style="color:${cc};font-weight:700">${t.contribution>=0?'+':''}${(t.contribution*100).toFixed(2)}pp</td>
+        <td style="font-size:11px;${noteStyle}">${note}</td>
+      </tr>`;
+    }).join('');
+  }
 }
 
 // ── 將動能結果疊加到盾牌績效頁 ──
