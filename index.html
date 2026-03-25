@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>矛與盾 × 動能策劃 0325 升級版</title>
+<title>矛與盾 × 動能策劃 0325完成版</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600;700;900&display=swap');
@@ -169,8 +169,8 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 <div class="wrap">
 <div class="hdr">
   <div>
-    <div class="hdr-title">🛡️ 矛與盾 × 動能策劃 <span class="v">0325 升級版</span></div>
-    <div class="hdr-sub">F1/F5 動態百分位 ｜ 寬度對稱補償 ｜ 階梯式盾牌 ｜ 避風港動能(TLT/GLD) ｜ V9.5動能(0.2/0.4/0.4) ｜ 63日寬度</div>
+    <div class="hdr-title">🛡️ 矛與盾 × 動能策劃 <span class="v">0325</span></div>
+    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5校準(HY下界80→上界10) ｜ 即時信號修正 ｜ Z-Score動量懲罰 ｜ 50分中性校準</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span id="momCurrentBadge" class="hidden" style="font-size:11px;padding:3px 10px;border-radius:3px;font-family:monospace;background:var(--teal-dim);color:var(--teal);border:1px solid var(--teal)">MOM: --</span>
@@ -188,6 +188,8 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   <button class="tab" onclick="switchTab(event,'mom')">📈 動能輪動</button>
   <button class="tab" onclick="switchTab(event,'logs')">📜 歷程</button>
 </div>
+
+<!-- ══ 資料庫 ══ -->
 
 <div class="panel active" id="panel-db">
 <div class="step-block">
@@ -282,17 +284,20 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   <div class="step-body"><button class="btn-green" onclick="exportCSV()">⬇ 下載 Shield_Database.csv</button></div>
 </div>
 </div>
+
+<!-- ══ 回測設定 ══ -->
+
 <div class="panel" id="panel-cfg">
 <div class="cfg-grid">
-<div class="cfg-box" style="opacity: 0.5; pointer-events: none;" title="方法A已棄用">
-  <div class="cfg-label" style="color:var(--yellow)">方法 A（Delta）已棄用</div>
+<div class="cfg-box">
+  <div class="cfg-label" style="color:var(--yellow)">方法 A（Delta）</div>
   <div class="cfg-row"><span>加碼分數 (≥)</span><input type="number" id="cpA150" value="60"></div>
   <div class="cfg-row"><span>清倉分數 (&lt;)</span><input type="number" id="cpA100" value="40"></div>
   <div class="cfg-row"><span>連跌天數</span><input type="number" id="cpADays" value="2"></div>
   <div class="cfg-row"><span>Delta (bp)</span><input type="number" id="cpADelta" value="50"></div>
 </div>
 <div class="cfg-box">
-  <div class="cfg-label" style="color:var(--green)">方法 B（Z-Score 主力）</div>
+  <div class="cfg-label" style="color:var(--green)">方法 B（Z-Score）</div>
   <div class="cfg-row"><span>加碼分數 (≥)</span><input type="number" id="cpB150" value="60"></div>
   <div class="cfg-row"><span>清倉分數 (&lt;)</span><input type="number" id="cpB100" value="40"></div>
   <div class="cfg-row"><span>連跌天數</span><input type="number" id="cpBDays" value="1"></div>
@@ -334,7 +339,7 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   </div>
   <div class="strk-cond"><div class="strk-cond-row">
     <span class="cond-num">③</span>
-    <label class="cond-check"><input type="checkbox" id="useStrkBias" checked onchange="updateStrkInfo()">EW/SP 63日寬度 Z (≤)</label>
+    <label class="cond-check"><input type="checkbox" id="useStrkBias" checked onchange="updateStrkInfo()">EW/SP 寬度 Z (≤)</label>
     <input type="number" id="cpBias" value="-2.0" step="0.1">
   </div></div>
   <div class="strk-cond"><div class="strk-cond-row">
@@ -367,6 +372,8 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 </div>
 </div>
 
+<!-- ══ 績效 ══ -->
+
 <div class="panel" id="panel-result">
   <div class="live-grid" id="liveDash"></div>
   <div class="metrics-grid" id="metricsGrid"></div>
@@ -377,19 +384,22 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   </div>
 </div>
 
+<!-- ══ 動能輪動 ══ -->
+
 <div class="panel" id="panel-mom">
 <div class="mom-note">
   <b>V9.5 動能輪動（機構級架構）</b><br>
-  ① <b>TS 過濾</b>：R₁₂ &gt; 過去一年現金利率+緩衝<br>
-  ② <b>CS 過濾</b>：多週期分數 <code>0.2×z₁₂ + 0.4×z₆ + 0.4×z₃</code> &gt; 0 且排名前 50%<br>
-  ③ <b>相關性過濾</b>：逐一加入，相關係數 &lt; 動態閾值<br>
-  ④ <b>階梯盾牌與避險</b>：滿倉(100%) / 半倉(50%) / 空倉(0%)。退回資金停泊至 TLT/GLD/BIL 之最強者。
+  ① <b>TS 過濾</b>：R₁₂ &gt; 現金利率+緩衝（個別判斷，Moskowitz 2012）→ 候選池<br>
+  ② <b>CS 過濾</b>：多週期分數 <code>0.5×z₁₂ + 0.3×z₆ + 0.2×z₃</code>（z_k=R_k/σ_k）高於候選池均值者入選<br>
+  ③ <b>相關性過濾</b>：逐一加入，相關係數 &lt; 動態閾值（盾牌越弱閾值越嚴）<br>
+  ④ <b>動能比例加權</b>：分數比例加權，上限 40%<br>
+  ⑤ <b>盾牌分段縮放</b>：&lt;30→0%，30–50→0–40%，50–70→40–80%，&gt;70→80–100%
 </div>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">
   <div class="cfg-box" style="border-color:var(--teal)">
-    <div class="cfg-label" style="color:var(--teal)">動能參數（V9.5 升級）</div>
+    <div class="cfg-label" style="color:var(--teal)">動能參數（V9.5）</div>
     <div style="font-size:10px;color:var(--teal);margin-bottom:6px;line-height:1.7;background:var(--surface2);padding:5px 7px;border-radius:3px">
-      分數 = 0.2×z₁₂ + 0.4×z₆ + 0.4×z₃<br>z_k = R_k / σ_k（中短週期主導）
+      分數 = 0.5×z₁₂ + 0.3×z₆ + 0.2×z₃<br>z_k = R_k / σ_k（各週期自身標準化）
     </div>
     <div class="cfg-row"><span>現金緩衝 (%)</span><input type="number" id="momBuffer" value="0.5" step="0.5" min="0" max="10" style="width:60px"></div>
     <div class="cfg-row"><span>最大持有標的</span><input type="number" id="momMaxHold" value="5" min="1" max="11" style="width:60px"></div>
@@ -404,21 +414,29 @@ td{padding:9px;border-bottom:1px solid var(--border)}
     </div>
   </div>
   <div class="cfg-box" style="border-color:var(--teal)">
-    <div class="cfg-label" style="color:var(--teal)">階梯盾牌 &amp; 避險模式</div>
-    <div class="toggle-row"><span>① 階梯式盾牌</span><label class="tog"><input type="checkbox" id="momShieldGate" checked><span class="tog-sl"></span></label></div>
+    <div class="cfg-label" style="color:var(--teal)">盾牌整合 &amp; 強化模式</div>
+    <div class="toggle-row"><span>① 盾牌縮放（基礎）</span><label class="tog"><input type="checkbox" id="momShieldGate" checked><span class="tog-sl"></span></label></div>
     <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.7;background:var(--surface2);padding:4px 7px;border-radius:3px">
-      &ge;50分→100% ｜ 30–49分→50% ｜ &lt;30分→0%<br>退場資金比拚 TLT vs GLD vs BIL
+      &lt;30→0% ｜ 30–50→0–40% ｜ 50–70→40–80% ｜ &gt;70→80–100%
     </div>
-    <div class="toggle-row"><span>② Core-Satellite SPY 下限</span><label class="tog"><input type="checkbox" id="momSpyFloor" onchange="toggleSpyFloor()"><span class="tog-sl"></span></label></div>
-    <div id="spyFloorRow" class="cfg-row" style="opacity:.4;pointer-events:none"><span>SPY 核心 (%)</span><input type="number" id="momSpyFloorPct" value="40" min="0" max="80" style="width:60px"></div>
+    <div class="toggle-row"><span>② SPY 最低倉位下限</span><label class="tog"><input type="checkbox" id="momSpyFloor" onchange="toggleSpyFloor()"><span class="tog-sl"></span></label></div>
+    <div id="spyFloorRow" class="cfg-row" style="opacity:.4;pointer-events:none"><span>SPY 下限 (%)</span><input type="number" id="momSpyFloorPct" value="30" min="0" max="80" style="width:60px"></div>
     <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.6;background:var(--surface2);padding:4px 7px;border-radius:3px">
-      永遠保留 N% SPY，剩餘比例交給 MOM 衝刺與避險
+      MOM 組合中永遠保留 N% SPY，剩餘比例由動能分配
     </div>
+    <div class="toggle-row"><span>③ 避險替代模式</span><label class="tog"><input type="checkbox" id="momDefenseMode" onchange="toggleDefenseMode()"><span class="tog-sl"></span></label></div>
+    <div id="defenseModeRows" style="opacity:.4;pointer-events:none">
+      <div class="cfg-row"><span>切換門檻（盾牌 ≥ 時持 SPY）</span><input type="number" id="momDefenseThresh" value="50" min="20" max="80" style="width:60px"></div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;line-height:1.6;background:var(--surface2);padding:4px 7px;border-radius:3px">
+        盾牌強（≥門檻）→ 持 SPY 100%<br>盾牌弱（&lt;門檻）→ 切換 MOM 輪動
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--teal);padding:3px 0">需先載入 Shield Database</div>
   </div>
   <div class="cfg-box" style="border-color:var(--teal)">
     <div class="cfg-label" style="color:var(--teal)">候選資產池</div>
     <div class="asset-grid" id="assetChips"></div>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px">點擊切換。BIL, TLT, GLD 為避風港選項。</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">點擊切換啟用/停用。BIL 為現金基準，固定啟用。</div>
   </div>
 </div>
 <div class="step-block" style="border-color:var(--teal)">
@@ -441,7 +459,7 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   <div class="step-header" style="background:var(--teal-dim)">
     <span class="step-num snm">2</span>
     <div><div class="step-title" style="color:var(--teal)">執行動能輪動回測</div>
-    <div class="step-sub">月頻換倉 · 階梯遞減 · 與 A/B/C/D 同框比較</div></div>
+    <div class="step-sub">月頻換倉 · 遞減加權 · 與 A/B/C/D 同框比較</div></div>
   </div>
   <div class="step-body">
     <div class="grid2" style="margin-bottom:10px">
@@ -460,9 +478,9 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 </div>
 <div id="momSignalSection" class="hidden">
   <div class="mom-signal-card">
-    <div class="mom-signal-title">📡 V9.5 升級版即時信號
+    <div class="mom-signal-title">📡 V9.5 即時信號
       <span style="font-size:10px;font-weight:400;color:var(--muted)">
-        分數 = 0.2×z₁₂+0.4×z₆+0.4×z₃ &nbsp;｜&nbsp; TS = R₁₂&gt;年均現金+緩衝 &nbsp;｜&nbsp; CS = 分數&gt;0且排名前50%
+        分數 = 0.5×z₁₂+0.3×z₆+0.2×z₃ &nbsp;｜&nbsp; TS = R₁₂&gt;現金+緩衝 &nbsp;｜&nbsp; CS = 分數&gt;候選池均值
       </span>
     </div>
     <div style="display:grid;grid-template-columns:42px 54px 50px 1fr 26px 26px 60px;gap:0;font-size:10px;color:var(--dim);padding:0 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px">
@@ -470,7 +488,7 @@ td{padding:9px;border-bottom:1px solid var(--border)}
     </div>
     <div id="momSignalRows"></div>
     <div style="margin-top:10px;font-size:11px;color:var(--muted)">
-      年均現金利率：<span id="momCashRateDisplay" style="color:var(--green);font-family:monospace;font-weight:700"></span>
+      現金利率（DGS2）：<span id="momCashRateDisplay" style="color:var(--green);font-family:monospace;font-weight:700"></span>
       &nbsp;｜&nbsp; <span id="momMuDisplay" style="color:var(--accent);font-family:monospace;font-size:11px"></span>
     </div>
     <div style="margin-top:6px;font-size:12px;font-weight:700">
@@ -508,7 +526,8 @@ td{padding:9px;border-bottom:1px solid var(--border)}
     <table>
       <thead><tr>
         <th>換倉月</th><th style="color:var(--teal)">持倉（比例加權）</th>
-        <th style="color:var(--yellow)">盾牌</th><th>TS候選</th><th>門檻</th>
+        <th style="color:var(--yellow)">盾牌</th><th>模式</th>
+        <th>TS候選</th><th>門檻</th>
         <th style="color:var(--accent)">月報酬</th>
         <th style="color:var(--teal)">MOM 淨值</th>
         <th>SPY 淨值</th><th style="color:var(--yellow)">超額</th>
@@ -519,10 +538,13 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 </div>
 </div>
 
+<!-- ══ 歷程 ══ -->
+
 <div class="panel" id="panel-logs">
   <div class="log-toolbar">
     <div class="log-filter-group">
       <button class="lfb active" onclick="setLogFilter('ALL',this)">全部</button>
+      <button class="lfb" onclick="setLogFilter('A',this)" style="color:var(--yellow)">方法 A</button>
       <button class="lfb" onclick="setLogFilter('B',this)" style="color:var(--green)">方法 B</button>
       <button class="lfb" onclick="setLogFilter('C',this)" style="color:var(--accent)">方法 C</button>
       <button class="lfb" onclick="setLogFilter('D',this)" style="color:var(--purple)">方法 D</button>
@@ -546,6 +568,7 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   </div>
 </div>
 </div>
+
 <script>
 'use strict';
 window.onerror=(m,u,l)=>{ alert('⚠️ 錯誤: '+m+'\n行: '+l); return false; };
@@ -645,51 +668,7 @@ const gv=id=>parseFloat($(id).value)||0;
 const gc=id=>$(id).checked;
 const setLog=(msg,ok)=>{ const e=$('fetchLog'); if(!e) return; e.textContent=msg; e.style.color=ok===true?'#00e5a0':ok===false?'#ff4d6d':'#6b7a99'; };
 
-// ==========================================
-// ★ 升級核心一：數學與總經輔助函式擴充
-// ==========================================
-
-// 計算滾動百分位數 (動態適應不同經濟週期，invert=true 代表數值越大分數越低)
-function getPercentile(series, currentVal, invert = false) {
-  if (!series || series.length === 0) return 50;
-  const sorted = [...series].sort((a, b) => a - b);
-  let rank = 0;
-  for (let i = 0; i < sorted.length; i++) {
-    if (sorted[i] <= currentVal) rank = i + 1;
-    else break;
-  }
-  let pct = (rank / sorted.length) * 100;
-  return invert ? (100 - pct) : pct;
-}
-
-// Z-Score 動量懲罰與獎勵 (雙向調用)
-function zScorePenalty(series, current, direction, zThresh, maxScore) {
-  const n = Math.min(series.length, 252); 
-  if (n < 20) return 0;
-  const vals = series.slice(-n);
-  const mean = vals.reduce((a, b) => a + b, 0) / n;
-  const std = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / n) || 0.0001;
-  const z = (current - mean) / std * direction;
-  if (z <= zThresh) return 0;
-  return Math.min(maxScore, maxScore * (z - zThresh) / (3.0 - zThresh));
-}
-
-// 平滑化現金利率 (作為 TS 門檻，取過去 1 年均值降低雜訊)
-function getCashRate(yyyymm) {
-  if (!DB.length) return 0.04;
-  const target = yyyymm + '-15'; 
-  let targetIdx = DB.length - 1;
-  for (let i = 0; i < DB.length; i++) {
-    if (DB[i].d > target) { targetIdx = Math.max(0, i - 1); break; }
-  }
-  const startIdx = Math.max(0, targetIdx - 252);
-  let sum = 0, count = 0;
-  for (let i = startIdx; i <= targetIdx; i++) {
-    sum += (DB[i].y2 || 4.0); count++;
-  }
-  return (count > 0 ? sum / count : 4.0) / 100;
-}
-// ════ 初始化與 UI 事件 ════
+// ════ 初始化 ════
 function lockCsvUpload(){
   AUTO_FETCHED=true;
   const area=$('csvUploadArea'), lock=$('csvLockMsg');
@@ -744,17 +723,21 @@ function updateMomStatusBar(){
   }).join('');
 }
 
-// ════ DB 工具與自動修復 ════
+// ════ DB 工具 ════
 function sortAndFill(){
   DB.sort((a,b)=>a.d.localeCompare(b.d));
   let last={sp:5000,ew:5000,vix:18,hy:3.5,tips:1.5,cape:30,y10:4.0,y2:3.8};
   DB.forEach(r=>{ ['sp','ew','vix','hy','tips','cape','y10','y2'].forEach(k=>{
     if(r[k]==null||isNaN(r[k])) r[k]=last[k]; else last[k]=r[k];
   });});
-  fixEWDiscontinuity();
+  fixEWDiscontinuity(); // ← EW 斷層修復
   updateStatus();
 }
 
+// ── EW/SP 比率系列斷層自動修復 ──
+// EW 僅用於計算 EW/SP 比率（zb、spewRelPerf），
+// 因此只要比率在斷層處連續，絕對數值不影響策略邏輯。
+// 典型案例：2003-04（EW=SP）→ 2003-05（EW=RSP ETF），ratio 從 1.000 驟降至 0.311
 function fixEWDiscontinuity(){
   if(DB.length<2) return;
   for(let i=1;i<DB.length;i++){
@@ -764,9 +747,12 @@ function fixEWDiscontinuity(){
     const r_p=ew_p/sp_p, r_c=ew_c/sp_c;
     if(r_p<=0) continue;
     const jump=r_c/r_p;
+    // 比率跳躍超過 2 倍或低於 0.5 倍 → 判定為系列斷層
     if(jump>2.0||jump<0.5){
       const scale=jump;
-      for(let j=0;j<i;j++){ DB[j].ew=+(DB[j].ew*scale).toFixed(6); }
+      for(let j=0;j<i;j++){
+        DB[j].ew=+(DB[j].ew*scale).toFixed(6);
+      }
       console.log(`[EW修復] ${DB[i-1].d}→${DB[i].d}: ratio ${r_p.toFixed(4)}→${r_c.toFixed(4)}, 前${i}筆 ×${scale.toFixed(4)}`);
     }
   }
@@ -782,6 +768,8 @@ function updateStatus(){
     $('dbVIX').value=l.vix.toFixed(2); $('dbHY').value=l.hy.toFixed(4);
     $('dbTIPS').value=l.tips.toFixed(2); $('dbY10').value=l.y10.toFixed(2); $('dbY2').value=l.y2.toFixed(2);
     $('dbCAPE').value='';
+    // ★ 只有當 cpStart 比 DB 最早日還晚、或 cpEnd 比 DB 最新日還早時才自動修正
+    // 避免「DB 有 23 年資料但 cpStart 被覆寫成近 1 年」造成 CAGR 爆炸
     const curStart=$('cpStart').value, curEnd=$('cpEnd').value;
     if(!curStart||curStart<DB[0].d) $('cpStart').value=DB[0].d;
     if(!curEnd||curEnd>l.d) $('cpEnd').value=l.d;
@@ -802,6 +790,12 @@ function toggleSpyFloor(){
   const row=$('spyFloorRow'); if(!row) return;
   row.style.opacity=on?'1':'0.4'; row.style.pointerEvents=on?'auto':'none';
 }
+function toggleDefenseMode(){
+  const on=gc('momDefenseMode');
+  const rows=$('defenseModeRows'); if(!rows) return;
+  rows.style.opacity=on?'1':'0.4'; rows.style.pointerEvents=on?'auto':'none';
+}
+
 function updateStrkInfo(){
   const active=[];
   if(gc('useStrkRsi')) active.push('①'); if(gc('useStrkVix')) active.push('②');
@@ -811,7 +805,6 @@ function updateStrkInfo(){
   $('strkInfo').textContent=`已啟用: ${active.join('')||'無'} | 需達 ${n} / ${cnt} 條件觸發短打`;
 }
 
-// [API 與 CSV 抓取功能保持不變...]
 function loadCSV(event){
   if(AUTO_FETCHED){ alert('⚠ 已使用自動抓取，CSV 上傳已停用。'); event.target.value=''; return; }
   const file=event.target.files[0]; if(!file) return;
@@ -973,7 +966,7 @@ async function fetchAndMerge(quickMode=false){
           });
         }
       }
-      if(Object.keys(capeByMonth).length>10) return capeByMonth;
+      if(Object.keys(capeByMonth).length>10){setLog(`🔄 CAPE：取得 ${Object.keys(capeByMonth).length} 個月資料`);return capeByMonth;}
     }catch(e){}
     try{
       const url='https://www.multpl.com/shiller-pe/table/by-month';
@@ -989,7 +982,7 @@ async function fetchAndMerge(quickMode=false){
           if(!isNaN(d.getTime())) capeByMonth[d.toISOString().slice(0,7)]=numVal;
         }
       }
-      if(Object.keys(capeByMonth).length>10) return capeByMonth;
+      if(Object.keys(capeByMonth).length>10){setLog(`🔄 CAPE：HTML解析取得 ${Object.keys(capeByMonth).length} 個月資料`);return capeByMonth;}
     }catch(e){}
     setLog('⚠ CAPE 自動抓取失敗，請手動上傳 CAPE CSV。');
     return capeByMonth;
@@ -1073,58 +1066,7 @@ function exportCSV(){
 }
 
 // ════════════════════════════════════════
-// ★ 升級核心二：防禦中樞 (Shield Score 改寫)
-// ════════════════════════════════════════
-function getShieldScore(dateStr){
-  if(!DB.length) return 50;
-  let bestIdx=DB.length-1;
-  for(let i=0;i<DB.length;i++){if(DB[i].d>dateStr){bestIdx=Math.max(0,i-1);break;}}
-  const best=DB[bestIdx];
-
-  // 1. 建立滾動視窗 (5年 = 1260 交易日) 來計算 ERP 與 HY 的百分位數
-  const startIdx5Y = Math.max(0, bestIdx - 1260);
-  const erpSeries = [], hySeries = [];
-  for(let i=startIdx5Y; i<=bestIdx; i++){
-    const r = DB[i];
-    erpSeries.push((100/(r.cape||30))-(r.tips||1.5));
-    hySeries.push((r.hy||3.5)*100);
-  }
-
-  // 2. 基礎盾分：取代死板的 lerp，改用動態環境自適應
-  const curErp = (100/(best.cape||30))-(best.tips||1.5);
-  const curHy = (best.hy||3.5)*100;
-  const f1 = getPercentile(erpSeries, curErp, false); // ERP越高越好(便宜)
-  const f5 = getPercentile(hySeries, curHy, true);    // HY越高越差(危險)
-  const base = f1*0.5 + f5*0.5;
-
-  // 3. 建立動量序列 (約 1.5 年 = 350 交易日)
-  const startIdxMom = Math.max(0, bestIdx - 350);
-  const hyMomSeries=[], breadthMomSeries=[];
-  for(let i=startIdxMom+60; i<=bestIdx; i++){
-    const i60 = Math.max(startIdxMom, i-60);
-    hyMomSeries.push((DB[i].hy||3.5)*100 - (DB[i60].hy||3.5)*100);
-    const r = DB[i], r0 = DB[i60];
-    const ew = r.ew||r.sp||1, sp = r.sp||1, ew0 = r0.ew||r0.sp||1, sp0 = r0.sp||1;
-    breadthMomSeries.push(sp0>0&&ew0>0 ? (ew/sp)/(ew0/sp0)-1 : 0);
-  }
-  
-  // 4. 計算動量懲罰與對稱性寬度補償 (獎勵)
-  const ci60 = Math.max(0, bestIdx-60);
-  const curHyMom = curHy - (DB[ci60].hy||3.5)*100;
-  const r0 = DB[ci60];
-  const ew=best.ew||best.sp||1, sp=best.sp||1, ew0=r0.ew||r0.sp||1, sp0=r0.sp||1;
-  const curBrdMom = sp0>0&&ew0>0 ? (ew/sp)/(ew0/sp0)-1 : 0;
-
-  const hyPenalty = zScorePenalty(hyMomSeries, curHyMom, 1, 1.5, 15);
-  const brdPenalty = zScorePenalty(breadthMomSeries, curBrdMom, -1, 1.5, 10);
-  const brdBonus = zScorePenalty(breadthMomSeries, curBrdMom, 1, 1.0, 10); // 寬度強勁時加分
-
-  // 5. 總結算
-  return Math.max(0, Math.min(100, base - hyPenalty - brdPenalty + brdBonus));
-}
-
-// ════════════════════════════════════════
-// ★ 升級核心三：V9.5 動能輪動模組
+// 動能輪動模組
 // ════════════════════════════════════════
 function getProxies(){
   let proxy=$('apiProxy').value.trim();
@@ -1173,6 +1115,71 @@ async function fetchMomData(){
   calcMomCurrentSignal(); saveToStorage();
 }
 
+// ════ Z-Score 動態懲罰輔助函式 ════
+// 以滾動歷史分布（最多252筆）為基準，只有統計上顯著的異常（>zThresh σ）才扣分
+// direction=1：懲罰偏高值（HY動量↑）；direction=-1：懲罰偏低值（寬度動量↓）
+// zThresh→0分，3.0σ→maxPenalty，線性插值
+function zScorePenalty(series,current,direction,zThresh,maxPenalty){
+  const n=Math.min(series.length,252); if(n<20) return 0;
+  const vals=series.slice(-n);
+  const mean=vals.reduce((a,b)=>a+b,0)/n;
+  const std=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/n)||0.0001;
+  const z=(current-mean)/std*direction;
+  if(z<=zThresh) return 0;
+  return Math.min(maxPenalty,maxPenalty*(z-zThresh)/(3.0-zThresh));
+}
+
+// ★★★ 0325 50分中性校準 + Z-Score 動量懲罰 ★★★
+// 設計原則：正常市場=50分，清場門檻40/45才有明確統計意義
+//   F1=50 @ ERP=2.0%（CAPE≈28.6, TIPS=1.5%，後危機長期均值）
+//     lerp(ERP, 0, 4, 10, 90)：midpoint ERP=2% → F1=50
+//   F5=50 @ HY=350bp（2010年後正常信用環境均值）
+//     lerp(HY, 250, 600, 66, 10)：(350-250)/(600-250)=2/7 → 66-56*2/7=50
+//   Z-Score懲罰：>1.5σ才開始扣分，3σ=上限（15/10分）
+//     正常波動完全不扣；2020 COVID暴升≈5σ→扣滿；2008緩升≈2σ→扣~5分
+function getShieldScore(dateStr){
+  if(!DB.length) return 50;
+  let bestIdx=DB.length-1;
+  for(let i=0;i<DB.length;i++){if(DB[i].d>dateStr){bestIdx=Math.max(0,i-1);break;}}
+  const best=DB[bestIdx];
+
+  // ── 基礎盾分（50分中性校準）──
+  const erp=(100/(best.cape||30))-(best.tips||1.5);
+  const f1=lerp(erp,0,4,10,90);                           // 50 @ ERP=2.0%
+  const f5=lerp((best.hy||3.5)*100,250,600,66,10);        // 50 @ HY=350bp
+  const base=f1*0.5+f5*0.5;
+
+  // ── 建立滾動動量序列（近350筆≈1.5年）──
+  const startIdx=Math.max(0,bestIdx-350);
+  const hyMomSeries=[],breadthMomSeries=[];
+  for(let i=startIdx+60;i<=bestIdx;i++){
+    const i60=Math.max(startIdx,i-60);
+    hyMomSeries.push((DB[i].hy||3.5)*100-(DB[i60].hy||3.5)*100);
+    const r=DB[i],r0=DB[i60];
+    const ew=r.ew||r.sp||1,sp=r.sp||1,ew0=r0.ew||r0.sp||1,sp0=r0.sp||1;
+    breadthMomSeries.push(sp0>0&&ew0>0?(ew/sp)/(ew0/sp0)-1:0);
+  }
+  // 當前值
+  const ci60=Math.max(0,bestIdx-60);
+  const curHyMom=(best.hy||3.5)*100-(DB[ci60].hy||3.5)*100;
+  const r0=DB[ci60];
+  const ew=best.ew||best.sp||1,sp=best.sp||1,ew0=r0.ew||r0.sp||1,sp0=r0.sp||1;
+  const curBrdMom=sp0>0&&ew0>0?(ew/sp)/(ew0/sp0)-1:0;
+
+  // ── Z-Score 動量懲罰（統計異常才扣分）──
+  const hyPenalty=zScorePenalty(hyMomSeries,curHyMom,1,1.5,15);
+  const brdPenalty=zScorePenalty(breadthMomSeries,curBrdMom,-1,1.5,10);
+
+  return Math.max(0,Math.min(100,base-hyPenalty-brdPenalty));
+}
+
+function getCashRate(yyyymm){
+  if(!DB.length) return 0.04;
+  const target=yyyymm+'-15'; let best=DB[DB.length-1];
+  for(const r of DB){if(r.d<=target) best=r; else break;}
+  return (best.y2||4.0)/100;
+}
+
 function getMomPrice(ticker,yyyymm){
   const prices=MOM_PRICES[ticker]; if(!prices||!prices.length) return null;
   const exact=prices.find(p=>p.date===yyyymm); if(exact) return exact.close;
@@ -1204,11 +1211,10 @@ function momCalcZ(ticker,months,idx,nPeriod){
   return (p1/p0-1)/vol;
 }
 
-// 修正：動能配重轉向中短週期
 function momCalcScore(ticker,months,idx){
   const z12=momCalcZ(ticker,months,idx,13);const z6=momCalcZ(ticker,months,idx,7);const z3=momCalcZ(ticker,months,idx,4);
   if(z12===null||z6===null||z3===null) return null;
-  return 0.2*z12 + 0.4*z6 + 0.4*z3; 
+  return 0.5*z12+0.3*z6+0.2*z3;
 }
 
 function momCalcCorr(t1,t2,months,idx,n=12){
@@ -1233,6 +1239,13 @@ function momCorrThreshold(shieldScore,corrMode){
   return 0.65;
 }
 
+function momShieldExposure(score){
+  if(score<30) return 0;
+  if(score<50) return lerp(score,30,50,0,0.4);
+  if(score<70) return lerp(score,50,70,0.4,0.8);
+  return lerp(score,70,100,0.8,1.0);
+}
+
 function momWeights(scores){
   const n=scores.length; if(n===0) return []; if(n===1) return [1.0];
   const CAP=0.4,EPS=1e-6;
@@ -1251,41 +1264,31 @@ function momWeights(scores){
   return w;
 }
 
-// 修正：CS 排擠效應解方 (改用前 50% 排名過濾)
 function calcMomSignalAt(months,idx,cfg){
   const enabledAssets=MOM_ASSET_DEFS.filter(a=>a.enabled).map(a=>a.ticker);
-  const cashRate=getCashRate(months[idx]); 
+  const cashRate=getCashRate(months[idx]);
   const threshold=cashRate+(cfg.buffer||0);
   const shieldScore=cfg.shieldScore||70;
   const corrThresh=momCorrThreshold(shieldScore,cfg.corrMode||'dynamic');
-  
-  const scoreMap={}, r12Map={};
+  const scoreMap={},r12Map={};
   for(const t of enabledAssets){
     const s=momCalcScore(t,months,idx); if(s!==null) scoreMap[t]=s;
     const p1=getMomPrice(t,months[idx-1]);const p0=idx>=13?getMomPrice(t,months[idx-13]):null;
     if(p1&&p0&&p0>0) r12Map[t]=p1/p0-1;
   }
-  
   const valid=enabledAssets.filter(t=>r12Map[t]!==undefined&&scoreMap[t]!==undefined);
   if(!valid.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:[],tsPass:[],scoreMap,r12Map,corrThresh,reason:'資料不足'};
-  
-  // TS 絕對動能過濾
   const tsPass=valid.filter(t=>r12Map[t]>threshold);
   if(!tsPass.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:[],tsPass:[],scoreMap,r12Map,corrThresh,reason:`TS未通過`};
-  
-  // CS 相對動能過濾 (捨棄均值，改取 >0 的前 50%)
-  let csPass=tsPass.filter(t=>(scoreMap[t]||0)>0); 
+  const tsMean=tsPass.reduce((s,t)=>s+(scoreMap[t]||0),0)/tsPass.length;
+  let csPass=tsPass.filter(t=>(scoreMap[t]||0)>tsMean); if(!csPass.length) csPass=[...tsPass];
   csPass.sort((a,b)=>(scoreMap[b]||0)-(scoreMap[a]||0));
-  csPass = csPass.slice(0, Math.max(1, Math.ceil(csPass.length / 2)));
-  
   const selected=[];
   for(const t of csPass){
     if(selected.every(f=>Math.abs(momCalcCorr(t,f,months,idx))<corrThresh)) selected.push(t);
     if(selected.length>=(cfg.maxHold||5)) break;
   }
-  
   if(!selected.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:csPass,tsPass,scoreMap,r12Map,corrThresh,reason:'相關性過濾後無標的'};
-  
   const selScores=selected.map(t=>Math.max(scoreMap[t]||0,0.001));
   const weights=momWeights(selScores);
   const rawHoldings={};
@@ -1293,31 +1296,13 @@ function calcMomSignalAt(months,idx,cfg){
   return {rawHoldings,cashRate,threshold,corrThresh,eligible:csPass,tsPass,selected,scoreMap,r12Map,reason:selected.map((t,i)=>`${t}(${(weights[i]*100).toFixed(0)}%)`).join('+')};
 }
 
-// 修正：階梯式盾牌 & 避風港動能對決 (TLT vs GLD vs BIL)
-function momApplyShield(rawHoldings, shieldScore, useShield, scoreMap) {
+function momApplyShield(rawHoldings,shieldScore,useShield){
   if(!useShield) return {...rawHoldings};
-  
-  // 階梯式縮放降低換倉摩擦
-  let exp = 1.0;
-  if (shieldScore < 30) exp = 0;
-  else if (shieldScore < 50) exp = 0.5;
-  
-  if (exp >= 0.99) return {...rawHoldings};
-  
-  const scaled = {};
-  for(const [t, w] of Object.entries(rawHoldings)) {
-    scaled[t] = (scaled[t] || 0) + w * exp;
-  }
-  
-  // 安全避風港動能決策：退場資金流向最強的避險資產
-  const havens = ['TLT', 'GLD', MOM_CASH_TICKER].filter(h => h === MOM_CASH_TICKER || (scoreMap && scoreMap[h] !== undefined));
-  let bestHaven = MOM_CASH_TICKER, bestScore = -999;
-  havens.forEach(h => {
-    const s = (scoreMap && scoreMap[h]) ? scoreMap[h] : 0; // BIL 分數視為 0
-    if(s > bestScore) { bestScore = s; bestHaven = h; }
-  });
-  
-  scaled[bestHaven] = (scaled[bestHaven] || 0) + (1 - exp);
+  const exp=momShieldExposure(shieldScore);
+  if(exp<=0) return {[MOM_CASH_TICKER]:1.0};
+  const scaled={};
+  for(const [t,w] of Object.entries(rawHoldings)) scaled[t]=(scaled[t]||0)+w*exp;
+  scaled[MOM_CASH_TICKER]=(scaled[MOM_CASH_TICKER]||0)+(1-exp);
   return scaled;
 }
 
@@ -1330,11 +1315,16 @@ function calcMomCurrentSignal(){
   const cfg={buffer:gv('momBuffer')/100,maxHold:parseInt($('momMaxHold').value)||5,corrMode:$('momCorrMode')?.value||'dynamic',shieldScore};
   const signal=calcMomSignalAt(months,lastIdx,cfg);
   const useShield=gc('momShieldGate');
-  
-  let finalH=momApplyShield(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0}, shieldScore, useShield, signal.scoreMap);
+  let finalH=momApplyShield(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0},shieldScore,useShield);
 
-  // Core-Satellite 核心下限：在經過盾牌縮放後，強勢保留 SPY
-  if(gc('momSpyFloor')){
+  // ★ 0325修正：即時信號補上避險替代模式判斷（原版漏掉此邏輯）
+  if(gc('momDefenseMode')&&shieldScore>=gv('momDefenseThresh')){
+    finalH={};
+    finalH['SPY']=1.0;
+  }
+
+  // ★ 0325修正：即時信號補上 SPY 最低倉位下限判斷
+  if(gc('momSpyFloor')&&!gc('momDefenseMode')){
     const spyFloor=gv('momSpyFloorPct')/100;
     if(spyFloor>0&&MOM_PRICES['SPY']){
       const curSpy=finalH['SPY']||0;
@@ -1380,26 +1370,26 @@ function calcMomCurrentSignal(){
   $('momRecommendHoldings').innerHTML=Object.entries(finalH)
     .filter(([t,w])=>w>0.005).sort((a,b)=>b[1]-a[1])
     .map(([t,w])=>`<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t} ${(w*100).toFixed(1)}%</span>`).join(' ');
-  
-  if(useShield){
-    let exp=1.0; if(shieldScore<30) exp=0; else if(shieldScore<50) exp=0.5;
+  if(useShield&&!gc('momDefenseMode')){
+    const exp=momShieldExposure(shieldScore);
     $('momRecommendHoldings').innerHTML+=` <span style="font-size:11px;color:var(--muted)">（盾牌${shieldScore.toFixed(0)}分→曝露${(exp*100).toFixed(0)}%）</span>`;
   }
-  
+  if(gc('momDefenseMode')){
+    const aboveThresh=shieldScore>=gv('momDefenseThresh');
+    $('momRecommendHoldings').innerHTML+=` <span style="font-size:11px;color:${aboveThresh?'var(--accent)':'var(--teal)'}">（避險模式：盾${shieldScore.toFixed(0)}分${aboveThresh?'≥':'<'}門檻→${aboveThresh?'持SPY':'MOM'}）</span>`;
+  }
   const badge=$('momCurrentBadge'); badge.classList.remove('hidden');
   badge.textContent=`MOM: ${Object.entries(finalH).filter(([t,w])=>w>0.005&&t!==MOM_CASH_TICKER).map(([t])=>t).slice(0,2).join('+')||'BIL'}`;
 }
-// ════════════════════════════════════════
-// ★ 升級核心四：回測引擎與主迴圈更新
-// ════════════════════════════════════════
+
 function runMomBacktest(){
   const spyPrices=MOM_PRICES['SPY'];
   if(!spyPrices||spyPrices.length<15){alert('請先抓取 ETF 資料！');return;}
-  const cfg={buffer:gv('momBuffer')/100,maxHold:parseInt($('momMaxHold').value)||5,shieldGate:gc('momShieldGate'),corrMode:$('momCorrMode')?.value||'dynamic',tradeCost:gv('momTradeCost')/100||0.001,spyFloor:gc('momSpyFloor')?(gv('momSpyFloorPct')/100):0};
+  const cfg={buffer:gv('momBuffer')/100,maxHold:parseInt($('momMaxHold').value)||5,shieldGate:gc('momShieldGate'),corrMode:$('momCorrMode')?.value||'dynamic',tradeCost:gv('momTradeCost')/100||0.001,spyFloor:gc('momSpyFloor')?(gv('momSpyFloorPct')/100):0,defenseMode:gc('momDefenseMode'),defenseThresh:gv('momDefenseThresh')||50};
   const MIN_WARM=14;
   const rawStart=($('momStart').value||'').trim().slice(0,7);
   const rawEnd=($('momEnd').value||'').trim().slice(0,7);
-  $('momBacktestLog').textContent='V9.5 升級版回測中...'; $('loadingOverlay').classList.remove('hidden'); $('loadingText').textContent='動能回測計算中...';
+  $('momBacktestLog').textContent='V9.5 回測中...'; $('loadingOverlay').classList.remove('hidden'); $('loadingText').textContent='V9.5 動能回測...';
   setTimeout(()=>{
     try{
       const months=spyPrices.map(p=>p.date).sort();
@@ -1411,15 +1401,22 @@ function runMomBacktest(){
       const INIT=100000; let nav=INIT,spyNav=INIT;
       const records=[],trades=[];
       let holdings={[MOM_CASH_TICKER]:1.0};
-      
       for(let i=calcStart;i<=calcEnd;i++){
         const signalMonth=months[i],nextMonth=months[i+1];
-        const curShield=getShieldScore(signalMonth+'-28');
-        const sigCfg={...cfg,shieldScore:curShield};
+        const shieldScore=100;
+        const sigCfg={...cfg,shieldScore};
         const signal=calcMomSignalAt(months,i,sigCfg);
-        
-        let scaledH=momApplyShield(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0}, curShield, cfg.shieldGate, signal.scoreMap);
+        let scaledH={...(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0})};
 
+        // ── 方案③：避險替代模式 ──
+        if(cfg.defenseMode){
+          const ss=getShieldScore(signalMonth+'-28');
+          if(ss>=cfg.defenseThresh){
+            scaledH={'SPY':1.0};
+          }
+        }
+
+        // ── 方案②：SPY 最低倉位下限 ──
         if(cfg.spyFloor>0 && MOM_PRICES['SPY']){
           const curSpy=scaledH['SPY']||0;
           if(curSpy<cfg.spyFloor){
@@ -1450,15 +1447,14 @@ function runMomBacktest(){
           const p0=getMomPrice(ticker,signalMonth),p1=getMomPrice(ticker,nextMonth);
           if(p0&&p1&&p0>0){
             const tickerRet=p1/p0-1; portRet+=w*tickerRet;
-            trades.push({entryMonth:signalMonth,exitMonth:nextMonth,ticker,weight:w,entryPrice:p0,exitPrice:p1,tickerRet,contribution:w*tickerRet,isCash:ticker===MOM_CASH_TICKER});
+            trades.push({entryMonth:signalMonth,exitMonth:nextMonth,ticker,weight:w,entryPrice:p0,exitPrice:p1,tickerRet,contribution:w*tickerRet,isCash:ticker===MOM_CASH_TICKER,shieldExp:1});
           }
         }
         portRet-=costDrag; nav*=(1+portRet);
         const sp0=getMomPrice('SPY',signalMonth),sp1=getMomPrice('SPY',nextMonth);
         if(sp0&&sp1&&sp0>0) spyNav*=(1+sp1/sp0-1);
-        
-        let actualExp=1.0; if(cfg.shieldGate){ if(curShield<30) actualExp=0; else if(curShield<50) actualExp=0.5; }
-        records.push({month:nextMonth,nav,spyNav,holdings:{...scaledH},portRet,shieldScore:curShield,shieldExp:actualExp,cashRate:signal.cashRate,signal});
+        const curShield=getShieldScore(signalMonth+'-28');
+        records.push({month:nextMonth,nav,spyNav,holdings:{...scaledH},portRet,shieldScore:curShield,shieldExp:1,cashRate:signal.cashRate,signal});
         holdings=scaledH;
       }
       if(records.length<6){alert('回測結果資料太少');return;}
@@ -1508,7 +1504,7 @@ function renderMomUI(){
   const cashMonths=records.filter(r=>r.holdings[MOM_CASH_TICKER]>=0.99).length;
   const sm=MOM_RESULT.shieldMonthly;
   const ABCD_COLORS={A:'#ffb830',B:'#00e5a0',C:'#7eb8ff',D:'#b388ff'};
-  const ABCD_LABELS={A:'方法 A',B:'方法 B(主力)',C:'方法 C',D:'方法 D'};
+  const ABCD_LABELS={A:'方法 A',B:'方法 B',C:'方法 C',D:'方法 D'};
   function shieldMetrics(key){
     if(!sm||!sm[key]||!sm[key].length) return null;
     const vals=sm[key].filter(v=>v!==null); if(vals.length<2) return null;
@@ -1528,7 +1524,7 @@ function renderMomUI(){
       rows:[['最終淨值',`$${Math.round(m.final).toLocaleString()}`,'white'],['區間報酬',`${m.tr>=0?'+':''}${(m.tr*100).toFixed(1)}%`,m.tr>=0?'tg':'tr'],['CAGR',`${(m.cagr*100).toFixed(2)}%`,''],['MDD',`${(m.mdd*100).toFixed(2)}%`,'tr'],['Sharpe',m.sharpe.toFixed(2),'tg']]};
   }).filter(Boolean):[];
   $('momMetricsGrid').innerHTML=[
-    {label:'動能輪動',sub:'MOM策略',color:'teal',rows:[['最終淨值',`$${Math.round(last.nav).toLocaleString()}`,'white'],['區間報酬',`${totalRet>=0?'+':''}${(totalRet*100).toFixed(1)}%`,totalRet>=0?'tg':'tr'],['CAGR',`${(cagr*100).toFixed(2)}%`,'tt'],['MDD',`${(mdd*100).toFixed(2)}%`,'tr'],['Sharpe',sharpe.toFixed(2),'tg'],['全避險月',`${cashMonths}月`,''],]},
+    {label:'動能輪動',sub:'MOM策略',color:'teal',rows:[['最終淨值',`$${Math.round(last.nav).toLocaleString()}`,'white'],['區間報酬',`${totalRet>=0?'+':''}${(totalRet*100).toFixed(1)}%`,totalRet>=0?'tg':'tr'],['CAGR',`${(cagr*100).toFixed(2)}%`,'tt'],['MDD',`${(mdd*100).toFixed(2)}%`,'tr'],['Sharpe',sharpe.toFixed(2),'tg'],['持現金月',`${cashMonths}月`,''],]},
     {label:'SPY 買持',sub:'B&H基準',color:'muted',rows:[['最終淨值',`$${Math.round(last.spyNav).toLocaleString()}`,'white'],['區間報酬',`${spyRet>=0?'+':''}${(spyRet*100).toFixed(1)}%`,spyRet>=0?'tg':'tr'],['CAGR',`${(spyCagr*100).toFixed(2)}%`,''],['超額CAGR',`${((cagr-spyCagr)*100)>=0?'+':''}${((cagr-spyCagr)*100).toFixed(2)}pp`,(cagr-spyCagr)>=0?'tg':'tr']]},
     ...abcdCards
   ].map(({label,sub,color,rows})=>`<div class="metric-card" style="border-top:3px solid var(--${color})"><div class="m-title">${label}<span style="font-size:10px;font-weight:400;color:var(--dim);margin-left:5px">${sub}</span></div>${rows.map(([k,v,cls])=>`<div class="m-row"><span>${k}</span><span class="m-val ${cls||''}">${v}</span></div>`).join('')}</div>`).join('');
@@ -1557,8 +1553,11 @@ function renderMomUI(){
     const tsCount=r.signal?.eligible?.length??'--';
     const thresh=r.cashRate!=null?((r.cashRate+cfg.buffer)*100).toFixed(2)+'%':'--';
     const ss=r.shieldScore!=null?r.shieldScore.toFixed(0):'--';
-    const ssColor=r.shieldScore>=50?'var(--green)':r.shieldScore>=30?'var(--yellow)':'var(--red)';
-    return `<tr class="log-row"><td class="mono" style="font-weight:700">${r.month}</td><td style="white-space:nowrap">${hChips}</td><td class="mono" style="color:${ssColor};font-weight:700">${ss}</td><td class="mono" style="text-align:center;color:${tsCount>0?'var(--teal)':'var(--red)'}">${tsCount}</td><td class="mono" style="color:var(--muted)">${thresh}</td><td class="mono" style="color:${retColor};font-weight:700">${r.portRet>=0?'+':''}${(r.portRet*100).toFixed(2)}%</td><td class="mono tt" style="font-weight:700">$${Math.round(r.nav).toLocaleString()}</td><td class="mono" style="color:var(--muted)">$${Math.round(r.spyNav).toLocaleString()}</td><td class="mono" style="color:${excColor};font-weight:700">${excess>=0?'+':''}${(excess*100).toFixed(2)}pp</td></tr>`;
+    const ssColor=r.shieldScore>=60?'var(--green)':r.shieldScore>=40?'var(--yellow)':'var(--red)';
+    const isSPYOnly=Object.keys(r.holdings).length===1&&r.holdings['SPY']>=0.99;
+    const isBILOnly=r.holdings[MOM_CASH_TICKER]>=0.99;
+    const modeLabel=isSPYOnly?'<span style="color:var(--accent);font-size:10px">SPY</span>':isBILOnly?'<span style="color:var(--muted);font-size:10px">現金</span>':'<span style="color:var(--teal);font-size:10px">MOM</span>';
+    return `<tr class="log-row"><td class="mono" style="font-weight:700">${r.month}</td><td style="white-space:nowrap">${hChips}</td><td class="mono" style="color:${ssColor};font-weight:700">${ss}</td><td>${modeLabel}</td><td class="mono" style="text-align:center;color:${tsCount>0?'var(--teal)':'var(--red)'}">${tsCount}</td><td class="mono" style="color:var(--muted)">${thresh}</td><td class="mono" style="color:${retColor};font-weight:700">${r.portRet>=0?'+':''}${(r.portRet*100).toFixed(2)}%</td><td class="mono tt" style="font-weight:700">$${Math.round(r.nav).toLocaleString()}</td><td class="mono" style="color:var(--muted)">$${Math.round(r.spyNav).toLocaleString()}</td><td class="mono" style="color:${excColor};font-weight:700">${excess>=0?'+':''}${(excess*100).toFixed(2)}pp</td></tr>`;
   }).join('');
   if($('momTradeBody')){
     $('momTradeBody').innerHTML=[...MOM_RESULT.trades||[]].reverse().map(t=>{
@@ -1622,6 +1621,7 @@ function calcP(cv,k){
     const dd=(v-pk)/pk;if(dd<mdd)mdd=dd;
     rets.push((v-cv[i-1][k])/cv[i-1][k]);
   }
+  // ★ 用實際日期差計算年數，避免 cv.length/252 在資料有缺口時算錯
   const d0=new Date(cv[0].d+'T00:00:00');
   const d1=new Date(cv[cv.length-1].d+'T00:00:00');
   const yr=Math.max(0.1,(d1-d0)/(365.25*86400000));
@@ -1709,52 +1709,58 @@ function runBacktest(){
       const pk={A:cfg.cap,B:cfg.cap,C:cfg.cap,D:cfg.cap,BH:cfg.cap};
       const sp0=SP[0];
       const totalEq=(s,spNow)=>s.eq+(s.plusN>0&&s.plusSP>0?s.plusN*(spNow/s.plusSP):0);
-      
+      const hyMomArr=[],breadthMomArr=[]; // 滾動動量序列，供 Z-Score 懲罰計算
       for(let i=1;i<N;i++){
         const ret=(SP[i]-SP[i-1])/SP[i-1];
         const hN=HY[i]*100;
-        
-        // 使用升級版的 getShieldScore 計算盾牌基底
-        const shieldBase = getShieldScore(DATES[i]);
+        const f1=lerp((100/CAPE[i])-TIPS[i],0,4,10,90);
+        // ★★★ 0325 F5刻度校準 + Z-Score動量懲罰 ★★★
+        // F5=50 @ HY=350bp, F1=50 @ ERP=2.0%, YC=50 @ 斜率=(ycLo+ycHi)/2
+        const f5b=lerp(hN,250,600,66,10);
+        const ycSlope=Y10[i]-Y2[i];
+        let shieldBase,ycScore=50;
+        if(cfg.useYC){ycScore=lerp(ycSlope,cfg.ycLo,cfg.ycHi,10,90);shieldBase=f1*0.5+f5b*0.3+ycScore*0.2;}
+        else shieldBase=f1*0.5+f5b*0.5;
 
+        // Z-Score 動量懲罰：以滾動歷史分布為基準，>1.5σ才扣分（上限15/10分）
+        const i60=Math.max(0,i-60);
+        hyMomArr.push(hN-HY[i60]*100);
+        const ewI=EW[i]/SP[i],ewI60=EW[i60]/SP[i60];
+        breadthMomArr.push(ewI60>0?ewI/ewI60-1:0);
+        const hyPenalty=zScorePenalty(hyMomArr,hyMomArr[hyMomArr.length-1],1,1.5,15);
+        const brdPenalty=zScorePenalty(breadthMomArr,breadthMomArr[breadthMomArr.length-1],-1,1.5,10);
+        shieldBase=Math.max(0,Math.min(100,shieldBase-hyPenalty-brdPenalty));
         let rsi=50;
         if(i>=70){
           const w=[SP[i]];
           for(let j=i-1;j>=0;j--){if(new Date(DATES[j]).getDay()>=new Date(DATES[j+1]).getDay()){w.push(SP[j]);if(w.length===15)break;}}
           if(w.length===15){w.reverse();let g=0,l=0;for(let k=1;k<15;k++){const d=w[k]-w[k-1];d>=0?g+=d:l-=d;}rsi=100-(100/(1+(g/(l||1))));}
         }
-        
         let zb=0;
-        // ★ 修正：將市場寬度計算週期從 20 天加長至 63 天
-        if(i>=63){
-          const sl=[];for(let j=i-62;j<=i;j++)sl.push(EW[j]/SP[j]);
-          const m=sl.reduce((a,b)=>a+b)/63;
-          const sd=Math.sqrt(sl.reduce((a,b)=>a+(b-m)**2)/63)||1;
+        if(i>=20){
+          const sl=[];for(let j=i-19;j<=i;j++)sl.push(EW[j]/SP[j]);
+          const m=sl.reduce((a,b)=>a+b)/20;
+          const sd=Math.sqrt(sl.reduce((a,b)=>a+(b-m)**2)/20)||1;
           zb=(EW[i]/SP[i]-m)/sd;
         }
-        
         const vixPeak=Math.max(...VIX.slice(Math.max(0,i-20),i+1));
         let spewRelPerf=0;
         const lb63=Math.max(0,i-63);
         if(i>=63&&EW[lb63]>0&&SP[lb63]>0)spewRelPerf=(SP[i]/SP[lb63])/(EW[i]/EW[lb63])-1;
-        
-        const ycSlope=Y10[i]-Y2[i];
         const reg=getRegime(rsi,ycSlope,VIX[i],cfg);
         st.regime=reg;
         const strkHit=evalStrike(cfg,VIX[i],vixPeak,rsi,zb,spewRelPerf);
-        
         const pA=st.A.m,pB=st.B.m;
-        // A（已棄用，僅保留歷史對比）
+        // A（delta 條件：f5b<80 保留下界判斷）
         let mA=hN;for(let j=Math.max(0,i-cfg.A.w);j<i;j++)if(HY[j]*100<mA)mA=HY[j]*100;
-        let sA=Math.round(shieldBase-(((hN-mA)>=cfg.A.dlt)?10:0));
+        let sA=Math.round(shieldBase-(((hN-mA)>=cfg.A.dlt&&f5b<55)?10:0));
         if(isNaN(sA))sA=st.A.ps;
         if(sA<cfg.A.s100)st.A.db++;else st.A.db=0;
         let nA=getMode(sA,st.A.db,cfg.A,strkHit,cfg.pos);nA=applyRegime(nA,reg,cfg);
         const pnlA=stepEngine(st.A,pA,nA.m,cfg.pos.plusMult,ret,SP[i],costRate);
         if(nA.m!==pA)logs.push({d:DATES[i],mtd:'A',fm:pA,to:nA.m,sp:SP[i].toFixed(1),s:sA,ps:st.A.ps,db:st.A.db,pnl:pnlA});
-        st.A.p=nA.p;st.A.m=nA.m;st.A.ps=sA;st.A.s=sA;
-        
-        // B (Z-Score 主力)
+        st.A.p=nA.p;st.A.m=nA.m;st.A.ps=sA;st.A.s=sA;st.A.f1=Math.round(f1);st.A.f5=Math.round(f5b);st.A.yc=Math.round(ycScore);
+        // B
         const slB=HY.slice(Math.max(0,i-cfg.B.w),i);
         const mB=slB.reduce((a,b)=>a+b,0)/slB.length;
         const sdB=Math.sqrt(slB.reduce((a,b)=>a+(b-mB)**2,0)/slB.length)||1;
@@ -1765,8 +1771,7 @@ function runBacktest(){
         let nB=getMode(sB,st.B.db,cfg.B,strkHit,cfg.pos);nB=applyRegime(nB,reg,cfg);
         const pnlB=stepEngine(st.B,pB,nB.m,cfg.pos.plusMult,ret,SP[i],costRate);
         if(nB.m!==pB)logs.push({d:DATES[i],mtd:'B',fm:pB,to:nB.m,sp:SP[i].toFixed(1),s:sB,ps:st.B.ps,db:st.B.db,pnl:pnlB});
-        st.B.p=nB.p;st.B.m=nB.m;st.B.ps=sB;st.B.s=sB;
-        
+        st.B.p=nB.p;st.B.m=nB.m;st.B.ps=sB;st.B.s=sB;st.B.f1=Math.round(f1);st.B.f5=Math.round(f5b);st.B.yc=Math.round(ycScore);
         // C
         const bA=(st.A.m==='NORMAL'||st.A.m==='PLUS'),bpA=(pA==='NORMAL'||pA==='PLUS');
         const bB=(st.B.m==='NORMAL'||st.B.m==='PLUS'),bpB=(pB==='NORMAL'||pB==='PLUS');
@@ -1777,7 +1782,6 @@ function runBacktest(){
         const nPC=nMC==='NORMAL'?cfg.pos.base:0;
         const prevPC=st.C.m==='CLEAR'?0:cfg.pos.base;
         st.C.eq*=(1+prevPC*ret);if(prevPC!==nPC)st.C.eq*=(1-cfg.cost);st.C.p=nPC;st.C.m=nMC;
-        
         // D
         const cA=st.A.m!==pA,cB=st.B.m!==pB;
         let nMD=st.D.m;
@@ -1787,7 +1791,6 @@ function runBacktest(){
         const pnlD=stepEngine(st.D,prevMD,nMD,cfg.pos.plusMult,ret,SP[i],costRate);
         if(nMD!==prevMD)logs.push({d:DATES[i],mtd:'D',fm:prevMD,to:nMD,sp:SP[i].toFixed(1),s:'--',ps:'--',db:'--',pnl:pnlD});
         st.D.m=nMD;
-        
         st.BH.eq=cfg.cap*(SP[i]/sp0);
         const eqA=totalEq(st.A,SP[i]),eqB=totalEq(st.B,SP[i]),eqD=totalEq(st.D,SP[i]);
         cv.push({d:DATES[i],A:eqA,B:eqB,C:st.C.eq,D:eqD,BH:st.BH.eq});
@@ -1839,7 +1842,7 @@ function renderUI(){
     const modeLabel=st[k].m==='PLUS'?`${bdg('PLUS')} <span style="font-size:11px;color:var(--blue)">+${(r.cfgLast?.pos?.plusMult||0.5)*100}%</span>`:bdg(st[k].m||'NORMAL');
     return `<div class="live-card"><div class="live-label" style="color:var(--${color})">${title}</div><div class="live-main">${modeLabel}<span class="live-score">${s!=='--'?s+'分':'聯集'}</span><div style="flex:1"></div>${deltaHtml}</div>${scoreBarHtml}${dbHtml}${plusHtml}</div>`;
   };
-  $('liveDash').innerHTML=liveCard('A','方法 A（已棄用）','yellow',true)+liveCard('B','方法 B（Z-Score 主力）','green',true)+liveCard('C','方法 C（雙態跟隨）','accent',false)+liveCard('D','方法 D（全態跟隨）','purple',false);
+  $('liveDash').innerHTML=liveCard('A','方法 A（Delta）','yellow',true)+liveCard('B','方法 B（Z-Score）','green',true)+liveCard('C','方法 C（雙態跟隨）','accent',false)+liveCard('D','方法 D（全態跟隨）','purple',false);
   $('metricsGrid').innerHTML=[['A','方法 A','yellow'],['B','方法 B','green'],['C','方法 C','accent'],['D','方法 D','purple'],['BH','B&H 基準','muted']].map(([k,label,col])=>{
     const p=calcP(r.cv,k);
     return `<div class="metric-card" style="border-top:3px solid var(--${col})"><div class="m-title">${label}</div><div class="m-row"><span>區間報酬</span><span class="m-val ${parseFloat(p.t)>0?'ty':''}">${parseFloat(p.t)>0?'+':''}${p.t}%</span></div><div class="m-row"><span>CAGR</span><span class="m-val">${p.c}%</span></div><div class="m-row"><span>MDD</span><span class="m-val tr">${p.m}%</span></div><div class="m-row"><span>Sharpe</span><span class="m-val tg">${p.s}</span></div><div class="m-row" style="opacity:.5"><span>年數</span><span class="m-val mono" style="font-size:11px">${p.yr}yr</span></div></div>`;
