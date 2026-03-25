@@ -170,7 +170,7 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 <div class="hdr">
   <div>
     <div class="hdr-title">🛡️ 矛與盾 × 動能策劃 <span class="v">0325</span></div>
-    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5校準(HY下界80→上界10) ｜ 即時信號修正</div>
+    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5校準(HY下界80→上界10) ｜ 即時信號修正 ｜ HY動量懲罰 ｜ 寬度動量懲罰</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span id="momCurrentBadge" class="hidden" style="font-size:11px;padding:3px 10px;border-radius:3px;font-family:monospace;background:var(--teal-dim);color:var(--teal);border:1px solid var(--teal)">MOM: --</span>
@@ -1115,18 +1115,36 @@ async function fetchMomData(){
   calcMomCurrentSignal(); saveToStorage();
 }
 
-// ★★★ 0325 F5 刻度校準 ★★★
-// 問題：原版 lerp(hN,250,800,80,20) 在 2010 年後 HY 從未達 800bp，形成死區
-// 修法：上限縮至 600bp，同時只壓縮上界（10），保留下界（80）
-// 效果：HY 正常（350bp）F5≈80 不變；HY 升至 500bp F5≈30（比舊版更敏感）；HY 達 600bp F5=10
-// 不對稱壓縮避免在低 HY 環境把盾分「墊高」造成反效果
+// ★★★ 0325 F5 刻度校準 + 動量懲罰 ★★★
+// F5：不對稱壓縮（下界80保持，上界壓至10），捕捉高HY環境
+// ① HY動量懲罰：60日內利差上升速度 → 每33bp/60d扣10分（上限25）
+//   效果：2020 COVID暴升650bp→立即扣25；2008緩升150bp→扣~15
+// ③ 寬度動量懲罰：EW/SP比率60日惡化 → 每5%惡化扣10分（上限20）
+//   效果：2022年初寬度惡化先於HY，2000年長期惡化有效
 function getShieldScore(dateStr){
   if(!DB.length) return 50;
   let best=DB[DB.length-1];
   for(const r of DB){if(r.d<=dateStr) best=r; else break;}
   const f1=lerp((100/(best.cape||30))-(best.tips||1.5),0,4,10,100);
   const f5=lerp((best.hy||3.5)*100,250,600,80,10);
-  return f1*0.5+f5*0.5;
+  const base=f1*0.5+f5*0.5;
+
+  // ① HY動量懲罰（60交易日≈85曆日）
+  const d60=new Date(best.d+'T12:00:00');
+  d60.setDate(d60.getDate()-85);
+  const d60str=d60.toISOString().slice(0,10);
+  let r60=DB[0];
+  for(const r of DB){if(r.d<=d60str) r60=r; else break;}
+  const hyMom60=(best.hy||3.5)*100-(r60.hy||3.5)*100;
+  const hyMomPenalty=Math.min(25,Math.max(0,hyMom60*0.3));
+
+  // ③ 寬度動量懲罰（EW/SP比率60日變化）
+  const ewspNow=(best.ew||1)/(best.sp||1);
+  const ewsp60=(r60.ew||1)/(r60.sp||1);
+  const breadthMom=ewsp60>0?ewspNow/ewsp60-1:0;
+  const breadthPenalty=breadthMom<-0.05?Math.min(20,(Math.abs(breadthMom)-0.05)*200):0;
+
+  return Math.max(0,Math.min(100,base-hyMomPenalty-breadthPenalty));
 }
 
 function getCashRate(yyyymm){
@@ -1678,6 +1696,19 @@ function runBacktest(){
         let shieldBase,ycScore=50;
         if(cfg.useYC){ycScore=lerp(ycSlope,cfg.ycLo,cfg.ycHi,20,100);shieldBase=f1*0.5+f5b*0.3+ycScore*0.2;}
         else shieldBase=f1*0.5+f5b*0.5;
+
+        // ① HY動量懲罰：60日利差上升速度（每33bp扣10分，上限25）
+        const i60=Math.max(0,i-60);
+        const hyMom60=hN-HY[i60]*100;
+        const hyMomPenalty=Math.min(25,Math.max(0,hyMom60*0.3));
+
+        // ③ 寬度動量懲罰：EW/SP比率60日惡化（每5%惡化扣10分，上限20）
+        const ewspNow=EW[i]/SP[i];
+        const ewsp60=EW[i60]/SP[i60];
+        const breadthMom=ewsp60>0?ewspNow/ewsp60-1:0;
+        const breadthPenalty=breadthMom<-0.05?Math.min(20,(Math.abs(breadthMom)-0.05)*200):0;
+
+        shieldBase=Math.max(0,Math.min(100,shieldBase-hyMomPenalty-breadthPenalty));
         let rsi=50;
         if(i>=70){
           const w=[SP[i]];
