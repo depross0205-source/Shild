@@ -170,7 +170,7 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 <div class="hdr">
   <div>
     <div class="hdr-title">🛡️ 矛與盾 × 動能策劃 <span class="v">0325</span></div>
-    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5刻度校準(HY 6%上限)</div>
+    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5校準(HY下界80→上界10) ｜ 即時信號修正</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span id="momCurrentBadge" class="hidden" style="font-size:11px;padding:3px 10px;border-radius:3px;font-family:monospace;background:var(--teal-dim);color:var(--teal);border:1px solid var(--teal)">MOM: --</span>
@@ -1115,16 +1115,17 @@ async function fetchMomData(){
   calcMomCurrentSignal(); saveToStorage();
 }
 
-// ★★★ 0325 F5刻度校準 ★★★
-// HY上限：8%(800bp)→6%(600bp)，分數區間：80-20→90-10
-// 依據：2010年後 HY>6% 已屬近代嚴重信用壓力（近代有效上限）
-// 方法論：校準指標刻度，非 in-sample 最佳化門檻
+// ★★★ 0325 F5 刻度校準 ★★★
+// 問題：原版 lerp(hN,250,800,80,20) 在 2010 年後 HY 從未達 800bp，形成死區
+// 修法：上限縮至 600bp，同時只壓縮上界（10），保留下界（80）
+// 效果：HY 正常（350bp）F5≈80 不變；HY 升至 500bp F5≈30（比舊版更敏感）；HY 達 600bp F5=10
+// 不對稱壓縮避免在低 HY 環境把盾分「墊高」造成反效果
 function getShieldScore(dateStr){
   if(!DB.length) return 50;
   let best=DB[DB.length-1];
   for(const r of DB){if(r.d<=dateStr) best=r; else break;}
   const f1=lerp((100/(best.cape||30))-(best.tips||1.5),0,4,10,100);
-  const f5=lerp((best.hy||3.5)*100,250,600,90,10);
+  const f5=lerp((best.hy||3.5)*100,250,600,80,10);
   return f1*0.5+f5*0.5;
 }
 
@@ -1270,7 +1271,36 @@ function calcMomCurrentSignal(){
   const cfg={buffer:gv('momBuffer')/100,maxHold:parseInt($('momMaxHold').value)||5,corrMode:$('momCorrMode')?.value||'dynamic',shieldScore};
   const signal=calcMomSignalAt(months,lastIdx,cfg);
   const useShield=gc('momShieldGate');
-  const finalH=momApplyShield(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0},shieldScore,useShield);
+  let finalH=momApplyShield(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0},shieldScore,useShield);
+
+  // ★ 0325修正：即時信號補上避險替代模式判斷（原版漏掉此邏輯）
+  if(gc('momDefenseMode')&&shieldScore>=gv('momDefenseThresh')){
+    finalH={};
+    finalH['SPY']=1.0;
+  }
+
+  // ★ 0325修正：即時信號補上 SPY 最低倉位下限判斷
+  if(gc('momSpyFloor')&&!gc('momDefenseMode')){
+    const spyFloor=gv('momSpyFloorPct')/100;
+    if(spyFloor>0&&MOM_PRICES['SPY']){
+      const curSpy=finalH['SPY']||0;
+      if(curSpy<spyFloor){
+        const boost=spyFloor-curSpy;
+        const others=Object.keys(finalH).filter(t=>t!=='SPY'&&t!==MOM_CASH_TICKER);
+        const othersTotal=others.reduce((s,t)=>s+(finalH[t]||0),0);
+        if(othersTotal>0){
+          const scale=Math.max(0,(othersTotal-boost)/othersTotal);
+          others.forEach(t=>{finalH[t]=(finalH[t]||0)*scale;});
+          const newTotal=Object.values(finalH).reduce((a,b)=>a+b,0);
+          if(newTotal<0.999) finalH[MOM_CASH_TICKER]=(finalH[MOM_CASH_TICKER]||0)+(1-newTotal);
+        }else{
+          finalH[MOM_CASH_TICKER]=Math.max(0,(finalH[MOM_CASH_TICKER]||0)-boost);
+        }
+        finalH['SPY']=spyFloor;
+      }
+    }
+  }
+
   $('momSignalSection').classList.remove('hidden');
   $('momCashRateDisplay').textContent=(signal.cashRate*100).toFixed(2)+'%';
   $('momMuDisplay').textContent=`門檻 ${(signal.threshold*100).toFixed(2)}%  |  相關閾值 ${(signal.corrThresh||0.75).toFixed(2)}`;
@@ -1296,9 +1326,13 @@ function calcMomCurrentSignal(){
   $('momRecommendHoldings').innerHTML=Object.entries(finalH)
     .filter(([t,w])=>w>0.005).sort((a,b)=>b[1]-a[1])
     .map(([t,w])=>`<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t} ${(w*100).toFixed(1)}%</span>`).join(' ');
-  if(useShield){
+  if(useShield&&!gc('momDefenseMode')){
     const exp=momShieldExposure(shieldScore);
     $('momRecommendHoldings').innerHTML+=` <span style="font-size:11px;color:var(--muted)">（盾牌${shieldScore.toFixed(0)}分→曝露${(exp*100).toFixed(0)}%）</span>`;
+  }
+  if(gc('momDefenseMode')){
+    const aboveThresh=shieldScore>=gv('momDefenseThresh');
+    $('momRecommendHoldings').innerHTML+=` <span style="font-size:11px;color:${aboveThresh?'var(--accent)':'var(--teal)'}">（避險模式：盾${shieldScore.toFixed(0)}分${aboveThresh?'≥':'<'}門檻→${aboveThresh?'持SPY':'MOM'}）</span>`;
   }
   const badge=$('momCurrentBadge'); badge.classList.remove('hidden');
   badge.textContent=`MOM: ${Object.entries(finalH).filter(([t,w])=>w>0.005&&t!==MOM_CASH_TICKER).map(([t])=>t).slice(0,2).join('+')||'BIL'}`;
@@ -1331,13 +1365,11 @@ function runMomBacktest(){
         let scaledH={...(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0})};
 
         // ── 方案③：避險替代模式 ──
-        // 盾牌強時全部持 SPY，盾牌弱時才啟動 MOM
         if(cfg.defenseMode){
           const ss=getShieldScore(signalMonth+'-28');
           if(ss>=cfg.defenseThresh){
-            scaledH={'SPY':1.0}; // 盾牌強 → 直接持 SPY
+            scaledH={'SPY':1.0};
           }
-          // 盾牌弱 → 維持 MOM 輪動組合
         }
 
         // ── 方案②：SPY 最低倉位下限 ──
@@ -1345,17 +1377,14 @@ function runMomBacktest(){
           const curSpy=scaledH['SPY']||0;
           if(curSpy<cfg.spyFloor){
             const boost=cfg.spyFloor-curSpy;
-            // 從非 SPY、非 BIL 部位等比縮減
             const others=Object.keys(scaledH).filter(t=>t!=='SPY'&&t!==MOM_CASH_TICKER);
             const othersTotal=others.reduce((s,t)=>s+(scaledH[t]||0),0);
             if(othersTotal>0){
               const scale=Math.max(0,(othersTotal-boost)/othersTotal);
               others.forEach(t=>{ scaledH[t]=(scaledH[t]||0)*scale; });
-              // 若還不足（其他部位已為0），從現金補
               const newTotal=Object.values(scaledH).reduce((a,b)=>a+b,0);
               if(newTotal<0.999) scaledH[MOM_CASH_TICKER]=(scaledH[MOM_CASH_TICKER]||0)+(1-newTotal);
             } else {
-              // 其他部位全是現金 → 從現金移至 SPY
               scaledH[MOM_CASH_TICKER]=Math.max(0,(scaledH[MOM_CASH_TICKER]||0)-boost);
             }
             scaledH['SPY']=cfg.spyFloor;
@@ -1640,8 +1669,11 @@ function runBacktest(){
         const ret=(SP[i]-SP[i-1])/SP[i-1];
         const hN=HY[i]*100;
         const f1=lerp((100/CAPE[i])-TIPS[i],0,4,10,100);
-        // ★★★ 0325 F5刻度校準：HY 6%上限(600bp)，分數區間 90→10 ★★★
-        const f5b=lerp(hN,250,600,90,10);
+        // ★★★ 0325 F5刻度校準：不對稱壓縮 ★★★
+        // 保留下界80（低HY時盾分不被墊高）
+        // 壓縮上界至10（高HY時盾分下降更敏感）
+        // 上限從800bp縮至600bp（近代有效範圍）
+        const f5b=lerp(hN,250,600,80,10);
         const ycSlope=Y10[i]-Y2[i];
         let shieldBase,ycScore=50;
         if(cfg.useYC){ycScore=lerp(ycSlope,cfg.ycLo,cfg.ycHi,20,100);shieldBase=f1*0.5+f5b*0.3+ycScore*0.2;}
@@ -1667,9 +1699,9 @@ function runBacktest(){
         st.regime=reg;
         const strkHit=evalStrike(cfg,VIX[i],vixPeak,rsi,zb,spewRelPerf);
         const pA=st.A.m,pB=st.B.m;
-        // A
+        // A（delta 條件：f5b<80 保留下界判斷）
         let mA=hN;for(let j=Math.max(0,i-cfg.A.w);j<i;j++)if(HY[j]*100<mA)mA=HY[j]*100;
-        let sA=Math.round(shieldBase-(((hN-mA)>=cfg.A.dlt&&f5b<90)?10:0));
+        let sA=Math.round(shieldBase-(((hN-mA)>=cfg.A.dlt&&f5b<80)?10:0));
         if(isNaN(sA))sA=st.A.ps;
         if(sA<cfg.A.s100)st.A.db++;else st.A.db=0;
         let nA=getMode(sA,st.A.db,cfg.A,strkHit,cfg.pos);nA=applyRegime(nA,reg,cfg);
