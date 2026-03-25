@@ -1,5 +1,6 @@
-<!DOCTYPE html><html lang="zh-TW"><head>
+<!DOCTYPE html><html lang="zh-TW">
 
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>矛與盾 × 動能策劃 0325完成版</title>
@@ -41,8 +42,6 @@ input[type=text],input[type=number],input[type=date],select{
   background:var(--bg);border:1px solid var(--border-hi);color:var(--white);
   padding:7px 9px;border-radius:3px;font-size:13px;font-family:'IBM Plex Mono',monospace;width:100%}
 input:focus,select:focus{outline:none;border-color:var(--accent)}
-/* ★ iOS修復：file input 用 clip 隱藏而非 display:none ★ */
-.file-inp{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .span2{grid-column:span 2}
@@ -57,9 +56,9 @@ button{padding:10px 16px;border:none;border-radius:3px;cursor:pointer;font-size:
 .stat-box{background:var(--bg);border:1px solid var(--border);padding:10px 14px;border-radius:3px;flex:1;min-width:140px}
 .stat-box .n{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--white)}
 .stat-box .s{font-size:11px;color:var(--muted);margin-top:2px}
-/* ★ upload-label 現在用於 <label> 元素 ★ */
 .upload-label{display:block;background:var(--surface2);border:2px dashed var(--border-hi);padding:12px;text-align:center;cursor:pointer;color:var(--accent);font-weight:700;border-radius:3px;margin-bottom:8px}
 .upload-label:hover{border-color:var(--accent)}
+input[type=file]{display:none}
 #fetchLog{font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:8px;min-height:16px;word-break:break-all}
 .cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
 .cfg-box{background:var(--surface);border:1px solid var(--border);padding:12px}
@@ -165,11 +164,13 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 <div class="loading-overlay hidden" id="loadingOverlay">
   <div class="spinner"></div>
   <div id="loadingText">處理中...</div>
-</div><div class="wrap">
+</div>
+
+<div class="wrap">
 <div class="hdr">
   <div>
     <div class="hdr-title">🛡️ 矛與盾 × 動能策劃 <span class="v">0325</span></div>
-    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5刻度校準(HY 6%上限,90→10)</div>
+    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5刻度校準(HY 6%上限)</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span id="momCurrentBadge" class="hidden" style="font-size:11px;padding:3px 10px;border-radius:3px;font-family:monospace;background:var(--teal-dim);color:var(--teal);border:1px solid var(--teal)">MOM: --</span>
@@ -178,31 +179,46 @@ td{padding:9px;border-bottom:1px solid var(--border)}
     <button onclick="clearStorage()" style="font-size:11px;padding:3px 10px;border-radius:3px;background:transparent;border:1px solid var(--border);color:var(--dim);cursor:pointer;font-family:monospace" title="清除 localStorage 快取">🗑 清除快取</button>
     <div id="dataSourceBadge" style="font-size:12px;padding:4px 12px;border:1px solid var(--border-hi);color:var(--muted);font-family:monospace;">● 初始模式</div>
   </div>
-</div><div class="tabs">
+</div>
+
+<div class="tabs">
   <button class="tab active" onclick="switchTab(event,'db')">🗄️ 資料庫</button>
   <button class="tab" onclick="switchTab(event,'cfg')">⚙ 回測設定</button>
   <button class="tab" onclick="switchTab(event,'result')">📊 績效與即時</button>
   <button class="tab" onclick="switchTab(event,'mom')">📈 動能輪動</button>
   <button class="tab" onclick="switchTab(event,'logs')">📜 歷程</button>
 </div>
+
+<!-- ══ 資料庫 ══ -->
+
 <div class="panel active" id="panel-db">
 <div class="step-block">
   <div class="step-header"><div><div class="step-title">🔑 API 設定</div></div></div>
   <div class="step-body">
     <div class="grid2">
-      <div class="field span2"><label>FRED API Key</label><input type="text" id="apiFredKey" value="258bf0113f3cc4ec207f3160731c459e" autocorrect="off" spellcheck="false"></div>
-      <div class="field span2"><label>Proxy URL</label><input type="text" id="apiProxy" value="https://shield-proxy.depross0205.workers.dev?url=" autocorrect="off" spellcheck="false"></div>
+      <div class="field span2"><label>FRED API Key</label>
+        <input type="text" id="apiFredKey" value="258bf0113f3cc4ec207f3160731c459e" autocorrect="off" spellcheck="false"></div>
+      <div class="field span2"><label>Proxy URL</label>
+        <input type="text" id="apiProxy" value="https://shield-proxy.depross0205.workers.dev?url=" autocorrect="off" spellcheck="false"></div>
     </div>
   </div>
 </div>
 <div class="step-block" id="csvUploadBlock">
-  <div class="step-header"><span class="step-num sn1">1</span><div><div class="step-title">上傳現有歷史資料庫</div><div class="step-sub">僅在未執行自動抓取時可用</div></div></div>
+  <div class="step-header"><span class="step-num sn1">1</span>
+    <div><div class="step-title">上傳現有歷史資料庫</div><div class="step-sub">僅在未執行自動抓取時可用</div></div></div>
   <div class="step-body">
-    <div id="csvLockMsg" class="hidden" style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border-hi);border-radius:3px;font-size:12px;color:var(--muted);margin-bottom:8px">🔒 已使用自動抓取（SPY adjclose），CSV 上傳已停用以避免資料不一致。<br>如需重置，請重新整理頁面。</div>
+    <div id="csvLockMsg" class="hidden" style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border-hi);border-radius:3px;font-size:12px;color:var(--muted);margin-bottom:8px">
+      🔒 已使用自動抓取（SPY adjclose），CSV 上傳已停用以避免資料不一致。<br>
+      如需重置，請重新整理頁面。
+    </div>
     <div id="csvUploadArea">
-      <!-- ★ iOS修復：改用 label 元素，input 用 clip 隱藏 ★ -->
-      <label for="csvUpload" class="upload-label" style="width:100%">📂 點擊選擇 CSV 檔案</label>
-      <input type="file" id="csvUpload" accept=".csv" class="file-inp" onchange="loadCSV(event)">
+      <input type="file" id="csvUpload" accept=".csv"
+        style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px"
+        onchange="loadCSV(event)">
+      <button onclick="document.getElementById('csvUpload').click()"
+        class="upload-label" style="width:100%;border:2px dashed var(--border-hi)">
+        📂 點擊選擇 CSV 檔案
+      </button>
     </div>
     <div id="csvStatus" style="font-size:12px;color:var(--green);min-height:16px;margin-bottom:10px"></div>
     <div class="stat-row">
@@ -212,7 +228,8 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   </div>
 </div>
 <div class="step-block">
-  <div class="step-header"><span class="step-num sn2">2</span><div><div class="step-title">自動抓取數據</div><div class="step-sub">SPY/RSP adjclose & FRED & CAPE（multpl.com）自動整併</div></div></div>
+  <div class="step-header"><span class="step-num sn2">2</span>
+    <div><div class="step-title">自動抓取數據</div><div class="step-sub">SPY/RSP adjclose & FRED & CAPE（multpl.com）自動整併</div></div></div>
   <div class="step-body">
     <div class="grid2" style="margin-bottom:10px">
       <button class="btn-blue" onclick="fetchAndMerge(false)" style="font-size:12px">🔄 完整抓取（首次/每月）<br><span style="font-weight:400;font-size:10px">全部歷史 + CAPE 月資料</span></button>
@@ -220,10 +237,18 @@ td{padding:9px;border-bottom:1px solid var(--border)}
     </div>
     <div style="margin-top:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:3px">
       <div style="font-size:11px;color:var(--teal);font-weight:700;margin-bottom:6px">📎 CAPE 歷史資料上傳</div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.6">CSV 格式：第一欄 DATE（YYYY-MM-DD 或 YYYY-MM），第二欄 CAPE<br>月頻資料會自動填充至當月所有交易日<br><span style="color:var(--dim)">範例：2024-01,34.50</span></div>
-      <!-- ★ iOS修復：CAPE upload 也改用 label ★ -->
-      <input type="file" id="capeUpload" accept=".csv,.txt" class="file-inp" onchange="loadCapeCSV(event)">
-      <label for="capeUpload" style="display:block;width:100%;padding:10px;background:var(--teal-dim);border:1px solid var(--teal);color:var(--teal);border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:center">📂 選擇 CAPE CSV 檔案</label>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.6">
+        CSV 格式：第一欄 DATE（YYYY-MM-DD 或 YYYY-MM），第二欄 CAPE<br>
+        月頻資料會自動填充至當月所有交易日<br>
+        <span style="color:var(--dim)">範例：2024-01,34.50</span>
+      </div>
+      <input type="file" id="capeUpload" accept=".csv,.txt"
+        style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px"
+        onchange="loadCapeCSV(event)">
+      <button onclick="document.getElementById('capeUpload').click()"
+        style="width:100%;padding:10px;background:var(--teal-dim);border:1px solid var(--teal);color:var(--teal);border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">
+        📂 選擇 CAPE CSV 檔案
+      </button>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:11px;color:var(--muted)">手動輸入當月值</span>
         <input type="number" id="apiCape" value="" step="0.1" placeholder="36.5" style="width:90px;font-size:12px">
@@ -235,18 +260,20 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   </div>
 </div>
 <div class="step-block">
-  <div class="step-header"><span class="step-num sn3">3</span><div><div class="step-title">手動輸入今日數據</div></div></div>
+  <div class="step-header"><span class="step-num sn3">3</span>
+    <div><div class="step-title">手動輸入今日數據</div></div></div>
   <div class="step-body">
     <div class="grid2">
       <div class="field"><label>日期</label><input type="date" id="dbDate" oninput="checkWeekend()"></div>
-      <div class="field"><label>S&amp;P 500</label><input type="number" id="dbSP" step="0.01"></div>
+      <div class="field"><label>S&P 500</label><input type="number" id="dbSP" step="0.01"></div>
       <div class="field"><label>等權重 (EW)</label><input type="number" id="dbEW" step="0.01"></div>
       <div class="field"><label>VIX</label><input type="number" id="dbVIX" step="0.01"></div>
       <div class="field"><label>HY 利差</label><input type="number" id="dbHY" step="0.001"></div>
       <div class="field"><label>TIPS 10Y (%)</label><input type="number" id="dbTIPS" step="0.01"></div>
       <div class="field"><label>DGS10</label><input type="number" id="dbY10" step="0.01"></div>
       <div class="field"><label>DGS2</label><input type="number" id="dbY2" step="0.01"></div>
-      <div class="field span2"><label>CAPE（留空沿用上日）</label><input type="number" id="dbCAPE" step="0.01" placeholder="留空 = 沿用上日"></div>
+      <div class="field span2"><label>CAPE（留空沿用上日）</label>
+        <input type="number" id="dbCAPE" step="0.01" placeholder="留空 = 沿用上日"></div>
     </div>
     <div class="weekend-warn" id="weekendWarn"></div>
     <button class="btn-yellow" onclick="manualAdd()" style="margin-top:6px">💾 寫入記憶體資料庫</button>
@@ -257,6 +284,9 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   <div class="step-body"><button class="btn-green" onclick="exportCSV()">⬇ 下載 Shield_Database.csv</button></div>
 </div>
 </div>
+
+<!-- ══ 回測設定 ══ -->
+
 <div class="panel" id="panel-cfg">
 <div class="cfg-grid">
 <div class="cfg-box">
@@ -286,11 +316,37 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 </div>
 <div class="cfg-box">
   <div class="cfg-label" style="color:var(--accent)">短打條件</div>
-  <div class="strk-n-bar"><span>達到</span><input type="number" id="cpStrkN" value="2" min="1" max="4" oninput="updateStrkInfo()"><span>/ 已啟用</span><span id="strkEnabledCount" style="color:var(--accent);font-weight:700">3</span><span>條件</span></div>
-  <div class="strk-cond"><div class="strk-cond-row"><span class="cond-num">①</span><label class="cond-check"><input type="checkbox" id="useStrkRsi" checked onchange="updateStrkInfo()">週 RSI (&lt;)</label><input type="number" id="cpRsi" value="35"></div></div>
-  <div class="strk-cond"><div class="strk-cond-row"><span class="cond-num">②</span><label class="cond-check"><input type="checkbox" id="useStrkVix" checked onchange="updateStrkInfo()">VIX (≥)</label><input type="number" id="cpVix" value="35"></div><div class="strk-sub"><label><input type="checkbox" id="vixPullback" onchange="toggleVixPB()"><span>VIX 從高點回跌</span><input type="number" id="cpVixPB" value="3" min="0.5" max="20" step="0.5" disabled><span>點後進場</span></label></div></div>
-  <div class="strk-cond"><div class="strk-cond-row"><span class="cond-num">③</span><label class="cond-check"><input type="checkbox" id="useStrkBias" checked onchange="updateStrkInfo()">EW/SP 寬度 Z (≤)</label><input type="number" id="cpBias" value="-2.0" step="0.1"></div></div>
-  <div class="strk-cond"><div class="strk-cond-row"><span class="cond-num">④</span><label class="cond-check"><input type="checkbox" id="useStrkEWR" onchange="updateStrkInfo()">SP/EW 63日超漲 (≥)</label><input type="number" id="cpEWRatio" value="0.05" step="0.01"></div></div>
+  <div class="strk-n-bar">
+    <span>達到</span><input type="number" id="cpStrkN" value="2" min="1" max="4" oninput="updateStrkInfo()">
+    <span>/ 已啟用</span><span id="strkEnabledCount" style="color:var(--accent);font-weight:700">3</span><span>條件</span>
+  </div>
+  <div class="strk-cond"><div class="strk-cond-row">
+    <span class="cond-num">①</span>
+    <label class="cond-check"><input type="checkbox" id="useStrkRsi" checked onchange="updateStrkInfo()">週 RSI (&lt;)</label>
+    <input type="number" id="cpRsi" value="35">
+  </div></div>
+  <div class="strk-cond">
+    <div class="strk-cond-row">
+      <span class="cond-num">②</span>
+      <label class="cond-check"><input type="checkbox" id="useStrkVix" checked onchange="updateStrkInfo()">VIX (≥)</label>
+      <input type="number" id="cpVix" value="35">
+    </div>
+    <div class="strk-sub"><label>
+      <input type="checkbox" id="vixPullback" onchange="toggleVixPB()">
+      <span>VIX 從高點回跌</span>
+      <input type="number" id="cpVixPB" value="3" min="0.5" max="20" step="0.5" disabled><span>點後進場</span>
+    </label></div>
+  </div>
+  <div class="strk-cond"><div class="strk-cond-row">
+    <span class="cond-num">③</span>
+    <label class="cond-check"><input type="checkbox" id="useStrkBias" checked onchange="updateStrkInfo()">EW/SP 寬度 Z (≤)</label>
+    <input type="number" id="cpBias" value="-2.0" step="0.1">
+  </div></div>
+  <div class="strk-cond"><div class="strk-cond-row">
+    <span class="cond-num">④</span>
+    <label class="cond-check"><input type="checkbox" id="useStrkEWR" onchange="updateStrkInfo()">SP/EW 63日超漲 (≥)</label>
+    <input type="number" id="cpEWRatio" value="0.05" step="0.01">
+  </div></div>
   <div class="strk-info" id="strkInfo">已啟用: ①②③ | 需達 2 條件觸發短打</div>
 </div>
 <div class="cfg-box">
@@ -301,10 +357,10 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 </div>
 <div class="cfg-box">
   <div class="cfg-label" style="color:var(--purple)">Regime 門檻</div>
-  <div class="cfg-row"><span>RSI 牛 (&gt;)</span><input type="number" id="regRsiOn" value="60"></div>
+  <div class="cfg-row"><span>RSI 牛 (>)</span><input type="number" id="regRsiOn" value="60"></div>
   <div class="cfg-row"><span>VIX 牛 (&lt;)</span><input type="number" id="regVixOn" value="20"></div>
   <div class="cfg-row"><span>RSI 熊 (&lt;)</span><input type="number" id="regRsiOff" value="40"></div>
-  <div class="cfg-row"><span>VIX 熊 (&gt;)</span><input type="number" id="regVixOff" value="25"></div>
+  <div class="cfg-row"><span>VIX 熊 (>)</span><input type="number" id="regVixOff" value="25"></div>
   <div class="cfg-row"><span>ON 允許加碼</span><label class="tog" style="flex-shrink:0"><input type="checkbox" id="regAllowPlus" checked><span class="tog-sl"></span></label></div>
   <div class="cfg-row"><span>MID 允許加碼</span><label class="tog" style="flex-shrink:0"><input type="checkbox" id="regAllowPlusMid"><span class="tog-sl"></span></label></div>
 </div>
@@ -315,13 +371,21 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 </div>
 </div>
 </div>
+
+<!-- ══ 績效 ══ -->
+
 <div class="panel" id="panel-result">
   <div class="live-grid" id="liveDash"></div>
   <div class="metrics-grid" id="metricsGrid"></div>
   <div class="chart-wrap"><canvas id="navChart" height="320"></canvas></div>
   <div class="chart-wrap"><canvas id="ddChart" height="180"></canvas></div>
-  <div class="table-wrap"><table><thead><tr id="yHead"></tr></thead><tbody id="yrBody"></tbody></table></div>
+  <div class="table-wrap">
+    <table><thead><tr id="yHead"></tr></thead><tbody id="yrBody"></tbody></table>
+  </div>
 </div>
+
+<!-- ══ 動能輪動 ══ -->
+
 <div class="panel" id="panel-mom">
 <div class="mom-note">
   <b>V9.5 動能輪動（機構級架構）</b><br>
@@ -334,23 +398,38 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">
   <div class="cfg-box" style="border-color:var(--teal)">
     <div class="cfg-label" style="color:var(--teal)">動能參數（V9.5）</div>
-    <div style="font-size:10px;color:var(--teal);margin-bottom:6px;line-height:1.7;background:var(--surface2);padding:5px 7px;border-radius:3px">分數 = 0.5×z₁₂ + 0.3×z₆ + 0.2×z₃<br>z_k = R_k / σ_k（各週期自身標準化）</div>
+    <div style="font-size:10px;color:var(--teal);margin-bottom:6px;line-height:1.7;background:var(--surface2);padding:5px 7px;border-radius:3px">
+      分數 = 0.5×z₁₂ + 0.3×z₆ + 0.2×z₃<br>z_k = R_k / σ_k（各週期自身標準化）
+    </div>
     <div class="cfg-row"><span>現金緩衝 (%)</span><input type="number" id="momBuffer" value="0.5" step="0.5" min="0" max="10" style="width:60px"></div>
     <div class="cfg-row"><span>最大持有標的</span><input type="number" id="momMaxHold" value="5" min="1" max="11" style="width:60px"></div>
     <div class="cfg-row"><span>交易成本 (%)</span><input type="number" id="momTradeCost" value="0.1" step="0.05" min="0" max="1" style="width:60px"></div>
-    <div class="cfg-row"><span>相關係數閾值</span><select id="momCorrMode" style="width:110px;padding:4px;font-size:11px;background:var(--bg);border:1px solid var(--border-hi);color:var(--white);border-radius:3px"><option value="dynamic">動態（依盾牌）</option><option value="0.85">固定 0.85</option><option value="0.75">固定 0.75</option><option value="0.65">固定 0.65</option></select></div>
+    <div class="cfg-row"><span>相關係數閾值</span>
+      <select id="momCorrMode" style="width:110px;padding:4px;font-size:11px;background:var(--bg);border:1px solid var(--border-hi);color:var(--white);border-radius:3px">
+        <option value="dynamic">動態（依盾牌）</option>
+        <option value="0.85">固定 0.85</option>
+        <option value="0.75">固定 0.75</option>
+        <option value="0.65">固定 0.65</option>
+      </select>
+    </div>
   </div>
   <div class="cfg-box" style="border-color:var(--teal)">
     <div class="cfg-label" style="color:var(--teal)">盾牌整合 &amp; 強化模式</div>
     <div class="toggle-row"><span>① 盾牌縮放（基礎）</span><label class="tog"><input type="checkbox" id="momShieldGate" checked><span class="tog-sl"></span></label></div>
-    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.7;background:var(--surface2);padding:4px 7px;border-radius:3px">&lt;30→0% ｜ 30–50→0–40% ｜ 50–70→40–80% ｜ &gt;70→80–100%</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.7;background:var(--surface2);padding:4px 7px;border-radius:3px">
+      &lt;30→0% ｜ 30–50→0–40% ｜ 50–70→40–80% ｜ &gt;70→80–100%
+    </div>
     <div class="toggle-row"><span>② SPY 最低倉位下限</span><label class="tog"><input type="checkbox" id="momSpyFloor" onchange="toggleSpyFloor()"><span class="tog-sl"></span></label></div>
     <div id="spyFloorRow" class="cfg-row" style="opacity:.4;pointer-events:none"><span>SPY 下限 (%)</span><input type="number" id="momSpyFloorPct" value="30" min="0" max="80" style="width:60px"></div>
-    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.6;background:var(--surface2);padding:4px 7px;border-radius:3px">MOM 組合中永遠保留 N% SPY，剩餘比例由動能分配</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.6;background:var(--surface2);padding:4px 7px;border-radius:3px">
+      MOM 組合中永遠保留 N% SPY，剩餘比例由動能分配
+    </div>
     <div class="toggle-row"><span>③ 避險替代模式</span><label class="tog"><input type="checkbox" id="momDefenseMode" onchange="toggleDefenseMode()"><span class="tog-sl"></span></label></div>
     <div id="defenseModeRows" style="opacity:.4;pointer-events:none">
       <div class="cfg-row"><span>切換門檻（盾牌 ≥ 時持 SPY）</span><input type="number" id="momDefenseThresh" value="50" min="20" max="80" style="width:60px"></div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;line-height:1.6;background:var(--surface2);padding:4px 7px;border-radius:3px">盾牌強（≥門檻）→ 持 SPY 100%<br>盾牌弱（&lt;門檻）→ 切換 MOM 輪動</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;line-height:1.6;background:var(--surface2);padding:4px 7px;border-radius:3px">
+        盾牌強（≥門檻）→ 持 SPY 100%<br>盾牌弱（&lt;門檻）→ 切換 MOM 輪動
+      </div>
     </div>
     <div style="font-size:10px;color:var(--teal);padding:3px 0">需先載入 Shield Database</div>
   </div>
@@ -361,20 +440,37 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   </div>
 </div>
 <div class="step-block" style="border-color:var(--teal)">
-  <div class="step-header" style="background:var(--teal-dim)"><span class="step-num snm">1</span><div><div class="step-title" style="color:var(--teal)">抓取 ETF 月頻歷史資料</div><div class="step-sub">使用現有 Proxy，抓取所有候選資產的月頻全部歷史（range=max）</div></div></div>
+  <div class="step-header" style="background:var(--teal-dim)">
+    <span class="step-num snm">1</span>
+    <div><div class="step-title" style="color:var(--teal)">抓取 ETF 月頻歷史資料</div>
+    <div class="step-sub">使用現有 Proxy，抓取所有候選資產的月頻全部歷史（range=max）</div></div>
+  </div>
   <div class="step-body">
     <div id="momAssetStatus" class="mom-status-bar"></div>
     <button class="btn-teal" onclick="fetchMomData()">🌐 抓取 ETF 月頻資料</button>
     <div id="momFetchLog" style="font-size:12px;color:var(--muted);font-family:monospace;margin-top:8px;min-height:16px"></div>
-    <div id="momFetchProgress" class="hidden" style="margin-top:8px"><div class="progress-bar-wrap"><div class="progress-bar-fill" id="momProgressFill" style="width:0%"></div></div><div id="momProgressText" style="font-size:11px;color:var(--muted);margin-top:4px"></div></div>
+    <div id="momFetchProgress" class="hidden" style="margin-top:8px">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="momProgressFill" style="width:0%"></div></div>
+      <div id="momProgressText" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+    </div>
   </div>
 </div>
 <div class="step-block" style="border-color:var(--teal)">
-  <div class="step-header" style="background:var(--teal-dim)"><span class="step-num snm">2</span><div><div class="step-title" style="color:var(--teal)">執行動能輪動回測</div><div class="step-sub">月頻換倉 · 遞減加權 · 與 A/B/C/D 同框比較</div></div></div>
+  <div class="step-header" style="background:var(--teal-dim)">
+    <span class="step-num snm">2</span>
+    <div><div class="step-title" style="color:var(--teal)">執行動能輪動回測</div>
+    <div class="step-sub">月頻換倉 · 遞減加權 · 與 A/B/C/D 同框比較</div></div>
+  </div>
   <div class="step-body">
     <div class="grid2" style="margin-bottom:10px">
-      <div class="field"><label>回測起始（YYYY-MM）</label><input type="text" id="momStart" value="" placeholder="留空=最早可用日" style="font-family:monospace"></div>
-      <div class="field"><label>回測結束（YYYY-MM）</label><input type="text" id="momEnd" value="" placeholder="留空=最新資料" style="font-family:monospace"></div>
+      <div class="field">
+        <label>回測起始（YYYY-MM）</label>
+        <input type="text" id="momStart" value="" placeholder="留空=最早可用日" style="font-family:monospace">
+      </div>
+      <div class="field">
+        <label>回測結束（YYYY-MM）</label>
+        <input type="text" id="momEnd" value="" placeholder="留空=最新資料" style="font-family:monospace">
+      </div>
     </div>
     <button class="btn-teal" onclick="runMomBacktest()" style="margin-bottom:8px">▶ 執行動能輪動回測</button>
     <div id="momBacktestLog" style="font-size:12px;color:var(--muted);font-family:monospace;min-height:16px"></div>
@@ -382,23 +478,68 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 </div>
 <div id="momSignalSection" class="hidden">
   <div class="mom-signal-card">
-    <div class="mom-signal-title">📡 V9.5 即時信號<span style="font-size:10px;font-weight:400;color:var(--muted)"> 分數 = 0.5×z₁₂+0.3×z₆+0.2×z₃ ｜ TS = R₁₂&gt;現金+緩衝 ｜ CS = 分數&gt;候選池均值</span></div>
-    <div style="display:grid;grid-template-columns:42px 54px 50px 1fr 26px 26px 60px;gap:0;font-size:10px;color:var(--dim);padding:0 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px"><span>代碼</span><span>綜合分數</span><span>R₁₂</span><span></span><span style="text-align:center">TS</span><span style="text-align:center">CS</span><span style="text-align:right">配重</span></div>
+    <div class="mom-signal-title">📡 V9.5 即時信號
+      <span style="font-size:10px;font-weight:400;color:var(--muted)">
+        分數 = 0.5×z₁₂+0.3×z₆+0.2×z₃ &nbsp;｜&nbsp; TS = R₁₂&gt;現金+緩衝 &nbsp;｜&nbsp; CS = 分數&gt;候選池均值
+      </span>
+    </div>
+    <div style="display:grid;grid-template-columns:42px 54px 50px 1fr 26px 26px 60px;gap:0;font-size:10px;color:var(--dim);padding:0 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px">
+      <span>代碼</span><span>綜合分數</span><span>R₁₂</span><span></span><span style="text-align:center">TS</span><span style="text-align:center">CS</span><span style="text-align:right">配重</span>
+    </div>
     <div id="momSignalRows"></div>
-    <div style="margin-top:10px;font-size:11px;color:var(--muted)">現金利率（DGS2）：<span id="momCashRateDisplay" style="color:var(--green);font-family:monospace;font-weight:700"></span> ｜ <span id="momMuDisplay" style="color:var(--accent);font-family:monospace;font-size:11px"></span></div>
-    <div style="margin-top:6px;font-size:12px;font-weight:700">建議持倉：<span id="momRecommendHoldings"></span></div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)">
+      現金利率（DGS2）：<span id="momCashRateDisplay" style="color:var(--green);font-family:monospace;font-weight:700"></span>
+      &nbsp;｜&nbsp; <span id="momMuDisplay" style="color:var(--accent);font-family:monospace;font-size:11px"></span>
+    </div>
+    <div style="margin-top:6px;font-size:12px;font-weight:700">
+      建議持倉：<span id="momRecommendHoldings"></span>
+    </div>
   </div>
 </div>
 <div id="momResultSection" class="hidden">
   <div class="metrics-grid" id="momMetricsGrid"></div>
-  <div class="chart-wrap"><div class="chart-title">動能輪動 NAV（月頻，對數刻度）</div><canvas id="momNavChart" height="300"></canvas></div>
-  <div class="chart-wrap"><div class="chart-title">最大回撤</div><canvas id="momDdChart" height="160"></canvas></div>
-  <div style="font-size:13px;font-weight:700;color:var(--teal);margin:16px 0 8px;padding:6px 0;border-bottom:1px solid var(--border)">📋 交易明細</div>
-  <div class="table-wrap"><table><thead><tr><th>進場月</th><th>出場月</th><th style="color:var(--teal)">標的</th><th>配重</th><th>進場價</th><th>出場價</th><th style="color:var(--accent)">持倉報酬</th><th style="color:var(--teal)">貢獻</th><th>備注</th></tr></thead><tbody id="momTradeBody"></tbody></table></div>
-  <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:8px;padding:6px 0;border-bottom:1px solid var(--border)">📅 每月換倉紀錄</div>
-  <div class="table-wrap"><table><thead><tr><th>換倉月</th><th style="color:var(--teal)">持倉</th><th style="color:var(--yellow)">盾牌</th><th>模式</th><th>TS候選</th><th>門檻</th><th style="color:var(--accent)">月報酬</th><th style="color:var(--teal)">MOM 淨值</th><th>SPY 淨值</th><th style="color:var(--yellow)">超額</th></tr></thead><tbody id="momLogBody"></tbody></table></div>
+  <div class="chart-wrap">
+    <div class="chart-title">動能輪動 NAV（月頻，對數刻度）</div>
+    <canvas id="momNavChart" height="300"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">最大回撤</div>
+    <canvas id="momDdChart" height="160"></canvas>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--teal);margin:16px 0 8px;padding:6px 0;border-bottom:1px solid var(--border)">
+    📋 交易明細（每筆持倉進出紀錄）
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>進場月</th><th>出場月</th><th style="color:var(--teal)">標的</th>
+        <th>配重</th><th>進場價</th><th>出場價</th>
+        <th style="color:var(--accent)">持倉報酬</th><th style="color:var(--teal)">貢獻（對組合）</th><th>備注</th>
+      </tr></thead>
+      <tbody id="momTradeBody"></tbody>
+    </table>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+    📅 每月換倉紀錄
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>換倉月</th><th style="color:var(--teal)">持倉（比例加權）</th>
+        <th style="color:var(--yellow)">盾牌</th><th>模式</th>
+        <th>TS候選</th><th>門檻</th>
+        <th style="color:var(--accent)">月報酬</th>
+        <th style="color:var(--teal)">MOM 淨值</th>
+        <th>SPY 淨值</th><th style="color:var(--yellow)">超額</th>
+      </tr></thead>
+      <tbody id="momLogBody"></tbody>
+    </table>
+  </div>
 </div>
 </div>
+
+<!-- ══ 歷程 ══ -->
+
 <div class="panel" id="panel-logs">
   <div class="log-toolbar">
     <div class="log-filter-group">
@@ -413,17 +554,34 @@ td{padding:9px;border-bottom:1px solid var(--border)}
       <button class="btn-outline" style="width:auto;padding:6px 14px;font-size:12px" onclick="downloadLogCSV()">⬇ 下載歷程 CSV</button>
     </div>
   </div>
-  <div class="table-wrap"><table><thead><tr><th>日期</th><th>引擎</th><th>狀態轉換</th><th>大盤點位</th><th>當日分數</th><th>前日分數</th><th>連跌天數</th><th style="color:var(--blue)">加碼損益</th></tr></thead><tbody id="historyBody"><tr><td colspan="8" style="text-align:center;color:var(--muted)">請先執行回測推演</td></tr></tbody></table></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>日期</th><th>引擎</th><th>狀態轉換</th>
+        <th>大盤點位</th><th>當日分數</th><th>前日分數</th><th>連跌天數</th>
+        <th style="color:var(--blue)">加碼損益</th>
+      </tr></thead>
+      <tbody id="historyBody">
+        <tr><td colspan="8" style="text-align:center;color:var(--muted)">請先執行回測推演</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 </div>
+
 <script>
 'use strict';
 window.onerror=(m,u,l)=>{ alert('⚠️ 錯誤: '+m+'\n行: '+l); return false; };
+
+// ════ 全域狀態 ════
 let DB=[], BT_RESULT=null, charts={}, logFilter='ALL';
 let MOM_PRICES={}, MOM_RESULT=null, MOM_CHART={};
 let AUTO_FETCHED=false;
+
+// ════ localStorage 快取機制 ════
 const LS_KEY_DB='shield_DB', LS_KEY_PRICES='shield_MOM_PRICES';
 const LS_KEY_UPDATED='shield_lastUpdated', LS_KEY_ASSET='shield_assetDefs';
+
 function saveToStorage(){
   try{
     localStorage.setItem(LS_KEY_DB,JSON.stringify(DB));
@@ -432,27 +590,50 @@ function saveToStorage(){
     const assetState=MOM_ASSET_DEFS.map(a=>({ticker:a.ticker,enabled:a.enabled}));
     localStorage.setItem(LS_KEY_ASSET,JSON.stringify(assetState));
     updateStorageBadge();
-  }catch(e){ console.warn('localStorage 儲存失敗：',e.message); $('storageBadge').textContent='💾 儲存失敗'; $('storageBadge').style.color='var(--red)'; }
+  }catch(e){
+    console.warn('localStorage 儲存失敗：',e.message);
+    $('storageBadge').textContent='💾 儲存失敗（容量不足）';
+    $('storageBadge').style.color='var(--red)';
+  }
 }
+
 function loadFromStorage(){
   try{
-    const rawDB=localStorage.getItem(LS_KEY_DB); if(!rawDB) return false;
-    DB=JSON.parse(rawDB);
-    const rawPrices=localStorage.getItem(LS_KEY_PRICES); if(rawPrices) MOM_PRICES=JSON.parse(rawPrices);
+    const rawDB=localStorage.getItem(LS_KEY_DB);
+    const rawPrices=localStorage.getItem(LS_KEY_PRICES);
     const rawAsset=localStorage.getItem(LS_KEY_ASSET);
-    if(rawAsset){ const states=JSON.parse(rawAsset); states.forEach(s=>{ const def=MOM_ASSET_DEFS.find(a=>a.ticker===s.ticker); if(def) def.enabled=s.enabled; }); }
-    sortAndFill(); updateMomStatusBar();
     const updated=localStorage.getItem(LS_KEY_UPDATED);
-    if(updated){ const dt=new Date(updated); $('dataSourceBadge').textContent=`● 快取 (${DB.length}筆)`; $('dataSourceBadge').style.color='var(--green)'; updateStorageBadge(dt); }
+    if(!rawDB) return false;
+    DB=JSON.parse(rawDB);
+    if(rawPrices) MOM_PRICES=JSON.parse(rawPrices);
+    if(rawAsset){
+      const states=JSON.parse(rawAsset);
+      states.forEach(s=>{
+        const def=MOM_ASSET_DEFS.find(a=>a.ticker===s.ticker);
+        if(def) def.enabled=s.enabled;
+      });
+    }
+    sortAndFill(); updateMomStatusBar();
+    if(updated){
+      const dt=new Date(updated);
+      const b=$('dataSourceBadge');
+      b.textContent=`● 快取 (${DB.length}筆)`;
+      b.style.color='var(--green)';
+      updateStorageBadge(dt);
+    }
     return true;
   }catch(e){ console.warn('localStorage 載入失敗：',e.message); return false; }
 }
+
 function updateStorageBadge(dt){
   const badge=$('storageBadge'); if(!badge) return;
   const d=dt||new Date(localStorage.getItem(LS_KEY_UPDATED)||Date.now());
-  badge.textContent=`💾 ${d.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})} ${d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}（${DB.length}筆）`;
+  const dateStr=d.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'});
+  const timeStr=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+  badge.textContent=`💾 ${dateStr} ${timeStr}（${DB.length}筆）`;
   badge.style.color='var(--green)';
 }
+
 function clearStorage(){
   if(!confirm('確定要清除所有 localStorage 快取？')) return;
   [LS_KEY_DB,LS_KEY_PRICES,LS_KEY_UPDATED,LS_KEY_ASSET].forEach(k=>localStorage.removeItem(k));
@@ -464,85 +645,166 @@ function clearStorage(){
   if(area) area.classList.remove('hidden'); if(lock) lock.classList.add('hidden');
   alert('快取已清除。請執行「完整抓取」或上傳 CSV。');
 }
+
+// ════ 動能資產池 ════
 const MOM_ASSET_DEFS=[
-  {ticker:'SPY',name:'美國大型股',enabled:true,group:'股票'},{ticker:'QQQ',name:'科技成長',enabled:true,group:'股票'},
-  {ticker:'IWM',name:'美國小型股',enabled:false,group:'股票'},{ticker:'VEU',name:'全球ex-US',enabled:true,group:'國際'},
-  {ticker:'EFA',name:'已開發國際',enabled:false,group:'國際'},{ticker:'EEM',name:'新興市場',enabled:false,group:'國際'},
-  {ticker:'TLT',name:'長債20Y',enabled:true,group:'債券'},{ticker:'IEF',name:'中債7Y',enabled:false,group:'債券'},
-  {ticker:'GLD',name:'黃金',enabled:true,group:'實物'},{ticker:'VNQ',name:'REIT',enabled:false,group:'實物'},
+  {ticker:'SPY',name:'美國大型股',enabled:true,group:'股票'},
+  {ticker:'QQQ',name:'科技成長',enabled:true,group:'股票'},
+  {ticker:'IWM',name:'美國小型股',enabled:false,group:'股票'},
+  {ticker:'VEU',name:'全球ex-US',enabled:true,group:'國際'},
+  {ticker:'EFA',name:'已開發國際',enabled:false,group:'國際'},
+  {ticker:'EEM',name:'新興市場',enabled:false,group:'國際'},
+  {ticker:'TLT',name:'長債20Y',enabled:true,group:'債券'},
+  {ticker:'IEF',name:'中債7Y',enabled:false,group:'債券'},
+  {ticker:'GLD',name:'黃金',enabled:true,group:'實物'},
+  {ticker:'VNQ',name:'REIT',enabled:false,group:'實物'},
   {ticker:'GSG',name:'商品指數',enabled:false,group:'實物'},
 ];
 const MOM_CASH_TICKER='BIL';
+
 const lerp=(x,x0,x1,y0,y1)=>y0+(y1-y0)*Math.max(0,Math.min(1,(x-x0)/(x1-x0)));
 const $=id=>document.getElementById(id);
 const gv=id=>parseFloat($(id).value)||0;
 const gc=id=>$(id).checked;
 const setLog=(msg,ok)=>{ const e=$('fetchLog'); if(!e) return; e.textContent=msg; e.style.color=ok===true?'#00e5a0':ok===false?'#ff4d6d':'#6b7a99'; };
-function lockCsvUpload(){ AUTO_FETCHED=true; const area=$('csvUploadArea'),lock=$('csvLockMsg'); if(area) area.classList.add('hidden'); if(lock) lock.classList.remove('hidden'); }
+
+// ════ 初始化 ════
+function lockCsvUpload(){
+  AUTO_FETCHED=true;
+  const area=$('csvUploadArea'), lock=$('csvLockMsg');
+  if(area) area.classList.add('hidden'); if(lock) lock.classList.remove('hidden');
+}
+
 window.addEventListener('DOMContentLoaded',()=>{
   $('dbDate').value=new Date().toISOString().slice(0,10);
   checkWeekend(); updateStrkInfo(); initAssetChips();
   const loaded=loadFromStorage();
   if(loaded){
-    const updated=localStorage.getItem(LS_KEY_UPDATED); const dt=updated?new Date(updated):null;
+    const updated=localStorage.getItem(LS_KEY_UPDATED);
+    const dt=updated?new Date(updated):null;
     const daysSince=dt?Math.floor((Date.now()-dt.getTime())/86400000):99;
     if(daysSince>=1) setLog(`💾 已載入快取（${DB.length}筆），上次更新 ${daysSince} 天前。建議執行「⚡ 每日快速更新」。`,null);
     else setLog(`💾 已載入今日快取（${DB.length}筆）。`,true);
-  } else { $('storageBadge').textContent='💾 無快取'; $('storageBadge').style.color='var(--muted)'; setLog('尚無快取資料，請執行「🔄 完整抓取」或上傳 CSV。',null); }
+  } else {
+    $('storageBadge').textContent='💾 無快取'; $('storageBadge').style.color='var(--muted)';
+    setLog('尚無快取資料，請執行「🔄 完整抓取」或上傳 CSV。',null);
+  }
 });
+
 function initAssetChips(){
-  const wrap=$('assetChips'); const groups={};
+  const wrap=$('assetChips');
+  const groups={};
   MOM_ASSET_DEFS.forEach(a=>{ if(!groups[a.group]) groups[a.group]=[]; groups[a.group].push(a); });
   wrap.innerHTML=Object.entries(groups).map(([g,assets])=>
     `<div style="font-size:9px;color:var(--dim);text-transform:uppercase;grid-column:1/-1;margin-top:4px;margin-bottom:1px">${g}</div>`+
     assets.map(a=>`<div class="asset-chip ${a.enabled?'enabled':''}" id="chip_${a.ticker}" onclick="toggleAsset('${a.ticker}')"><span>${a.ticker}</span><span style="font-size:9px;color:var(--muted)">${a.name.slice(0,5)}</span></div>`).join('')
-  ).join('')+`<div style="font-size:9px;color:var(--dim);text-transform:uppercase;grid-column:1/-1;margin-top:4px;margin-bottom:1px">現金</div><div class="asset-chip cash">BIL <span style="font-size:9px">停泊</span></div>`;
+  ).join('')+
+  `<div style="font-size:9px;color:var(--dim);text-transform:uppercase;grid-column:1/-1;margin-top:4px;margin-bottom:1px">現金</div>
+   <div class="asset-chip cash">BIL <span style="font-size:9px">停泊</span></div>`;
   updateMomStatusBar();
 }
-function toggleAsset(ticker){ const idx=MOM_ASSET_DEFS.findIndex(a=>a.ticker===ticker); if(idx<0) return; MOM_ASSET_DEFS[idx].enabled=!MOM_ASSET_DEFS[idx].enabled; $('chip_'+ticker).classList.toggle('enabled',MOM_ASSET_DEFS[idx].enabled); updateMomStatusBar(); }
-function updateMomStatusBar(){
-  const wrap=$('momAssetStatus'); const allTickers=[...MOM_ASSET_DEFS.map(a=>a.ticker),MOM_CASH_TICKER];
-  wrap.innerHTML=allTickers.map(t=>{ const prices=MOM_PRICES[t],hasData=prices&&prices.length>0; const enabled=t===MOM_CASH_TICKER||MOM_ASSET_DEFS.find(a=>a.ticker===t)?.enabled; if(!enabled) return ''; const cls=!prices?'mas-pending':hasData?'mas-ok':'mas-fail'; return `<span class="mom-asset-status ${cls}">${t} ${hasData?prices.length+'m':'--'}</span>`; }).join('');
+
+function toggleAsset(ticker){
+  const idx=MOM_ASSET_DEFS.findIndex(a=>a.ticker===ticker); if(idx<0) return;
+  MOM_ASSET_DEFS[idx].enabled=!MOM_ASSET_DEFS[idx].enabled;
+  $('chip_'+ticker).classList.toggle('enabled',MOM_ASSET_DEFS[idx].enabled);
+  updateMomStatusBar();
 }
+
+function updateMomStatusBar(){
+  const wrap=$('momAssetStatus');
+  const allTickers=[...MOM_ASSET_DEFS.map(a=>a.ticker),MOM_CASH_TICKER];
+  wrap.innerHTML=allTickers.map(t=>{
+    const prices=MOM_PRICES[t], hasData=prices&&prices.length>0;
+    const enabled=t===MOM_CASH_TICKER||MOM_ASSET_DEFS.find(a=>a.ticker===t)?.enabled;
+    if(!enabled) return '';
+    const cls=!prices?'mas-pending':hasData?'mas-ok':'mas-fail';
+    return `<span class="mom-asset-status ${cls}">${t} ${hasData?prices.length+'m':'--'}</span>`;
+  }).join('');
+}
+
+// ════ DB 工具 ════
 function sortAndFill(){
   DB.sort((a,b)=>a.d.localeCompare(b.d));
   let last={sp:5000,ew:5000,vix:18,hy:3.5,tips:1.5,cape:30,y10:4.0,y2:3.8};
-  DB.forEach(r=>{ ['sp','ew','vix','hy','tips','cape','y10','y2'].forEach(k=>{ if(r[k]==null||isNaN(r[k])) r[k]=last[k]; else last[k]=r[k]; }); });
-  fixEWDiscontinuity(); updateStatus();
+  DB.forEach(r=>{ ['sp','ew','vix','hy','tips','cape','y10','y2'].forEach(k=>{
+    if(r[k]==null||isNaN(r[k])) r[k]=last[k]; else last[k]=r[k];
+  });});
+  fixEWDiscontinuity(); // ← EW 斷層修復
+  updateStatus();
 }
+
+// ── EW/SP 比率系列斷層自動修復 ──
+// EW 僅用於計算 EW/SP 比率（zb、spewRelPerf），
+// 因此只要比率在斷層處連續，絕對數值不影響策略邏輯。
+// 典型案例：2003-04（EW=SP）→ 2003-05（EW=RSP ETF），ratio 從 1.000 驟降至 0.311
 function fixEWDiscontinuity(){
   if(DB.length<2) return;
   for(let i=1;i<DB.length;i++){
-    const sp_p=DB[i-1].sp,ew_p=DB[i-1].ew,sp_c=DB[i].sp,ew_c=DB[i].ew;
+    const sp_p=DB[i-1].sp, ew_p=DB[i-1].ew;
+    const sp_c=DB[i].sp,   ew_c=DB[i].ew;
     if(!sp_p||!sp_c||!ew_p||!ew_c) continue;
-    const r_p=ew_p/sp_p,r_c=ew_c/sp_c; if(r_p<=0) continue;
+    const r_p=ew_p/sp_p, r_c=ew_c/sp_c;
+    if(r_p<=0) continue;
     const jump=r_c/r_p;
-    if(jump>2.0||jump<0.5){ const scale=jump; for(let j=0;j<i;j++) DB[j].ew=+(DB[j].ew*scale).toFixed(6); }
+    // 比率跳躍超過 2 倍或低於 0.5 倍 → 判定為系列斷層
+    if(jump>2.0||jump<0.5){
+      const scale=jump;
+      for(let j=0;j<i;j++){
+        DB[j].ew=+(DB[j].ew*scale).toFixed(6);
+      }
+      console.log(`[EW修復] ${DB[i-1].d}→${DB[i].d}: ratio ${r_p.toFixed(4)}→${r_c.toFixed(4)}, 前${i}筆 ×${scale.toFixed(4)}`);
+    }
   }
 }
+
 function updateStatus(){
   $('dbCount').textContent=DB.length+' 筆';
   $('dbRange').textContent=DB.length>0?DB[0].d+' → '+DB[DB.length-1].d:'--';
   if(DB.length>0){
     const l=DB[DB.length-1];
     $('dbDate').value=new Date().toISOString().slice(0,10);
-    $('dbSP').value=l.sp.toFixed(2); $('dbEW').value=l.ew.toFixed(2); $('dbVIX').value=l.vix.toFixed(2);
-    $('dbHY').value=l.hy.toFixed(4); $('dbTIPS').value=l.tips.toFixed(2); $('dbY10').value=l.y10.toFixed(2); $('dbY2').value=l.y2.toFixed(2); $('dbCAPE').value='';
-    const curStart=$('cpStart').value,curEnd=$('cpEnd').value;
+    $('dbSP').value=l.sp.toFixed(2); $('dbEW').value=l.ew.toFixed(2);
+    $('dbVIX').value=l.vix.toFixed(2); $('dbHY').value=l.hy.toFixed(4);
+    $('dbTIPS').value=l.tips.toFixed(2); $('dbY10').value=l.y10.toFixed(2); $('dbY2').value=l.y2.toFixed(2);
+    $('dbCAPE').value='';
+    // ★ 只有當 cpStart 比 DB 最早日還晚、或 cpEnd 比 DB 最新日還早時才自動修正
+    // 避免「DB 有 23 年資料但 cpStart 被覆寫成近 1 年」造成 CAGR 爆炸
+    const curStart=$('cpStart').value, curEnd=$('cpEnd').value;
     if(!curStart||curStart<DB[0].d) $('cpStart').value=DB[0].d;
     if(!curEnd||curEnd>l.d) $('cpEnd').value=l.d;
   }
 }
-function checkWeekend(){ const d=$('dbDate').value; if(!d){ $('weekendWarn').style.display='none'; return; } const day=new Date(d+'T12:00:00').getDay(); const w=$('weekendWarn'); if(day===0||day===6){ w.textContent=`⚠ ${d} 是週${day===6?'六':'日'}（非交易日）`; w.style.display='block'; } else w.style.display='none'; }
+
+function checkWeekend(){
+  const d=$('dbDate').value; if(!d){ $('weekendWarn').style.display='none'; return; }
+  const day=new Date(d+'T12:00:00').getDay();
+  const w=$('weekendWarn');
+  if(day===0||day===6){ w.textContent=`⚠ ${d} 是週${day===6?'六':'日'}（非交易日）`; w.style.display='block'; }
+  else w.style.display='none';
+}
+
 function toggleVixPB(){ const pb=gc('vixPullback'); $('cpVixPB').disabled=!pb; $('cpVixPB').style.opacity=pb?'1':'0.4'; }
-function toggleSpyFloor(){ const on=gc('momSpyFloor'); const row=$('spyFloorRow'); if(!row) return; row.style.opacity=on?'1':'0.4'; row.style.pointerEvents=on?'auto':'none'; }
-function toggleDefenseMode(){ const on=gc('momDefenseMode'); const rows=$('defenseModeRows'); if(!rows) return; rows.style.opacity=on?'1':'0.4'; rows.style.pointerEvents=on?'auto':'none'; }
+function toggleSpyFloor(){
+  const on=gc('momSpyFloor');
+  const row=$('spyFloorRow'); if(!row) return;
+  row.style.opacity=on?'1':'0.4'; row.style.pointerEvents=on?'auto':'none';
+}
+function toggleDefenseMode(){
+  const on=gc('momDefenseMode');
+  const rows=$('defenseModeRows'); if(!rows) return;
+  rows.style.opacity=on?'1':'0.4'; rows.style.pointerEvents=on?'auto':'none';
+}
+
 function updateStrkInfo(){
-  const active=[]; if(gc('useStrkRsi')) active.push('①'); if(gc('useStrkVix')) active.push('②'); if(gc('useStrkBias')) active.push('③'); if(gc('useStrkEWR')) active.push('④');
+  const active=[];
+  if(gc('useStrkRsi')) active.push('①'); if(gc('useStrkVix')) active.push('②');
+  if(gc('useStrkBias')) active.push('③'); if(gc('useStrkEWR')) active.push('④');
   const cnt=active.length||1; $('strkEnabledCount').textContent=cnt;
   const n=Math.min(Math.max(1,parseInt($('cpStrkN').value)||2),cnt);
   $('strkInfo').textContent=`已啟用: ${active.join('')||'無'} | 需達 ${n} / ${cnt} 條件觸發短打`;
 }
+
 function loadCSV(event){
   if(AUTO_FETCHED){ alert('⚠ 已使用自動抓取，CSV 上傳已停用。'); event.target.value=''; return; }
   const file=event.target.files[0]; if(!file) return;
@@ -550,154 +812,302 @@ function loadCSV(event){
   reader.onload=e=>{
     try{
       const lines=e.target.result.split('\n').filter(l=>l.trim());
-      const headers=lines[0].split(',').map(h=>h.trim().toUpperCase()); const gi=n=>headers.indexOf(n);
-      const idx={d:gi('DATE'),sp:gi('SP500'),ew:gi('SP500EW')>-1?gi('SP500EW'):gi('EW'),hy:gi('HY_SPREAD'),tips:gi('TIPS_10Y'),vix:gi('VIX'),cape:gi('CAPE'),y10:gi('DGS10'),y2:gi('DGS2')};
+      const headers=lines[0].split(',').map(h=>h.trim().toUpperCase());
+      const gi=n=>headers.indexOf(n);
+      const idx={d:gi('DATE'),sp:gi('SP500'),ew:gi('SP500EW')>-1?gi('SP500EW'):gi('EW'),
+        hy:gi('HY_SPREAD'),tips:gi('TIPS_10Y'),vix:gi('VIX'),cape:gi('CAPE'),y10:gi('DGS10'),y2:gi('DGS2')};
       if(idx.d<0||idx.sp<0){alert('找不到 DATE 或 SP500 欄位！');return;}
       const rows=[];
       for(let i=1;i<lines.length;i++){
         const c=lines[i].split(','); if(c.length<4) continue;
         const pf=k=>idx[k]>-1?parseFloat(c[idx[k]]):NaN;
-        rows.push({d:c[idx.d].trim(),sp:pf('sp'),ew:idx.ew>-1?pf('ew'):pf('sp'),hy:pf('hy'),tips:pf('tips'),vix:pf('vix'),cape:pf('cape'),y10:pf('y10'),y2:pf('y2')});
+        rows.push({d:c[idx.d].trim(),sp:pf('sp'),ew:idx.ew>-1?pf('ew'):pf('sp'),
+          hy:pf('hy'),tips:pf('tips'),vix:pf('vix'),cape:pf('cape'),y10:pf('y10'),y2:pf('y2')});
       }
-      rows.forEach(r=>{ const ei=DB.findIndex(x=>x.d===r.d); if(ei>-1){Object.entries(r).forEach(([k,v])=>{if(k!=='d'&&!isNaN(v))DB[ei][k]=v;});}else DB.push(r); });
-      sortAndFill(); $('csvStatus').textContent='✅ 載入 '+rows.length+' 筆，共 '+DB.length+' 筆';
-      const b=$('dataSourceBadge'); b.textContent='● CSV ('+DB.length+' 筆)'; b.style.color='var(--green)'; saveToStorage();
+      rows.forEach(r=>{
+        const ei=DB.findIndex(x=>x.d===r.d);
+        if(ei>-1){Object.entries(r).forEach(([k,v])=>{if(k!=='d'&&!isNaN(v))DB[ei][k]=v;});}
+        else DB.push(r);
+      });
+      sortAndFill();
+      $('csvStatus').textContent='✅ 載入 '+rows.length+' 筆，共 '+DB.length+' 筆';
+      const b=$('dataSourceBadge'); b.textContent='● CSV ('+DB.length+' 筆)'; b.style.color='var(--green)';
+      saveToStorage();
     }catch(err){alert('CSV 解析錯誤：'+err.message);}
   };
   reader.readAsText(file);
 }
-function applyCapeMonthly(capeByMonth){ let changed=0; DB.forEach(r=>{ const m=r.d.slice(0,7); if(capeByMonth[m]!==undefined){ const newCape=+capeByMonth[m].toFixed(2); if(Math.abs((r.cape||0)-newCape)>0.01){ r.cape=newCape; changed++; } } }); return changed; }
-function applyManualCape(){ const val=parseFloat($('apiCape').value); if(isNaN(val)||val<=0){alert('請輸入有效的 CAPE 值');return;} const curMonth=new Date().toISOString().slice(0,7); const changed=applyCapeMonthly({[curMonth]:val}); if(changed>0){ sortAndFill(); saveToStorage(); alert(`✅ 已將 ${curMonth} 的 ${changed} 筆資料更新為 CAPE=${val}`); } else alert(`目前資料庫中無 ${curMonth} 的資料，或 CAPE 值已是 ${val}。`); }
+
+function applyCapeMonthly(capeByMonth){
+  let changed=0;
+  DB.forEach(r=>{
+    const m=r.d.slice(0,7);
+    if(capeByMonth[m]!==undefined){
+      const newCape=+capeByMonth[m].toFixed(2);
+      if(Math.abs((r.cape||0)-newCape)>0.01){ r.cape=newCape; changed++; }
+    }
+  });
+  return changed;
+}
+
+function applyManualCape(){
+  const val=parseFloat($('apiCape').value);
+  if(isNaN(val)||val<=0){alert('請輸入有效的 CAPE 值（例如 36.5）');return;}
+  const curMonth=new Date().toISOString().slice(0,7);
+  const changed=applyCapeMonthly({[curMonth]:val});
+  if(changed>0){ sortAndFill(); saveToStorage(); alert(`✅ 已將 ${curMonth} 的 ${changed} 筆資料更新為 CAPE=${val}`); }
+  else alert(`目前資料庫中無 ${curMonth} 的資料，或 CAPE 值已是 ${val}。`);
+}
+
 function loadCapeCSV(event){
-  const file=event.target.files[0]; if(!file) return; const st=$('capeUploadStatus');
+  const file=event.target.files[0]; if(!file) return;
+  const st=$('capeUploadStatus');
   st.textContent='📂 讀取 '+file.name+'...'; st.style.color='var(--muted)';
   const reader=new FileReader();
   reader.onload=e=>{
     try{
-      const text=e.target.result.trim(); if(!text){st.textContent='❌ 檔案是空的';st.style.color='var(--red)';return;}
-      const lines=text.split(/\r?\n/).filter(l=>l.trim()); const startIdx=/^\d/.test(lines[0].split(/[,\t]/)[0].trim())?0:1;
-      const capeByDay={},capeByMonth={};let parsed=0,skipped=0;
+      const text=e.target.result.trim();
+      if(!text){st.textContent='❌ 檔案是空的';st.style.color='var(--red)';return;}
+      const lines=text.split(/\r?\n/).filter(l=>l.trim());
+      const startIdx=/^\d/.test(lines[0].split(/[,\t]/)[0].trim())?0:1;
+      const capeByDay={}, capeByMonth={};
+      let parsed=0, skipped=0;
       for(let i=startIdx;i<lines.length;i++){
-        const cols=lines[i].split(/[,\t]/).map(c=>c.trim().replace(/"/g,'')); if(cols.length<2) continue;
-        const rawDate=cols[0]; let val=NaN;
+        const cols=lines[i].split(/[,\t]/).map(c=>c.trim().replace(/"/g,''));
+        if(cols.length<2) continue;
+        const rawDate=cols[0];
+        let val=NaN;
         for(let j=1;j<cols.length;j++){const v=parseFloat(cols[j]);if(!isNaN(v)&&v>0){val=v;break;}}
         if(isNaN(val)||val<=0){skipped++;continue;}
-        if(/^\d{4}-\d{2}-\d{2}$/.test(rawDate)){capeByDay[rawDate]=val;capeByMonth[rawDate.slice(0,7)]=val;parsed++;}
-        else if(/^\d{4}-\d{2}$/.test(rawDate)){capeByMonth[rawDate]=val;parsed++;}
-        else skipped++;
+        if(/^\d{4}-\d{2}-\d{2}$/.test(rawDate)){
+          capeByDay[rawDate]=val; capeByMonth[rawDate.slice(0,7)]=val; parsed++;
+        }else if(/^\d{4}-\d{2}$/.test(rawDate)){
+          capeByMonth[rawDate]=val; parsed++;
+        }else skipped++;
       }
       if(parsed===0){st.textContent='❌ 無法解析任何資料';st.style.color='var(--red)';return;}
-      if(DB.length===0){ localStorage.setItem('shield_pendingCape',JSON.stringify(capeByMonth)); st.textContent=`⚠ DB 尚無資料，已暫存 ${parsed} 筆 CAPE。`; st.style.color='var(--yellow)'; return; }
+      if(DB.length===0){
+        localStorage.setItem('shield_pendingCape',JSON.stringify(capeByMonth));
+        st.textContent=`⚠ DB 尚無資料，已暫存 ${parsed} 筆 CAPE。執行完整抓取後會自動套用。`;
+        st.style.color='var(--yellow)'; return;
+      }
       let changed=0;
-      DB.forEach(r=>{ let newCape=capeByDay[r.d]??capeByMonth[r.d.slice(0,7)]??null; if(newCape!==null){const rounded=+newCape.toFixed(2);if(Math.abs((r.cape||0)-rounded)>0.01){r.cape=rounded;changed++;}} });
+      DB.forEach(r=>{
+        let newCape=capeByDay[r.d]??capeByMonth[r.d.slice(0,7)]??null;
+        if(newCape!==null){const rounded=+newCape.toFixed(2);if(Math.abs((r.cape||0)-rounded)>0.01){r.cape=rounded;changed++;}}
+      });
       sortAndFill(); saveToStorage(); event.target.value='';
-      st.textContent=`✅ 解析 ${parsed} 筆，更新 DB ${changed} 筆`+(skipped>0?`，跳過 ${skipped} 筆`:''); st.style.color='var(--green)';
+      st.textContent=`✅ 解析 ${parsed} 筆，更新 DB ${changed} 筆`+(skipped>0?`，跳過 ${skipped} 筆`:'');
+      st.style.color='var(--green)';
     }catch(err){st.textContent='❌ 解析錯誤：'+err.message;st.style.color='var(--red)';}
   };
-  reader.onerror=()=>{st.textContent='❌ 讀取檔案失敗';st.style.color='var(--red)';}; reader.readAsText(file,'UTF-8');
+  reader.onerror=()=>{st.textContent='❌ 讀取檔案失敗';st.style.color='var(--red)';};
+  reader.readAsText(file,'UTF-8');
 }
+
 async function fetchAndMerge(quickMode=false){
   const key=$('apiFredKey').value.trim(); let proxy=$('apiProxy').value.trim();
   if(!key){alert('請填寫 FRED API Key');return;}
   if(proxy&&!proxy.includes('url=')) proxy=proxy.endsWith('/')?proxy+'?url=':proxy+'/?url=';
   const PROXIES=[proxy,'https://api.allorigins.win/raw?url=','https://api.codetabs.com/v1/proxy?quest='].filter(Boolean);
-  $('loadingOverlay').classList.remove('hidden'); setLog(quickMode?'⚡ 每日快速更新中...':'🔄 完整抓取中（含 CAPE）...');
-  const fetchFB=async url=>{ let lastErr; for(const p of PROXIES){ try{ const res=await fetch(p+encodeURIComponent(url)); if(!res.ok) throw new Error('HTTP '+res.status); if((res.headers.get('content-type')||'').includes('text/html')&&!url.includes('multpl')) throw new Error('Proxy 回傳 HTML'); return res; }catch(e){lastErr=e;} } throw lastErr||new Error('所有 Proxy 失敗，請檢查 Proxy 設定或改用 CSV 上傳'); };
-  // ★ iOS修復：getYf 加入 query1/query2 雙端點輪詢 ★
+  $('loadingOverlay').classList.remove('hidden');
+  setLog(quickMode?'⚡ 每日快速更新中...':'🔄 完整抓取中（含 CAPE）...');
+  const fetchFB=async url=>{
+    let lastErr;
+    for(const p of PROXIES){
+      try{
+        const res=await fetch(p+encodeURIComponent(url));
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        if((res.headers.get('content-type')||'').includes('text/html')&&!url.includes('multpl')) throw new Error('Proxy 回傳 HTML');
+        return res;
+      }catch(e){lastErr=e;}
+    }
+    throw lastErr||new Error('所有 Proxy 失敗');
+  };
   const getYf=async ticker=>{
     setLog((quickMode?'⚡':'🔄')+' Yahoo: '+ticker+'...');
     $('loadingText').textContent='抓取 '+ticker;
     const range=quickMode?'1mo':'max';
-    const endpoints=[
-      'https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?range='+range+'&interval=1d',
-      'https://query2.finance.yahoo.com/v8/finance/chart/'+ticker+'?range='+range+'&interval=1d',
-    ];
-    for(const url of endpoints){
-      try{
-        const res=await fetchFB(url); const j=await res.json();
-        const chart=j?.chart?.result?.[0]; if(!chart) continue;
-        const d={}; chart.timestamp.forEach((t,i)=>{ const adj=chart.indicators?.adjclose?.[0]?.adjclose?.[i]; const cl=chart.indicators?.quote?.[0]?.close?.[i]; const val=adj??cl; if(val&&val>0) d[new Date(t*1000).toISOString().slice(0,10)]=val; });
-        if(Object.keys(d).length>5) return d;
-      }catch(e){ console.warn(ticker+' endpoint failed:',e.message); }
-    }
-    throw new Error(ticker+' 所有端點失敗，請改用 CSV 上傳');
+    const url='https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?range='+range+'&interval=1d';
+    const res=await fetchFB(url); const j=await res.json();
+    const d={},chart=j.chart.result[0];
+    chart.timestamp.forEach((t,i)=>{
+      const adj=chart.indicators?.adjclose?.[0]?.adjclose?.[i];
+      const cl=chart.indicators?.quote?.[0]?.close?.[i];
+      const val=adj??cl;
+      if(val&&val>0) d[new Date(t*1000).toISOString().slice(0,10)]=val;
+    });
+    return d;
   };
-  const getFred=async id=>{ setLog((quickMode?'⚡':'🔄')+' FRED: '+id+'...'); $('loadingText').textContent='抓取 FRED: '+id; let url='https://api.stlouisfed.org/fred/series/observations?series_id='+id+'&api_key='+key+'&file_type=json'; if(quickMode){const from=new Date(Date.now()-45*86400000).toISOString().slice(0,10);url+='&observation_start='+from;} const res=await fetchFB(url); const j=await res.json(); if(j.error_message) throw new Error('FRED: '+j.error_message); const d={};j.observations.forEach(o=>{if(o.value!=='.') d[o.date]=parseFloat(o.value);});return d; };
+  const getFred=async id=>{
+    setLog((quickMode?'⚡':'🔄')+' FRED: '+id+'...');
+    $('loadingText').textContent='抓取 FRED: '+id;
+    let url='https://api.stlouisfed.org/fred/series/observations?series_id='+id+'&api_key='+key+'&file_type=json';
+    if(quickMode){const from=new Date(Date.now()-45*86400000).toISOString().slice(0,10);url+='&observation_start='+from;}
+    const res=await fetchFB(url); const j=await res.json();
+    if(j.error_message) throw new Error('FRED: '+j.error_message);
+    const d={};j.observations.forEach(o=>{if(o.value!=='.') d[o.date]=parseFloat(o.value);});return d;
+  };
   const fetchCape=async()=>{
-    setLog('🔄 CAPE：抓取中...'); $('loadingText').textContent='抓取 CAPE 歷史...'; const capeByMonth={};
-    try{ const url='https://www.multpl.com/shiller-pe/table/by-month.json'; const res=await fetchFB(url); const text=await res.text(); let parsed; try{parsed=JSON.parse(text);}catch(e){parsed=null;} if(parsed){ const rows=parsed.data||parsed.rows||parsed; if(Array.isArray(rows)){ rows.forEach(row=>{ let dateVal,numVal; if(Array.isArray(row)){dateVal=new Date(row[0]);numVal=parseFloat(row[1]);}else if(row.date&&row.value!==undefined){dateVal=new Date(row.date);numVal=parseFloat(row.value);} if(dateVal&&!isNaN(dateVal)&&!isNaN(numVal)&&numVal>0){capeByMonth[dateVal.toISOString().slice(0,7)]=numVal;} }); } } if(Object.keys(capeByMonth).length>10){setLog(`🔄 CAPE：取得 ${Object.keys(capeByMonth).length} 個月資料`);return capeByMonth;} }catch(e){}
-    try{ const url='https://www.multpl.com/shiller-pe/table/by-month'; const res=await fetchFB(url); const html=await res.text(); const trPattern=/<tr[^>]*>([\s\S]*?)<\/tr>/gi; let trMatch; while((trMatch=trPattern.exec(html))!==null){ const inner=trMatch[1]; const tdTexts=(inner.match(/<td[^>]*>([\s\S]*?)<\/td>/gi)||[]).map(td=>td.replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim()); if(tdTexts.length>=2){ const numVal=parseFloat(tdTexts[1].replace(/,/g,'')); if(isNaN(numVal)||numVal<=0) continue; const d=new Date(tdTexts[0].replace(/\s+/g,' ').trim()); if(!isNaN(d.getTime())) capeByMonth[d.toISOString().slice(0,7)]=numVal; } } if(Object.keys(capeByMonth).length>10){setLog(`🔄 CAPE：HTML解析取得 ${Object.keys(capeByMonth).length} 個月資料`);return capeByMonth;} }catch(e){}
-    setLog('⚠ CAPE 自動抓取失敗，請手動上傳 CAPE CSV。'); return capeByMonth;
+    setLog('🔄 CAPE：抓取中...'); $('loadingText').textContent='抓取 CAPE 歷史...';
+    const capeByMonth={};
+    try{
+      const url='https://www.multpl.com/shiller-pe/table/by-month.json';
+      const res=await fetchFB(url); const text=await res.text();
+      let parsed; try{parsed=JSON.parse(text);}catch(e){parsed=null;}
+      if(parsed){
+        const rows=parsed.data||parsed.rows||parsed;
+        if(Array.isArray(rows)){
+          rows.forEach(row=>{
+            let dateVal,numVal;
+            if(Array.isArray(row)){dateVal=new Date(row[0]);numVal=parseFloat(row[1]);}
+            else if(row.date&&row.value!==undefined){dateVal=new Date(row.date);numVal=parseFloat(row.value);}
+            if(dateVal&&!isNaN(dateVal)&&!isNaN(numVal)&&numVal>0){capeByMonth[dateVal.toISOString().slice(0,7)]=numVal;}
+          });
+        }
+      }
+      if(Object.keys(capeByMonth).length>10){setLog(`🔄 CAPE：取得 ${Object.keys(capeByMonth).length} 個月資料`);return capeByMonth;}
+    }catch(e){}
+    try{
+      const url='https://www.multpl.com/shiller-pe/table/by-month';
+      const res=await fetchFB(url); const html=await res.text();
+      const trPattern=/<tr[^>]*>([\s\S]*?)<\/tr>/gi; let trMatch;
+      while((trMatch=trPattern.exec(html))!==null){
+        const inner=trMatch[1];
+        const tdTexts=(inner.match(/<td[^>]*>([\s\S]*?)<\/td>/gi)||[]).map(td=>td.replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim());
+        if(tdTexts.length>=2){
+          const numVal=parseFloat(tdTexts[1].replace(/,/g,''));
+          if(isNaN(numVal)||numVal<=0) continue;
+          const d=new Date(tdTexts[0].replace(/\s+/g,' ').trim());
+          if(!isNaN(d.getTime())) capeByMonth[d.toISOString().slice(0,7)]=numVal;
+        }
+      }
+      if(Object.keys(capeByMonth).length>10){setLog(`🔄 CAPE：HTML解析取得 ${Object.keys(capeByMonth).length} 個月資料`);return capeByMonth;}
+    }catch(e){}
+    setLog('⚠ CAPE 自動抓取失敗，請手動上傳 CAPE CSV。');
+    return capeByMonth;
   };
   try{
     const spD=await getYf('SPY'),ewD=await getYf('RSP'),vixD=await getYf('^VIX');
-    const hyD=await getFred('BAMLH0A0HYM2'),tipD=await getFred('DFII10'),y10D=await getFred('DGS10'),y2D=await getFred('DGS2');
-    let capeByMonth={}; if(!quickMode) capeByMonth=await fetchCape();
-    setLog('整併資料中...'); let added=0,updated=0,lHY=3.5,lT=1.5,l10=4.0,l2=3.8;
+    const hyD=await getFred('BAMLH0A0HYM2'),tipD=await getFred('DFII10');
+    const y10D=await getFred('DGS10'),y2D=await getFred('DGS2');
+    let capeByMonth={};
+    if(!quickMode) capeByMonth=await fetchCape();
+    setLog('整併資料中...');
+    let added=0,updated=0,lHY=3.5,lT=1.5,l10=4.0,l2=3.8;
     if(quickMode&&DB.length>0){const l=DB[DB.length-1];lHY=l.hy||lHY;lT=l.tips||lT;l10=l.y10||l10;l2=l.y2||l2;}
     Object.keys(spD).sort().forEach(d=>{
-      if(hyD[d]!==undefined)lHY=hyD[d];if(tipD[d]!==undefined)lT=tipD[d];if(y10D[d]!==undefined)l10=y10D[d];if(y2D[d]!==undefined)l2=y2D[d];
-      if(!vixD[d]) return; const m=d.slice(0,7); const capeForRow=capeByMonth[m]||null; const ei=DB.findIndex(x=>x.d===d);
-      if(ei>-1){ DB[ei].sp=+spD[d].toFixed(4);DB[ei].ew=ewD[d]?+ewD[d].toFixed(4):+spD[d].toFixed(4);DB[ei].vix=+vixD[d].toFixed(2);DB[ei].hy=+lHY.toFixed(4);DB[ei].tips=+lT.toFixed(2);DB[ei].y10=+l10.toFixed(2);DB[ei].y2=+l2.toFixed(2);if(capeForRow)DB[ei].cape=capeForRow;updated++; }
-      else{ const lastCape=DB.length>0?DB[DB.length-1].cape:30; DB.push({d,sp:+spD[d].toFixed(4),ew:ewD[d]?+ewD[d].toFixed(4):+spD[d].toFixed(4),vix:+vixD[d].toFixed(2),hy:+lHY.toFixed(4),tips:+lT.toFixed(2),cape:capeForRow||lastCape,y10:+l10.toFixed(2),y2:+l2.toFixed(2)});added++; }
+      if(hyD[d]!==undefined)lHY=hyD[d];if(tipD[d]!==undefined)lT=tipD[d];
+      if(y10D[d]!==undefined)l10=y10D[d];if(y2D[d]!==undefined)l2=y2D[d];
+      if(!vixD[d]) return;
+      const m=d.slice(0,7);
+      const capeForRow=capeByMonth[m]||null;
+      const ei=DB.findIndex(x=>x.d===d);
+      if(ei>-1){
+        DB[ei].sp=+spD[d].toFixed(4); DB[ei].ew=ewD[d]?+ewD[d].toFixed(4):+spD[d].toFixed(4);
+        DB[ei].vix=+vixD[d].toFixed(2); DB[ei].hy=+lHY.toFixed(4); DB[ei].tips=+lT.toFixed(2);
+        DB[ei].y10=+l10.toFixed(2); DB[ei].y2=+l2.toFixed(2);
+        if(capeForRow) DB[ei].cape=capeForRow; updated++;
+      }else{
+        const lastCape=DB.length>0?DB[DB.length-1].cape:30;
+        DB.push({d,sp:+spD[d].toFixed(4),ew:ewD[d]?+ewD[d].toFixed(4):+spD[d].toFixed(4),
+          vix:+vixD[d].toFixed(2),hy:+lHY.toFixed(4),tips:+lT.toFixed(2),
+          cape:capeForRow||lastCape,y10:+l10.toFixed(2),y2:+l2.toFixed(2)}); added++;
+      }
     });
-    let capeChanged=0; if(!quickMode&&Object.keys(capeByMonth).length>0) capeChanged=applyCapeMonthly(capeByMonth);
+    let capeChanged=0;
+    if(!quickMode&&Object.keys(capeByMonth).length>0) capeChanged=applyCapeMonthly(capeByMonth);
     sortAndFill();
-    const msg=`✅ ${quickMode?'快速':'完整'}更新完成！新增 ${added}，更新 ${updated}${quickMode?'':`，CAPE更新${capeChanged}筆`}。共 ${DB.length} 筆`;
-    setLog(msg,true); const b=$('dataSourceBadge'); b.textContent=`● ${quickMode?'⚡快速':'完整'}更新 (${DB.length}筆)`; b.style.color=quickMode?'var(--accent)':'var(--teal)';
+    const capeInfo=quickMode?'':`，CAPE更新${capeChanged}筆`;
+    const msg=`✅ ${quickMode?'快速':'完整'}更新完成！新增 ${added}，更新 ${updated}${capeInfo}。共 ${DB.length} 筆`;
+    setLog(msg,true);
+    const b=$('dataSourceBadge'); b.textContent=`● ${quickMode?'⚡快速':'完整'}更新 (${DB.length}筆)`; b.style.color=quickMode?'var(--accent)':'var(--teal)';
     lockCsvUpload();
     const pendingCape=localStorage.getItem('shield_pendingCape');
-    if(pendingCape){ try{ const pendingMap=JSON.parse(pendingCape); const pendingChanged=applyCapeMonthly(pendingMap); if(pendingChanged>0){setLog(`✅ 套用暫存 CAPE：更新 ${pendingChanged} 筆`);sortAndFill();} localStorage.removeItem('shield_pendingCape'); }catch(e){} }
-    saveToStorage(); if(!quickMode) alert(msg);
+    if(pendingCape){
+      try{
+        const pendingMap=JSON.parse(pendingCape);
+        const pendingChanged=applyCapeMonthly(pendingMap);
+        if(pendingChanged>0){setLog(`✅ 套用暫存 CAPE：更新 ${pendingChanged} 筆`);sortAndFill();}
+        localStorage.removeItem('shield_pendingCape');
+      }catch(e){}
+    }
+    saveToStorage();
+    if(!quickMode) alert(msg);
   }catch(err){setLog('❌ '+err.message,false);console.error(err);alert('❌ 抓取失敗：'+err.message);}
   finally{$('loadingOverlay').classList.add('hidden');}
 }
+
 function manualAdd(){
-  const d=$('dbDate').value,sp=parseFloat($('dbSP').value),ew=parseFloat($('dbEW').value);
+  const d=$('dbDate').value;
+  const sp=parseFloat($('dbSP').value),ew=parseFloat($('dbEW').value);
   const vix=parseFloat($('dbVIX').value),hy=parseFloat($('dbHY').value),tips=parseFloat($('dbTIPS').value);
   const y10=parseFloat($('dbY10').value),y2=parseFloat($('dbY2').value);
   if(!d||isNaN(sp)||isNaN(vix)||isNaN(hy)||isNaN(tips)){alert('日期、SP500、VIX、HY、TIPS 為必填！');return;}
-  const lastCAPE=DB.length>0?DB[DB.length-1].cape:30; const capeRaw=$('dbCAPE').value;
+  const lastCAPE=DB.length>0?DB[DB.length-1].cape:30;
+  const capeRaw=$('dbCAPE').value;
   const cape=capeRaw===''||isNaN(parseFloat(capeRaw))?lastCAPE:parseFloat(capeRaw);
-  const lastY10=DB.length>0?DB[DB.length-1].y10:4.0; const lastY2=DB.length>0?DB[DB.length-1].y2:3.8;
+  const lastY10=DB.length>0?DB[DB.length-1].y10:4.0;
+  const lastY2=DB.length>0?DB[DB.length-1].y2:3.8;
   const row={d,sp,ew:isNaN(ew)?sp:ew,vix,hy,tips,cape,y10:isNaN(y10)?lastY10:y10,y2:isNaN(y2)?lastY2:y2};
-  const ei=DB.findIndex(x=>x.d===d); if(ei>-1){DB[ei]=row;}else{DB.push(row);}
+  const ei=DB.findIndex(x=>x.d===d);
+  if(ei>-1){DB[ei]=row;}else{DB.push(row);}
   sortAndFill(); alert('✅ '+d+' 已'+(ei>-1?'覆蓋':'新增'));
 }
+
 function exportCSV(){
   if(DB.length===0){alert('記憶體無資料！');return;}
   const header='Date,SP500,SP500EW,HY_Spread,TIPS_10Y,VIX,CAPE,DGS10,DGS2';
-  const rows=DB.map(r=>[r.d,(r.sp||0).toFixed(4),(r.ew||0).toFixed(4),(r.hy||0).toFixed(4),(r.tips||0).toFixed(2),(r.vix||0).toFixed(2),(r.cape||30).toFixed(2),(r.y10||0).toFixed(2),(r.y2||0).toFixed(2)].join(','));
+  const rows=DB.map(r=>[r.d,(r.sp||0).toFixed(4),(r.ew||0).toFixed(4),(r.hy||0).toFixed(4),
+    (r.tips||0).toFixed(2),(r.vix||0).toFixed(2),(r.cape||30).toFixed(2),(r.y10||0).toFixed(2),(r.y2||0).toFixed(2)].join(','));
   const blob=new Blob([[header,...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Shield_Database.csv';a.style.display='none';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Shield_Database.csv';
+  a.style.display='none';document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
-function getProxies(){ let proxy=$('apiProxy').value.trim(); if(proxy&&!proxy.includes('url=')) proxy=proxy.endsWith('/')?proxy+'?url=':proxy+'/?url='; return [proxy,'https://api.allorigins.win/raw?url=','https://api.codetabs.com/v1/proxy?quest='].filter(Boolean); }
+
+// ════════════════════════════════════════
+// 動能輪動模組
+// ════════════════════════════════════════
+function getProxies(){
+  let proxy=$('apiProxy').value.trim();
+  if(proxy&&!proxy.includes('url=')) proxy=proxy.endsWith('/')?proxy+'?url=':proxy+'/?url=';
+  return [proxy,'https://api.allorigins.win/raw?url=','https://api.codetabs.com/v1/proxy?quest='].filter(Boolean);
+}
+
 async function fetchYfMonthly(ticker,proxies){
-  // ★ 雙端點輪詢 ★
-  const endpoints=[
-    'https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?range=max&interval=1mo',
-    'https://query2.finance.yahoo.com/v8/finance/chart/'+ticker+'?range=max&interval=1mo',
-  ];
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=max&interval=1mo`;
   let lastErr;
-  for(const url of endpoints){
-    for(const p of proxies){
-      try{
-        const res=await fetch(p+encodeURIComponent(url)); if(!res.ok) throw new Error('HTTP '+res.status);
-        const j=await res.json(); const chart=j?.chart?.result?.[0]; if(!chart) throw new Error('無資料');
-        const prices=[]; chart.timestamp.forEach((t,i)=>{ const close=chart.indicators?.adjclose?.[0]?.adjclose?.[i]??chart.indicators?.quote?.[0]?.close?.[i]; if(close&&close>0) prices.push({date:new Date(t*1000).toISOString().slice(0,7),close:+close.toFixed(4)}); });
-        const seen={};prices.forEach(p2=>{seen[p2.date]=p2;}); const result=Object.values(seen).sort((a,b)=>a.date.localeCompare(b.date));
-        if(result.length>5) return result;
-      }catch(e){lastErr=e;}
-    }
+  for(const p of proxies){
+    try{
+      const res=await fetch(p+encodeURIComponent(url)); if(!res.ok) throw new Error('HTTP '+res.status);
+      const j=await res.json(); const chart=j?.chart?.result?.[0]; if(!chart) throw new Error('無資料');
+      const prices=[]; chart.timestamp.forEach((t,i)=>{
+        const close=chart.indicators?.adjclose?.[0]?.adjclose?.[i]??chart.indicators?.quote?.[0]?.close?.[i];
+        if(close&&close>0) prices.push({date:new Date(t*1000).toISOString().slice(0,7),close:+close.toFixed(4)});
+      });
+      const seen={};prices.forEach(p=>{seen[p.date]=p;});
+      return Object.values(seen).sort((a,b)=>a.date.localeCompare(b.date));
+    }catch(e){lastErr=e;}
   }
   throw lastErr||new Error('抓取失敗');
 }
+
 async function fetchMomData(){
-  const proxies=getProxies(); const enabledTickers=[...MOM_ASSET_DEFS.filter(a=>a.enabled).map(a=>a.ticker),MOM_CASH_TICKER];
-  $('loadingOverlay').classList.remove('hidden'); $('momFetchProgress').classList.remove('hidden'); $('momFetchLog').textContent='開始抓取...';
-  let done=0; const results={},failed=[];
-  for(const ticker of enabledTickers){ $('loadingText').textContent=`抓取 ${ticker} 月頻資料...`; $('momProgressText').textContent=`${ticker} (${done+1}/${enabledTickers.length})`; $('momProgressFill').style.width=`${(done/enabledTickers.length)*100}%`; try{ results[ticker]=await fetchYfMonthly(ticker,proxies); }catch(e){ failed.push(ticker); results[ticker]=[]; } done++; }
-  $('momProgressFill').style.width='100%'; Object.assign(MOM_PRICES,results); updateMomStatusBar();
+  const proxies=getProxies();
+  const enabledTickers=[...MOM_ASSET_DEFS.filter(a=>a.enabled).map(a=>a.ticker),MOM_CASH_TICKER];
+  $('loadingOverlay').classList.remove('hidden'); $('momFetchProgress').classList.remove('hidden');
+  $('momFetchLog').textContent='開始抓取...';
+  let done=0; const results={}, failed=[];
+  for(const ticker of enabledTickers){
+    $('loadingText').textContent=`抓取 ${ticker} 月頻資料...`;
+    $('momProgressText').textContent=`${ticker} (${done+1}/${enabledTickers.length})`;
+    $('momProgressFill').style.width=`${(done/enabledTickers.length)*100}%`;
+    try{ results[ticker]=await fetchYfMonthly(ticker,proxies); }
+    catch(e){ failed.push(ticker); results[ticker]=[]; }
+    done++;
+  }
+  $('momProgressFill').style.width='100%';
+  Object.assign(MOM_PRICES,results); updateMomStatusBar();
   const okCount=enabledTickers.filter(t=>results[t]?.length>0).length;
   const msg=`✅ 完成 ${okCount}/${enabledTickers.length}${failed.length?'，失敗：'+failed.join(','):''}`;
   $('momFetchLog').textContent=msg; $('momFetchLog').style.color=failed.length?'var(--yellow)':'var(--green)';
@@ -706,226 +1116,712 @@ async function fetchMomData(){
 }
 
 // ★★★ 0325 F5刻度校準 ★★★
+// HY上限：8%(800bp)→6%(600bp)，分數區間：80-20→90-10
+// 依據：2010年後 HY>6% 已屬近代嚴重信用壓力（近代有效上限）
+// 方法論：校準指標刻度，非 in-sample 最佳化門檻
 function getShieldScore(dateStr){
-if(!DB.length) return 50;
-let best=DB[DB.length-1];
-for(const r of DB){if(r.d<=dateStr) best=r; else break;}
-const f1=lerp((100/(best.cape||30))-(best.tips||1.5),0,4,10,100);
-const f5=lerp((best.hy||3.5)*100,250,600,90,10);
-return f1*0.5+f5*0.5;
+  if(!DB.length) return 50;
+  let best=DB[DB.length-1];
+  for(const r of DB){if(r.d<=dateStr) best=r; else break;}
+  const f1=lerp((100/(best.cape||30))-(best.tips||1.5),0,4,10,100);
+  const f5=lerp((best.hy||3.5)*100,250,600,90,10);
+  return f1*0.5+f5*0.5;
 }
 
-function getCashRate(yyyymm){ if(!DB.length) return 0.04; const target=yyyymm+’-15’; let best=DB[DB.length-1]; for(const r of DB){if(r.d<=target) best=r; else break;} return (best.y2||4.0)/100; }
-function getMomPrice(ticker,yyyymm){ const prices=MOM_PRICES[ticker]; if(!prices||!prices.length) return null; const exact=prices.find(p=>p.date===yyyymm); if(exact) return exact.close; let best=null; for(const p of prices){if(p.date<=yyyymm) best=p; else break;} return best?.close||null; }
-function momCalcVol(ticker,months,idx,n=12){ if(idx<n+1) return null; const rets=[]; for(let i=idx-n;i<idx;i++){ const p0=getMomPrice(ticker,months[i-1]);const p1=getMomPrice(ticker,months[i]); if(p0&&p1&&p0>0) rets.push(p1/p0-1); } const minRequired=Math.max(2,Math.floor(n/2)); if(rets.length<minRequired) return null; const avg=rets.reduce((a,b)=>a+b,0)/rets.length; return Math.sqrt(rets.reduce((a,b)=>a+(b-avg)**2,0)/rets.length)*Math.sqrt(12); }
-function momCalcZ(ticker,months,idx,nPeriod){ if(idx<nPeriod) return null; const p1=getMomPrice(ticker,months[idx-1]);const p0=getMomPrice(ticker,months[idx-nPeriod]); if(!p1||!p0||p0<=0) return null; const volN=Math.min(nPeriod-1,12); const vol=momCalcVol(ticker,months,idx,volN); if(!vol||vol<=0) return null; return (p1/p0-1)/vol; }
-function momCalcScore(ticker,months,idx){ const z12=momCalcZ(ticker,months,idx,13);const z6=momCalcZ(ticker,months,idx,7);const z3=momCalcZ(ticker,months,idx,4); if(z12===null||z6===null||z3===null) return null; return 0.5*z12+0.3*z6+0.2*z3; }
-function momCalcCorr(t1,t2,months,idx,n=12){ if(idx<n+1) return 0; const r1=[],r2=[]; for(let i=idx-n;i<idx;i++){ const a0=getMomPrice(t1,months[i-1]),a1=getMomPrice(t1,months[i]),b0=getMomPrice(t2,months[i-1]),b1=getMomPrice(t2,months[i]); if(a0&&a1&&a0>0&&b0&&b1&&b0>0){r1.push(a1/a0-1);r2.push(b1/b0-1);} } if(r1.length<6) return 0; const m1=r1.reduce((a,b)=>a+b,0)/r1.length;const m2=r2.reduce((a,b)=>a+b,0)/r2.length; let num=0,d1=0,d2=0; r1.forEach((v,i)=>{num+=(v-m1)*(r2[i]-m2);d1+=(v-m1)**2;d2+=(r2[i]-m2)**2;}); return num/Math.sqrt((d1*d2)||1); }
-function momCorrThreshold(shieldScore,corrMode){ if(corrMode!==‘dynamic’) return parseFloat(corrMode)||0.75; if(shieldScore>50) return 0.85; if(shieldScore>=30) return 0.75; return 0.65; }
-function momShieldExposure(score){ if(score<30) return 0; if(score<50) return lerp(score,30,50,0,0.4); if(score<70) return lerp(score,50,70,0.4,0.8); return lerp(score,70,100,0.8,1.0); }
-function momWeights(scores){ const n=scores.length; if(n===0) return []; if(n===1) return [1.0]; const CAP=0.4,EPS=1e-6; const minS=Math.min(…scores); let sh=scores.map(s=>Math.max(s-minS,EPS)); const shSum=sh.reduce((a,b)=>a+b,0)||EPS; let w=sh.map(s=>s/shSum); for(let it=0;it<20;it++){ const capped=w.map(x=>x>=CAP); if(!capped.some(Boolean)) break; const capTotal=capped.filter(Boolean).length*CAP; const freeSum=sh.filter((_,i)=>!capped[i]).reduce((a,b)=>a+b,0)||EPS; w=w.map((x,i)=>capped[i]?CAP:(sh[i]/freeSum)*(1-capTotal)); if(w.some(x=>isNaN(x))){w=Array(n).fill(1/n);break;} } return w; }
+function getCashRate(yyyymm){
+  if(!DB.length) return 0.04;
+  const target=yyyymm+'-15'; let best=DB[DB.length-1];
+  for(const r of DB){if(r.d<=target) best=r; else break;}
+  return (best.y2||4.0)/100;
+}
+
+function getMomPrice(ticker,yyyymm){
+  const prices=MOM_PRICES[ticker]; if(!prices||!prices.length) return null;
+  const exact=prices.find(p=>p.date===yyyymm); if(exact) return exact.close;
+  let best=null;
+  for(const p of prices){if(p.date<=yyyymm) best=p; else break;}
+  return best?.close||null;
+}
+
+function momCalcVol(ticker,months,idx,n=12){
+  if(idx<n+1) return null;
+  const rets=[];
+  for(let i=idx-n;i<idx;i++){
+    const p0=getMomPrice(ticker,months[i-1]);const p1=getMomPrice(ticker,months[i]);
+    if(p0&&p1&&p0>0) rets.push(p1/p0-1);
+  }
+  const minRequired=Math.max(2,Math.floor(n/2));
+  if(rets.length<minRequired) return null;
+  const avg=rets.reduce((a,b)=>a+b,0)/rets.length;
+  return Math.sqrt(rets.reduce((a,b)=>a+(b-avg)**2,0)/rets.length)*Math.sqrt(12);
+}
+
+function momCalcZ(ticker,months,idx,nPeriod){
+  if(idx<nPeriod) return null;
+  const p1=getMomPrice(ticker,months[idx-1]);const p0=getMomPrice(ticker,months[idx-nPeriod]);
+  if(!p1||!p0||p0<=0) return null;
+  const volN=Math.min(nPeriod-1,12);
+  const vol=momCalcVol(ticker,months,idx,volN);
+  if(!vol||vol<=0) return null;
+  return (p1/p0-1)/vol;
+}
+
+function momCalcScore(ticker,months,idx){
+  const z12=momCalcZ(ticker,months,idx,13);const z6=momCalcZ(ticker,months,idx,7);const z3=momCalcZ(ticker,months,idx,4);
+  if(z12===null||z6===null||z3===null) return null;
+  return 0.5*z12+0.3*z6+0.2*z3;
+}
+
+function momCalcCorr(t1,t2,months,idx,n=12){
+  if(idx<n+1) return 0;
+  const r1=[],r2=[];
+  for(let i=idx-n;i<idx;i++){
+    const a0=getMomPrice(t1,months[i-1]),a1=getMomPrice(t1,months[i]);
+    const b0=getMomPrice(t2,months[i-1]),b1=getMomPrice(t2,months[i]);
+    if(a0&&a1&&a0>0&&b0&&b1&&b0>0){r1.push(a1/a0-1);r2.push(b1/b0-1);}
+  }
+  if(r1.length<6) return 0;
+  const m1=r1.reduce((a,b)=>a+b,0)/r1.length;const m2=r2.reduce((a,b)=>a+b,0)/r2.length;
+  let num=0,d1=0,d2=0;
+  r1.forEach((v,i)=>{num+=(v-m1)*(r2[i]-m2);d1+=(v-m1)**2;d2+=(r2[i]-m2)**2;});
+  return num/Math.sqrt((d1*d2)||1);
+}
+
+function momCorrThreshold(shieldScore,corrMode){
+  if(corrMode!=='dynamic') return parseFloat(corrMode)||0.75;
+  if(shieldScore>50) return 0.85;
+  if(shieldScore>=30) return 0.75;
+  return 0.65;
+}
+
+function momShieldExposure(score){
+  if(score<30) return 0;
+  if(score<50) return lerp(score,30,50,0,0.4);
+  if(score<70) return lerp(score,50,70,0.4,0.8);
+  return lerp(score,70,100,0.8,1.0);
+}
+
+function momWeights(scores){
+  const n=scores.length; if(n===0) return []; if(n===1) return [1.0];
+  const CAP=0.4,EPS=1e-6;
+  const minS=Math.min(...scores);
+  let sh=scores.map(s=>Math.max(s-minS,EPS));
+  const shSum=sh.reduce((a,b)=>a+b,0)||EPS;
+  let w=sh.map(s=>s/shSum);
+  for(let it=0;it<20;it++){
+    const capped=w.map(x=>x>=CAP);
+    if(!capped.some(Boolean)) break;
+    const capTotal=capped.filter(Boolean).length*CAP;
+    const freeSum=sh.filter((_,i)=>!capped[i]).reduce((a,b)=>a+b,0)||EPS;
+    w=w.map((x,i)=>capped[i]?CAP:(sh[i]/freeSum)*(1-capTotal));
+    if(w.some(x=>isNaN(x))){w=Array(n).fill(1/n);break;}
+  }
+  return w;
+}
+
 function calcMomSignalAt(months,idx,cfg){
-const enabledAssets=MOM_ASSET_DEFS.filter(a=>a.enabled).map(a=>a.ticker); const cashRate=getCashRate(months[idx]); const threshold=cashRate+(cfg.buffer||0); const shieldScore=cfg.shieldScore||70; const corrThresh=momCorrThreshold(shieldScore,cfg.corrMode||‘dynamic’); const scoreMap={},r12Map={};
-for(const t of enabledAssets){ const s=momCalcScore(t,months,idx); if(s!==null) scoreMap[t]=s; const p1=getMomPrice(t,months[idx-1]);const p0=idx>=13?getMomPrice(t,months[idx-13]):null; if(p1&&p0&&p0>0) r12Map[t]=p1/p0-1; }
-const valid=enabledAssets.filter(t=>r12Map[t]!==undefined&&scoreMap[t]!==undefined);
-if(!valid.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:[],tsPass:[],scoreMap,r12Map,corrThresh,reason:‘資料不足’};
-const tsPass=valid.filter(t=>r12Map[t]>threshold); if(!tsPass.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:[],tsPass:[],scoreMap,r12Map,corrThresh,reason:‘TS未通過’};
-const tsMean=tsPass.reduce((s,t)=>s+(scoreMap[t]||0),0)/tsPass.length; let csPass=tsPass.filter(t=>(scoreMap[t]||0)>tsMean); if(!csPass.length) csPass=[…tsPass]; csPass.sort((a,b)=>(scoreMap[b]||0)-(scoreMap[a]||0));
-const selected=[]; for(const t of csPass){ if(selected.every(f=>Math.abs(momCalcCorr(t,f,months,idx))<corrThresh)) selected.push(t); if(selected.length>=(cfg.maxHold||5)) break; }
-if(!selected.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:csPass,tsPass,scoreMap,r12Map,corrThresh,reason:‘相關性過濾後無標的’};
-const selScores=selected.map(t=>Math.max(scoreMap[t]||0,0.001)); const weights=momWeights(selScores); const rawHoldings={}; selected.forEach((t,i)=>{rawHoldings[t]=weights[i];});
-return {rawHoldings,cashRate,threshold,corrThresh,eligible:csPass,tsPass,selected,scoreMap,r12Map,reason:selected.map((t,i)=>`${t}(${(weights[i]*100).toFixed(0)}%)`).join(’+’)};
+  const enabledAssets=MOM_ASSET_DEFS.filter(a=>a.enabled).map(a=>a.ticker);
+  const cashRate=getCashRate(months[idx]);
+  const threshold=cashRate+(cfg.buffer||0);
+  const shieldScore=cfg.shieldScore||70;
+  const corrThresh=momCorrThreshold(shieldScore,cfg.corrMode||'dynamic');
+  const scoreMap={},r12Map={};
+  for(const t of enabledAssets){
+    const s=momCalcScore(t,months,idx); if(s!==null) scoreMap[t]=s;
+    const p1=getMomPrice(t,months[idx-1]);const p0=idx>=13?getMomPrice(t,months[idx-13]):null;
+    if(p1&&p0&&p0>0) r12Map[t]=p1/p0-1;
+  }
+  const valid=enabledAssets.filter(t=>r12Map[t]!==undefined&&scoreMap[t]!==undefined);
+  if(!valid.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:[],tsPass:[],scoreMap,r12Map,corrThresh,reason:'資料不足'};
+  const tsPass=valid.filter(t=>r12Map[t]>threshold);
+  if(!tsPass.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:[],tsPass:[],scoreMap,r12Map,corrThresh,reason:`TS未通過`};
+  const tsMean=tsPass.reduce((s,t)=>s+(scoreMap[t]||0),0)/tsPass.length;
+  let csPass=tsPass.filter(t=>(scoreMap[t]||0)>tsMean); if(!csPass.length) csPass=[...tsPass];
+  csPass.sort((a,b)=>(scoreMap[b]||0)-(scoreMap[a]||0));
+  const selected=[];
+  for(const t of csPass){
+    if(selected.every(f=>Math.abs(momCalcCorr(t,f,months,idx))<corrThresh)) selected.push(t);
+    if(selected.length>=(cfg.maxHold||5)) break;
+  }
+  if(!selected.length) return {rawHoldings:{[MOM_CASH_TICKER]:1.0},cashRate,threshold,eligible:csPass,tsPass,scoreMap,r12Map,corrThresh,reason:'相關性過濾後無標的'};
+  const selScores=selected.map(t=>Math.max(scoreMap[t]||0,0.001));
+  const weights=momWeights(selScores);
+  const rawHoldings={};
+  selected.forEach((t,i)=>{rawHoldings[t]=weights[i];});
+  return {rawHoldings,cashRate,threshold,corrThresh,eligible:csPass,tsPass,selected,scoreMap,r12Map,reason:selected.map((t,i)=>`${t}(${(weights[i]*100).toFixed(0)}%)`).join('+')};
 }
-function momApplyShield(rawHoldings,shieldScore,useShield){ if(!useShield) return {…rawHoldings}; const exp=momShieldExposure(shieldScore); if(exp<=0) return {[MOM_CASH_TICKER]:1.0}; const scaled={}; for(const [t,w] of Object.entries(rawHoldings)) scaled[t]=(scaled[t]||0)+w*exp; scaled[MOM_CASH_TICKER]=(scaled[MOM_CASH_TICKER]||0)+(1-exp); return scaled; }
+
+function momApplyShield(rawHoldings,shieldScore,useShield){
+  if(!useShield) return {...rawHoldings};
+  const exp=momShieldExposure(shieldScore);
+  if(exp<=0) return {[MOM_CASH_TICKER]:1.0};
+  const scaled={};
+  for(const [t,w] of Object.entries(rawHoldings)) scaled[t]=(scaled[t]||0)+w*exp;
+  scaled[MOM_CASH_TICKER]=(scaled[MOM_CASH_TICKER]||0)+(1-exp);
+  return scaled;
+}
+
 function calcMomCurrentSignal(){
-const spyPrices=MOM_PRICES[‘SPY’]; if(!spyPrices||spyPrices.length<15){$(‘momFetchLog’).textContent=‘⚠ SPY 資料不足，請先抓取’;return;}
-const months=spyPrices.map(p=>p.date).sort(); const lastIdx=months.length-1; const shieldScore=getShieldScore(months[lastIdx]+’-28’);
-const cfg={buffer:gv(‘momBuffer’)/100,maxHold:parseInt($(‘momMaxHold’).value)||5,corrMode:$(‘momCorrMode’)?.value||‘dynamic’,shieldScore};
-const signal=calcMomSignalAt(months,lastIdx,cfg); const useShield=gc(‘momShieldGate’); const finalH=momApplyShield(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0},shieldScore,useShield);
-$(‘momSignalSection’).classList.remove(‘hidden’); $(‘momCashRateDisplay’).textContent=(signal.cashRate*100).toFixed(2)+’%’; $(‘momMuDisplay’).textContent=`門檻 ${(signal.threshold*100).toFixed(2)}%  |  相關閾值 ${(signal.corrThresh||0.75).toFixed(2)}`;
-const allScored=Object.entries(signal.scoreMap||{}).sort((a,b)=>b[1]-a[1]); const maxAbsS=Math.max(…allScored.map(([t,s])=>Math.abs(s)),0.01); const tsSet=new Set(signal.tsPass||[]);const csSet=new Set(signal.eligible||[]);
-$(‘momSignalRows’).innerHTML=allScored.map(([t,s])=>{
-const ts=tsSet.has(t),cs=csSet.has(t),w=finalH[t];
-const r12=signal.r12Map?.[t]; const bw=Math.round(Math.min(100,Math.abs(s)/maxAbsS*100));
-// ★ 修正：使用正確 CSS 雙橫線 – ★
-const bc=s>=0?‘var(–teal)’:‘var(–red)’;
-const nc=w&&w>0.005?‘var(–teal)’:cs?‘var(–accent)’:ts?‘var(–muted)’:‘var(–dim)’;
-return `<div class="mom-signal-row"><span style="width:42px;font-weight:700;color:${nc}">${t}</span><span style="width:54px;color:${s>=0?'var(--teal)':'var(--red)'}">${s>=0?'+':''}${s.toFixed(2)}</span><span style="width:50px;font-size:10px;color:${r12!=null?(r12>signal.threshold?'var(--green)':'var(--red)'):'var(--dim)'}">${r12!=null?(r12*100).toFixed(1)+'%':'--'}</span><div class="mom-bar-wrap"><div class="mom-bar-fill" style="width:${bw}%;background:${bc};opacity:${cs?1:0.2}"></div></div><span style="width:26px;text-align:center;font-weight:700;color:${ts?'var(--green)':'var(--red)'}">${ts?'✓':'✗'}</span><span style="width:26px;text-align:center;font-weight:700;color:${cs?'var(--teal)':'var(--dim)'}">${ts?(cs?'✓':'✗'):'—'}</span><span style="width:60px;text-align:right;font-weight:700;color:${w&&w>0.005?'var(--teal)':'var(--dim)'}"> ${w&&w>0.005?'● '+(w*100).toFixed(1)+'%':''}</span></div>`;
-}).join(’’);
-$(‘momRecommendHoldings’).innerHTML=Object.entries(finalH).filter(([t,w])=>w>0.005).sort((a,b)=>b[1]-a[1]).map(([t,w])=>`<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t} ${(w*100).toFixed(1)}%</span>`).join(’ ‘);
-if(useShield){ const exp=momShieldExposure(shieldScore); $(‘momRecommendHoldings’).innerHTML+=` <span style="font-size:11px;color:var(--muted)">（盾牌${shieldScore.toFixed(0)}分→曝露${(exp*100).toFixed(0)}%）</span>`; }
-const badge=$(‘momCurrentBadge’); badge.classList.remove(‘hidden’); badge.textContent=`MOM: ${Object.entries(finalH).filter(([t,w])=>w>0.005&&t!==MOM_CASH_TICKER).map(([t])=>t).slice(0,2).join('+')||'BIL'}`;
+  const spyPrices=MOM_PRICES['SPY'];
+  if(!spyPrices||spyPrices.length<15){$('momFetchLog').textContent='⚠ SPY 資料不足，請先抓取';return;}
+  const months=spyPrices.map(p=>p.date).sort();
+  const lastIdx=months.length-1;
+  const shieldScore=getShieldScore(months[lastIdx]+'-28');
+  const cfg={buffer:gv('momBuffer')/100,maxHold:parseInt($('momMaxHold').value)||5,corrMode:$('momCorrMode')?.value||'dynamic',shieldScore};
+  const signal=calcMomSignalAt(months,lastIdx,cfg);
+  const useShield=gc('momShieldGate');
+  const finalH=momApplyShield(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0},shieldScore,useShield);
+  $('momSignalSection').classList.remove('hidden');
+  $('momCashRateDisplay').textContent=(signal.cashRate*100).toFixed(2)+'%';
+  $('momMuDisplay').textContent=`門檻 ${(signal.threshold*100).toFixed(2)}%  |  相關閾值 ${(signal.corrThresh||0.75).toFixed(2)}`;
+  const allScored=Object.entries(signal.scoreMap||{}).sort((a,b)=>b[1]-a[1]);
+  const maxAbsS=Math.max(...allScored.map(([t,s])=>Math.abs(s)),0.01);
+  const tsSet=new Set(signal.tsPass||[]);const csSet=new Set(signal.eligible||[]);
+  $('momSignalRows').innerHTML=allScored.map(([t,s])=>{
+    const ts=tsSet.has(t),cs=csSet.has(t),w=finalH[t];
+    const r12=signal.r12Map?.[t];
+    const bw=Math.round(Math.min(100,Math.abs(s)/maxAbsS*100));
+    const bc=s>=0?'var(--teal)':'var(--red)';
+    const nc=w&&w>0.005?'var(--teal)':cs?'var(--accent)':ts?'var(--muted)':'var(--dim)';
+    return `<div class="mom-signal-row">
+      <span style="width:42px;font-weight:700;color:${nc}">${t}</span>
+      <span style="width:54px;color:${s>=0?'var(--teal)':'var(--red)'}">${s>=0?'+':''}${s.toFixed(2)}</span>
+      <span style="width:50px;font-size:10px;color:${r12!=null?(r12>signal.threshold?'var(--green)':'var(--red)'):'var(--dim)'}">${r12!=null?(r12*100).toFixed(1)+'%':'--'}</span>
+      <div class="mom-bar-wrap"><div class="mom-bar-fill" style="width:${bw}%;background:${bc};opacity:${cs?1:0.2}"></div></div>
+      <span style="width:26px;text-align:center;font-weight:700;color:${ts?'var(--green)':'var(--red)'}">${ts?'✓':'✗'}</span>
+      <span style="width:26px;text-align:center;font-weight:700;color:${cs?'var(--teal)':'var(--dim)'}">${ts?(cs?'✓':'✗'):'—'}</span>
+      <span style="width:60px;text-align:right;font-weight:700;color:${w&&w>0.005?'var(--teal)':'var(--dim)'}">
+        ${w&&w>0.005?'● '+(w*100).toFixed(1)+'%':''}</span></div>`;
+  }).join('');
+  $('momRecommendHoldings').innerHTML=Object.entries(finalH)
+    .filter(([t,w])=>w>0.005).sort((a,b)=>b[1]-a[1])
+    .map(([t,w])=>`<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t} ${(w*100).toFixed(1)}%</span>`).join(' ');
+  if(useShield){
+    const exp=momShieldExposure(shieldScore);
+    $('momRecommendHoldings').innerHTML+=` <span style="font-size:11px;color:var(--muted)">（盾牌${shieldScore.toFixed(0)}分→曝露${(exp*100).toFixed(0)}%）</span>`;
+  }
+  const badge=$('momCurrentBadge'); badge.classList.remove('hidden');
+  badge.textContent=`MOM: ${Object.entries(finalH).filter(([t,w])=>w>0.005&&t!==MOM_CASH_TICKER).map(([t])=>t).slice(0,2).join('+')||'BIL'}`;
 }
+
 function runMomBacktest(){
-const spyPrices=MOM_PRICES[‘SPY’]; if(!spyPrices||spyPrices.length<15){alert(‘請先抓取 ETF 資料！’);return;}
-const cfg={buffer:gv(‘momBuffer’)/100,maxHold:parseInt($(‘momMaxHold’).value)||5,shieldGate:gc(‘momShieldGate’),corrMode:$(‘momCorrMode’)?.value||‘dynamic’,tradeCost:gv(‘momTradeCost’)/100||0.001,spyFloor:gc(‘momSpyFloor’)?(gv(‘momSpyFloorPct’)/100):0,defenseMode:gc(‘momDefenseMode’),defenseThresh:gv(‘momDefenseThresh’)||50};
-const MIN_WARM=14; const rawStart=($(‘momStart’).value||’’).trim().slice(0,7); const rawEnd=($(‘momEnd’).value||’’).trim().slice(0,7);
-$(‘momBacktestLog’).textContent=‘V9.5 回測中…’; $(‘loadingOverlay’).classList.remove(‘hidden’); $(‘loadingText’).textContent=‘V9.5 動能回測…’;
-setTimeout(()=>{
-try{
-const months=spyPrices.map(p=>p.date).sort(); let calcStart=MIN_WARM;
-if(rawStart){for(let i=MIN_WARM;i<months.length;i++){if(months[i]>=rawStart){calcStart=i;break;}}}
-let calcEnd=months.length-2; if(rawEnd){for(let i=months.length-2;i>=MIN_WARM;i–){if(months[i]<=rawEnd){calcEnd=i;break;}}}
-if(calcStart>calcEnd){alert(‘區間無有效資料’);return;}
-const INIT=100000; let nav=INIT,spyNav=INIT; const records=[],trades=[]; let holdings={[MOM_CASH_TICKER]:1.0};
-for(let i=calcStart;i<=calcEnd;i++){
-const signalMonth=months[i],nextMonth=months[i+1]; const shieldScore=100; const sigCfg={…cfg,shieldScore}; const signal=calcMomSignalAt(months,i,sigCfg); let scaledH={…(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0})};
-if(cfg.defenseMode){ const ss=getShieldScore(signalMonth+’-28’); if(ss>=cfg.defenseThresh) scaledH={‘SPY’:1.0}; }
-if(cfg.spyFloor>0&&MOM_PRICES[‘SPY’]){ const curSpy=scaledH[‘SPY’]||0; if(curSpy<cfg.spyFloor){ const boost=cfg.spyFloor-curSpy; const others=Object.keys(scaledH).filter(t=>t!==‘SPY’&&t!==MOM_CASH_TICKER); const othersTotal=others.reduce((s,t)=>s+(scaledH[t]||0),0); if(othersTotal>0){ const scale=Math.max(0,(othersTotal-boost)/othersTotal); others.forEach(t=>{scaledH[t]=(scaledH[t]||0)*scale;}); const newTotal=Object.values(scaledH).reduce((a,b)=>a+b,0); if(newTotal<0.999) scaledH[MOM_CASH_TICKER]=(scaledH[MOM_CASH_TICKER]||0)+(1-newTotal); } else scaledH[MOM_CASH_TICKER]=Math.max(0,(scaledH[MOM_CASH_TICKER]||0)-boost); scaledH[‘SPY’]=cfg.spyFloor; } }
-const TRADE_COST=cfg.tradeCost??0.001; let turnover=0; for(const t of new Set([…Object.keys(holdings),…Object.keys(scaledH)])){ const wOld=holdings[t]||0,wNew=scaledH[t]||0; turnover+=Math.abs(wNew-wOld); } const costDrag=(turnover/2)*TRADE_COST;
-let portRet=0; for(const [ticker,w] of Object.entries(holdings)){ const p0=getMomPrice(ticker,signalMonth),p1=getMomPrice(ticker,nextMonth); if(p0&&p1&&p0>0){ const tickerRet=p1/p0-1; portRet+=w*tickerRet; trades.push({entryMonth:signalMonth,exitMonth:nextMonth,ticker,weight:w,entryPrice:p0,exitPrice:p1,tickerRet,contribution:w*tickerRet,isCash:ticker===MOM_CASH_TICKER,shieldExp:1}); } }
-portRet-=costDrag; nav*=(1+portRet); const sp0=getMomPrice(‘SPY’,signalMonth),sp1=getMomPrice(‘SPY’,nextMonth); if(sp0&&sp1&&sp0>0) spyNav*=(1+sp1/sp0-1);
-const curShield=getShieldScore(signalMonth+’-28’); records.push({month:nextMonth,nav,spyNav,holdings:{…scaledH},portRet,shieldScore:curShield,shieldExp:1,cashRate:signal.cashRate,signal}); holdings=scaledH;
+  const spyPrices=MOM_PRICES['SPY'];
+  if(!spyPrices||spyPrices.length<15){alert('請先抓取 ETF 資料！');return;}
+  const cfg={buffer:gv('momBuffer')/100,maxHold:parseInt($('momMaxHold').value)||5,shieldGate:gc('momShieldGate'),corrMode:$('momCorrMode')?.value||'dynamic',tradeCost:gv('momTradeCost')/100||0.001,spyFloor:gc('momSpyFloor')?(gv('momSpyFloorPct')/100):0,defenseMode:gc('momDefenseMode'),defenseThresh:gv('momDefenseThresh')||50};
+  const MIN_WARM=14;
+  const rawStart=($('momStart').value||'').trim().slice(0,7);
+  const rawEnd=($('momEnd').value||'').trim().slice(0,7);
+  $('momBacktestLog').textContent='V9.5 回測中...'; $('loadingOverlay').classList.remove('hidden'); $('loadingText').textContent='V9.5 動能回測...';
+  setTimeout(()=>{
+    try{
+      const months=spyPrices.map(p=>p.date).sort();
+      let calcStart=MIN_WARM;
+      if(rawStart){for(let i=MIN_WARM;i<months.length;i++){if(months[i]>=rawStart){calcStart=i;break;}}}
+      let calcEnd=months.length-2;
+      if(rawEnd){for(let i=months.length-2;i>=MIN_WARM;i--){if(months[i]<=rawEnd){calcEnd=i;break;}}}
+      if(calcStart>calcEnd){alert('區間無有效資料');return;}
+      const INIT=100000; let nav=INIT,spyNav=INIT;
+      const records=[],trades=[];
+      let holdings={[MOM_CASH_TICKER]:1.0};
+      for(let i=calcStart;i<=calcEnd;i++){
+        const signalMonth=months[i],nextMonth=months[i+1];
+        const shieldScore=100;
+        const sigCfg={...cfg,shieldScore};
+        const signal=calcMomSignalAt(months,i,sigCfg);
+        let scaledH={...(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0})};
+
+        // ── 方案③：避險替代模式 ──
+        // 盾牌強時全部持 SPY，盾牌弱時才啟動 MOM
+        if(cfg.defenseMode){
+          const ss=getShieldScore(signalMonth+'-28');
+          if(ss>=cfg.defenseThresh){
+            scaledH={'SPY':1.0}; // 盾牌強 → 直接持 SPY
+          }
+          // 盾牌弱 → 維持 MOM 輪動組合
+        }
+
+        // ── 方案②：SPY 最低倉位下限 ──
+        if(cfg.spyFloor>0 && MOM_PRICES['SPY']){
+          const curSpy=scaledH['SPY']||0;
+          if(curSpy<cfg.spyFloor){
+            const boost=cfg.spyFloor-curSpy;
+            // 從非 SPY、非 BIL 部位等比縮減
+            const others=Object.keys(scaledH).filter(t=>t!=='SPY'&&t!==MOM_CASH_TICKER);
+            const othersTotal=others.reduce((s,t)=>s+(scaledH[t]||0),0);
+            if(othersTotal>0){
+              const scale=Math.max(0,(othersTotal-boost)/othersTotal);
+              others.forEach(t=>{ scaledH[t]=(scaledH[t]||0)*scale; });
+              // 若還不足（其他部位已為0），從現金補
+              const newTotal=Object.values(scaledH).reduce((a,b)=>a+b,0);
+              if(newTotal<0.999) scaledH[MOM_CASH_TICKER]=(scaledH[MOM_CASH_TICKER]||0)+(1-newTotal);
+            } else {
+              // 其他部位全是現金 → 從現金移至 SPY
+              scaledH[MOM_CASH_TICKER]=Math.max(0,(scaledH[MOM_CASH_TICKER]||0)-boost);
+            }
+            scaledH['SPY']=cfg.spyFloor;
+          }
+        }
+
+        const TRADE_COST=cfg.tradeCost??0.001;
+        let turnover=0;
+        for(const t of new Set([...Object.keys(holdings),...Object.keys(scaledH)])){
+          const wOld=holdings[t]||0,wNew=scaledH[t]||0;
+          turnover+=Math.abs(wNew-wOld);
+        }
+        const costDrag=(turnover/2)*TRADE_COST;
+        let portRet=0;
+        for(const [ticker,w] of Object.entries(holdings)){
+          const p0=getMomPrice(ticker,signalMonth),p1=getMomPrice(ticker,nextMonth);
+          if(p0&&p1&&p0>0){
+            const tickerRet=p1/p0-1; portRet+=w*tickerRet;
+            trades.push({entryMonth:signalMonth,exitMonth:nextMonth,ticker,weight:w,entryPrice:p0,exitPrice:p1,tickerRet,contribution:w*tickerRet,isCash:ticker===MOM_CASH_TICKER,shieldExp:1});
+          }
+        }
+        portRet-=costDrag; nav*=(1+portRet);
+        const sp0=getMomPrice('SPY',signalMonth),sp1=getMomPrice('SPY',nextMonth);
+        if(sp0&&sp1&&sp0>0) spyNav*=(1+sp1/sp0-1);
+        const curShield=getShieldScore(signalMonth+'-28');
+        records.push({month:nextMonth,nav,spyNav,holdings:{...scaledH},portRet,shieldScore:curShield,shieldExp:1,cashRate:signal.cashRate,signal});
+        holdings=scaledH;
+      }
+      if(records.length<6){alert('回測結果資料太少');return;}
+      const shieldMonthly=buildShieldMonthly(records[0].month,records[records.length-1].month);
+      MOM_RESULT={records,initial:INIT,cfg,shieldMonthly,trades};
+      renderMomUI(); overlaymomOnShieldChart();
+      const range=`${records[0].month} ~ ${records[records.length-1].month}`;
+      $('momBacktestLog').textContent=`✅ 完成，共 ${records.length} 個月（${range}）`;
+      $('momBacktestLog').style.color='var(--teal)';
+    }catch(err){$('momBacktestLog').textContent='❌ '+err.message;$('momBacktestLog').style.color='var(--red)';console.error(err);}
+    finally{$('loadingOverlay').classList.add('hidden');}
+  },60);
 }
-if(records.length<6){alert(‘回測結果資料太少’);return;}
-const shieldMonthly=buildShieldMonthly(records[0].month,records[records.length-1].month);
-MOM_RESULT={records,initial:INIT,cfg,shieldMonthly,trades}; renderMomUI(); overlaymomOnShieldChart();
-$(‘momBacktestLog’).textContent=`✅ 完成，共 ${records.length} 個月（${records[0].month} ~ ${records[records.length-1].month}）`; $(‘momBacktestLog’).style.color=‘var(–teal)’;
-}catch(err){$(‘momBacktestLog’).textContent=‘❌ ‘+err.message;$(‘momBacktestLog’).style.color=‘var(–red)’;console.error(err);}
-finally{$(‘loadingOverlay’).classList.add(‘hidden’);}
-},60);
-}
+
 function buildShieldMonthly(startMonth,endMonth){
-if(!BT_RESULT) return null; const cv=BT_RESULT.cv,keys=[‘A’,‘B’,‘C’,‘D’,‘BH’]; const startDateStr=startMonth+’-01’; let startIdx=0;
-for(let i=0;i<cv.length;i++){if(cv[i].d>=startDateStr){startIdx=i;break;}} const baseNav={};keys.forEach(k=>{baseNav[k]=cv[startIdx]?cv[startIdx][k]:null;});
-const byMonth={}; cv.forEach(r=>{if(r.d>=startDateStr){const m=r.d.slice(0,7);if(m<=endMonth) byMonth[m]=r;}}); const result={months:[],A:[],B:[],C:[],D:[],BH:[]};
-Object.keys(byMonth).sort().forEach(m=>{ const r=byMonth[m];result.months.push(m); keys.forEach(k=>{const base=baseNav[k];result[k].push(base&&base>0?(r[k]/base)*100000:null);}); }); return result;
+  if(!BT_RESULT) return null;
+  const cv=BT_RESULT.cv,keys=['A','B','C','D','BH'];
+  const startDateStr=startMonth+'-01';
+  let startIdx=0;
+  for(let i=0;i<cv.length;i++){if(cv[i].d>=startDateStr){startIdx=i;break;}}
+  const baseNav={};keys.forEach(k=>{baseNav[k]=cv[startIdx]?cv[startIdx][k]:null;});
+  const byMonth={};
+  cv.forEach(r=>{if(r.d>=startDateStr){const m=r.d.slice(0,7);if(m<=endMonth) byMonth[m]=r;}});
+  const result={months:[],A:[],B:[],C:[],D:[],BH:[]};
+  Object.keys(byMonth).sort().forEach(m=>{
+    const r=byMonth[m];result.months.push(m);
+    keys.forEach(k=>{const base=baseNav[k];result[k].push(base&&base>0?(r[k]/base)*100000:null);});
+  });
+  return result;
 }
+
 function renderMomUI(){
-const {records,initial,cfg}=MOM_RESULT; $(‘momResultSection’).classList.remove(‘hidden’);
-const last=records[records.length-1],first=records[0]; const years=(new Date(last.month+’-01’)-new Date(first.month+’-01’))/(365.25*86400000);
-const totalRet=last.nav/initial-1; const cagr=years>0?Math.pow(1+Math.max(totalRet,-0.999),1/years)-1:0; const spyRet=last.spyNav/initial-1; const spyCagr=years>0?Math.pow(1+Math.max(spyRet,-0.999),1/years)-1:0;
-let peak=records[0].nav,mdd=0; records.forEach(r=>{if(r.nav>peak)peak=r.nav;const dd=(r.nav-peak)/peak;if(dd<mdd)mdd=dd;});
-const monthRets=records.map(r=>r.portRet); const avgRet=monthRets.reduce((a,b)=>a+b,0)/monthRets.length; const std=Math.sqrt(monthRets.reduce((a,b)=>a+(b-avgRet)**2,0)/monthRets.length)*Math.sqrt(12); const sharpe=std>0?(cagr-0.025)/std:0; const cashMonths=records.filter(r=>r.holdings[MOM_CASH_TICKER]>=0.99).length;
-const sm=MOM_RESULT.shieldMonthly; const ABCD_COLORS={A:’#ffb830’,B:’#00e5a0’,C:’#7eb8ff’,D:’#b388ff’}; const ABCD_LABELS={A:‘方法 A’,B:‘方法 B’,C:‘方法 C’,D:‘方法 D’};
-function shieldMetrics(key){ if(!sm||!sm[key]||!sm[key].length) return null; const vals=sm[key].filter(v=>v!==null); if(vals.length<2) return null; const tr=vals[vals.length-1]/vals[0]-1; const yrs=sm.months.length/12; const cagr2=yrs>0?Math.pow(1+Math.max(tr,-0.999),1/yrs)-1:0; let pk=vals[0],mdd2=0; vals.forEach(v=>{if(v>pk)pk=v;const dd=(v-pk)/pk;if(dd<mdd2)mdd2=dd;}); const mRets=[]; for(let i=1;i<vals.length;i++) mRets.push((vals[i]-vals[i-1])/vals[i-1]); const ar=mRets.reduce((a,b)=>a+b,0)/(mRets.length||1); const sd=Math.sqrt(mRets.reduce((a,b)=>a+(b-ar)**2,0)/(mRets.length||1))*Math.sqrt(12); const sh=sd>0?(cagr2-0.025)/sd:0; return {tr,cagr:cagr2,mdd:mdd2,sharpe:sh,final:vals[vals.length-1]}; }
-const abcdCards=sm?[‘A’,‘B’,‘C’,‘D’].map(k=>{ const m=shieldMetrics(k); if(!m) return ‘’; return {label:ABCD_LABELS[k],sub:‘盾牌策略’,color:k===‘A’?‘yellow’:k===‘B’?‘green’:k===‘C’?‘accent’:‘purple’,rows:[[‘最終淨值’,`$${Math.round(m.final).toLocaleString()}`,‘white’],[‘區間報酬’,`${m.tr>=0?'+':''}${(m.tr*100).toFixed(1)}%`,m.tr>=0?‘tg’:‘tr’],[‘CAGR’,`${(m.cagr*100).toFixed(2)}%`,’’],[‘MDD’,`${(m.mdd*100).toFixed(2)}%`,‘tr’],[‘Sharpe’,m.sharpe.toFixed(2),‘tg’]]}; }).filter(Boolean):[];
-$(‘momMetricsGrid’).innerHTML=[{label:‘動能輪動’,sub:‘MOM策略’,color:‘teal’,rows:[[‘最終淨值’,`$${Math.round(last.nav).toLocaleString()}`,‘white’],[‘區間報酬’,`${totalRet>=0?'+':''}${(totalRet*100).toFixed(1)}%`,totalRet>=0?‘tg’:‘tr’],[‘CAGR’,`${(cagr*100).toFixed(2)}%`,‘tt’],[‘MDD’,`${(mdd*100).toFixed(2)}%`,‘tr’],[‘Sharpe’,sharpe.toFixed(2),‘tg’],[‘持現金月’,`${cashMonths}月`,’’],]},{label:‘SPY 買持’,sub:‘B&H基準’,color:‘muted’,rows:[[‘最終淨值’,`$${Math.round(last.spyNav).toLocaleString()}`,‘white’],[‘區間報酬’,`${spyRet>=0?'+':''}${(spyRet*100).toFixed(1)}%`,spyRet>=0?‘tg’:‘tr’],[‘CAGR’,`${(spyCagr*100).toFixed(2)}%`,’’],[‘超額CAGR’,`${((cagr-spyCagr)*100)>=0?'+':''}${((cagr-spyCagr)*100).toFixed(2)}pp`,(cagr-spyCagr)>=0?‘tg’:‘tr’]]},…abcdCards].map(({label,sub,color,rows})=>`<div class="metric-card" style="border-top:3px solid var(--${color})"><div class="m-title">${label}<span style="font-size:10px;font-weight:400;color:var(--dim);margin-left:5px">${sub}</span></div>${rows.map(([k,v,cls])=>`<div class="m-row"><span>${k}</span><span class="m-val ${cls||''}">${v}</span></div>`).join('')}</div>`).join(’’);
-if(MOM_CHART.nav){MOM_CHART.nav.destroy();MOM_CHART.dd.destroy();}
-const labels=records.map(r=>r.month); const sc={x:{ticks:{color:’#6b7a99’,maxTicksLimit:12},grid:{color:’#1a2030’}},y:{ticks:{color:’#6b7a99’},grid:{color:’#1a2030’}}}; const opt={responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:‘index’},animation:{duration:200}};
-const abcdDatasets=sm?[‘A’,‘B’,‘C’,‘D’].map(k=>{ if(!sm[k]) return null; const monthMap={};sm.months.forEach((m,i)=>{monthMap[m]=sm[k][i];}); return {label:ABCD_LABELS[k],data:labels.map(m=>monthMap[m]??null),borderColor:ABCD_COLORS[k],borderWidth:1.5,pointRadius:0,borderDash:[3,3]}; }).filter(Boolean):[];
-MOM_CHART.nav=new Chart($(‘momNavChart’).getContext(‘2d’),{type:‘line’,data:{labels,datasets:[{label:‘動能輪動 MOM’,data:records.map(r=>r.nav),borderColor:’#00d4aa’,borderWidth:2.5,pointRadius:0},{label:‘SPY B&H’,data:records.map(r=>r.spyNav),borderColor:’#3d4a66’,borderWidth:1,pointRadius:0},…abcdDatasets]},options:{…opt,plugins:{legend:{labels:{color:’#6b7a99’,boxWidth:10,font:{size:11}}}},scales:{…sc,y:{…sc.y,type:‘logarithmic’}}}});
-const mddData=[]; let pk2=records[0].nav; records.forEach(r=>{if(r.nav>pk2)pk2=r.nav;mddData.push((r.nav-pk2)/pk2*100);}); const mddSpy=[]; let pk3=records[0].spyNav; records.forEach(r=>{if(r.spyNav>pk3)pk3=r.spyNav;mddSpy.push((r.spyNav-pk3)/r.spyNav*100);});
-MOM_CHART.dd=new Chart($(‘momDdChart’).getContext(‘2d’),{type:‘line’,data:{labels,datasets:[{label:‘MOM’,data:mddData,borderColor:’#00d4aa’,borderWidth:1,pointRadius:0,fill:true,backgroundColor:‘rgba(0,212,170,0.08)’},{label:‘SPY’,data:mddSpy,borderColor:’#3d4a66’,borderWidth:1,pointRadius:0}]},options:{…opt,plugins:{legend:{display:false}},scales:sc}});
-$(‘momLogBody’).innerHTML=[…records].reverse().map((r,revIdx)=>{ const idx=records.length-1-revIdx; const prevSpy=idx>0?records[idx-1].spyNav:initial; const hChips=Object.entries(r.holdings).map(([t,w])=>`<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t} <span style="opacity:.7">${(w*100).toFixed(0)}%</span></span>`).join(’’); const retColor=r.portRet>=0?‘var(–green)’:‘var(–red)’; const excess=r.portRet-(r.spyNav/prevSpy-1); const excColor=excess>=0?‘var(–green)’:‘var(–red)’; const tsCount=r.signal?.eligible?.length??’–’; const thresh=r.cashRate!=null?((r.cashRate+cfg.buffer)*100).toFixed(2)+’%’:’–’; const ss=r.shieldScore!=null?r.shieldScore.toFixed(0):’–’; const ssColor=r.shieldScore>=60?‘var(–green)’:r.shieldScore>=40?‘var(–yellow)’:‘var(–red)’; const isSPYOnly=Object.keys(r.holdings).length===1&&r.holdings[‘SPY’]>=0.99; const isBILOnly=r.holdings[MOM_CASH_TICKER]>=0.99; const modeLabel=isSPYOnly?’<span style="color:var(--accent);font-size:10px">SPY</span>’:isBILOnly?’<span style="color:var(--muted);font-size:10px">現金</span>’:’<span style="color:var(--teal);font-size:10px">MOM</span>’; return `<tr class="log-row"><td class="mono" style="font-weight:700">${r.month}</td><td style="white-space:nowrap">${hChips}</td><td class="mono" style="color:${ssColor};font-weight:700">${ss}</td><td>${modeLabel}</td><td class="mono" style="text-align:center;color:${tsCount>0?'var(--teal)':'var(--red)'}">${tsCount}</td><td class="mono" style="color:var(--muted)">${thresh}</td><td class="mono" style="color:${retColor};font-weight:700">${r.portRet>=0?'+':''}${(r.portRet*100).toFixed(2)}%</td><td class="mono tt" style="font-weight:700">$${Math.round(r.nav).toLocaleString()}</td><td class="mono" style="color:var(--muted)">$${Math.round(r.spyNav).toLocaleString()}</td><td class="mono" style="color:${excColor};font-weight:700">${excess>=0?'+':''}${(excess*100).toFixed(2)}pp</td></tr>`; }).join(’’);
-if($(‘momTradeBody’)){ $(‘momTradeBody’).innerHTML=[…MOM_RESULT.trades||[]].reverse().map(t=>{ const rc=t.tickerRet>=0?‘var(–green)’:‘var(–red)’; const cc=t.contribution>=0?‘var(–green)’:‘var(–red)’; return `<tr class="log-row"><td class="mono">${t.entryMonth}</td><td class="mono">${t.exitMonth}</td><td style="font-weight:700;color:${t.isCash?'var(--green)':'var(--teal)'}">${t.ticker}</td><td class="mono">${(t.weight*100).toFixed(1)}%</td><td class="mono">${t.entryPrice.toFixed(2)}</td><td class="mono">${t.exitPrice.toFixed(2)}</td><td class="mono" style="color:${rc};font-weight:700">${t.tickerRet>=0?'+':''}${(t.tickerRet*100).toFixed(2)}%</td><td class="mono" style="color:${cc};font-weight:700">${t.contribution>=0?'+':''}${(t.contribution*100).toFixed(2)}pp</td><td style="font-size:11px;color:var(--muted)">${t.isCash?'現金停泊':''}</td></tr>`; }).join(’’); }
+  const {records,initial,cfg}=MOM_RESULT;
+  $('momResultSection').classList.remove('hidden');
+  const last=records[records.length-1],first=records[0];
+  const years=(new Date(last.month+'-01')-new Date(first.month+'-01'))/(365.25*86400000);
+  const totalRet=last.nav/initial-1;
+  const cagr=years>0?Math.pow(1+Math.max(totalRet,-0.999),1/years)-1:0;
+  const spyRet=last.spyNav/initial-1;
+  const spyCagr=years>0?Math.pow(1+Math.max(spyRet,-0.999),1/years)-1:0;
+  let peak=records[0].nav,mdd=0;
+  records.forEach(r=>{if(r.nav>peak)peak=r.nav;const dd=(r.nav-peak)/peak;if(dd<mdd)mdd=dd;});
+  const monthRets=records.map(r=>r.portRet);
+  const avgRet=monthRets.reduce((a,b)=>a+b,0)/monthRets.length;
+  const std=Math.sqrt(monthRets.reduce((a,b)=>a+(b-avgRet)**2,0)/monthRets.length)*Math.sqrt(12);
+  const sharpe=std>0?(cagr-0.025)/std:0;
+  const cashMonths=records.filter(r=>r.holdings[MOM_CASH_TICKER]>=0.99).length;
+  const sm=MOM_RESULT.shieldMonthly;
+  const ABCD_COLORS={A:'#ffb830',B:'#00e5a0',C:'#7eb8ff',D:'#b388ff'};
+  const ABCD_LABELS={A:'方法 A',B:'方法 B',C:'方法 C',D:'方法 D'};
+  function shieldMetrics(key){
+    if(!sm||!sm[key]||!sm[key].length) return null;
+    const vals=sm[key].filter(v=>v!==null); if(vals.length<2) return null;
+    const tr=vals[vals.length-1]/vals[0]-1;
+    const yrs=sm.months.length/12;
+    const cagr2=yrs>0?Math.pow(1+Math.max(tr,-0.999),1/yrs)-1:0;
+    let pk=vals[0],mdd2=0; vals.forEach(v=>{if(v>pk)pk=v;const dd=(v-pk)/pk;if(dd<mdd2)mdd2=dd;});
+    const mRets=[]; for(let i=1;i<vals.length;i++) mRets.push((vals[i]-vals[i-1])/vals[i-1]);
+    const ar=mRets.reduce((a,b)=>a+b,0)/(mRets.length||1);
+    const sd=Math.sqrt(mRets.reduce((a,b)=>a+(b-ar)**2,0)/(mRets.length||1))*Math.sqrt(12);
+    const sh=sd>0?(cagr2-0.025)/sd:0;
+    return {tr,cagr:cagr2,mdd:mdd2,sharpe:sh,final:vals[vals.length-1]};
+  }
+  const abcdCards=sm?['A','B','C','D'].map(k=>{
+    const m=shieldMetrics(k); if(!m) return '';
+    return {label:ABCD_LABELS[k],sub:'盾牌策略',color:k==='A'?'yellow':k==='B'?'green':k==='C'?'accent':'purple',
+      rows:[['最終淨值',`$${Math.round(m.final).toLocaleString()}`,'white'],['區間報酬',`${m.tr>=0?'+':''}${(m.tr*100).toFixed(1)}%`,m.tr>=0?'tg':'tr'],['CAGR',`${(m.cagr*100).toFixed(2)}%`,''],['MDD',`${(m.mdd*100).toFixed(2)}%`,'tr'],['Sharpe',m.sharpe.toFixed(2),'tg']]};
+  }).filter(Boolean):[];
+  $('momMetricsGrid').innerHTML=[
+    {label:'動能輪動',sub:'MOM策略',color:'teal',rows:[['最終淨值',`$${Math.round(last.nav).toLocaleString()}`,'white'],['區間報酬',`${totalRet>=0?'+':''}${(totalRet*100).toFixed(1)}%`,totalRet>=0?'tg':'tr'],['CAGR',`${(cagr*100).toFixed(2)}%`,'tt'],['MDD',`${(mdd*100).toFixed(2)}%`,'tr'],['Sharpe',sharpe.toFixed(2),'tg'],['持現金月',`${cashMonths}月`,''],]},
+    {label:'SPY 買持',sub:'B&H基準',color:'muted',rows:[['最終淨值',`$${Math.round(last.spyNav).toLocaleString()}`,'white'],['區間報酬',`${spyRet>=0?'+':''}${(spyRet*100).toFixed(1)}%`,spyRet>=0?'tg':'tr'],['CAGR',`${(spyCagr*100).toFixed(2)}%`,''],['超額CAGR',`${((cagr-spyCagr)*100)>=0?'+':''}${((cagr-spyCagr)*100).toFixed(2)}pp`,(cagr-spyCagr)>=0?'tg':'tr']]},
+    ...abcdCards
+  ].map(({label,sub,color,rows})=>`<div class="metric-card" style="border-top:3px solid var(--${color})"><div class="m-title">${label}<span style="font-size:10px;font-weight:400;color:var(--dim);margin-left:5px">${sub}</span></div>${rows.map(([k,v,cls])=>`<div class="m-row"><span>${k}</span><span class="m-val ${cls||''}">${v}</span></div>`).join('')}</div>`).join('');
+  if(MOM_CHART.nav){MOM_CHART.nav.destroy();MOM_CHART.dd.destroy();}
+  const labels=records.map(r=>r.month);
+  const sc={x:{ticks:{color:'#6b7a99',maxTicksLimit:12},grid:{color:'#1a2030'}},y:{ticks:{color:'#6b7a99'},grid:{color:'#1a2030'}}};
+  const opt={responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},animation:{duration:200}};
+  const abcdDatasets=sm?['A','B','C','D'].map(k=>{
+    if(!sm[k]) return null;
+    const monthMap={};sm.months.forEach((m,i)=>{monthMap[m]=sm[k][i];});
+    return {label:ABCD_LABELS[k],data:labels.map(m=>monthMap[m]??null),borderColor:ABCD_COLORS[k],borderWidth:1.5,pointRadius:0,borderDash:[3,3]};
+  }).filter(Boolean):[];
+  MOM_CHART.nav=new Chart($('momNavChart').getContext('2d'),{type:'line',data:{labels,datasets:[{label:'動能輪動 MOM',data:records.map(r=>r.nav),borderColor:'#00d4aa',borderWidth:2.5,pointRadius:0},{label:'SPY B&H',data:records.map(r=>r.spyNav),borderColor:'#3d4a66',borderWidth:1,pointRadius:0},...abcdDatasets]},options:{...opt,plugins:{legend:{labels:{color:'#6b7a99',boxWidth:10,font:{size:11}}}},scales:{...sc,y:{...sc.y,type:'logarithmic'}}}});
+  const mddData=[]; let pk2=records[0].nav;
+  records.forEach(r=>{if(r.nav>pk2)pk2=r.nav;mddData.push((r.nav-pk2)/pk2*100);});
+  const mddSpy=[]; let pk3=records[0].spyNav;
+  records.forEach(r=>{if(r.spyNav>pk3)pk3=r.spyNav;mddSpy.push((r.spyNav-pk3)/r.spyNav*100);});
+  MOM_CHART.dd=new Chart($('momDdChart').getContext('2d'),{type:'line',data:{labels,datasets:[{label:'MOM',data:mddData,borderColor:'#00d4aa',borderWidth:1,pointRadius:0,fill:true,backgroundColor:'rgba(0,212,170,0.08)'},{label:'SPY',data:mddSpy,borderColor:'#3d4a66',borderWidth:1,pointRadius:0}]},options:{...opt,plugins:{legend:{display:false}},scales:sc}});
+  $('momLogBody').innerHTML=[...records].reverse().map((r,revIdx)=>{
+    const idx=records.length-1-revIdx;
+    const prevSpy=idx>0?records[idx-1].spyNav:initial;
+    const hChips=Object.entries(r.holdings).map(([t,w])=>`<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t} <span style="opacity:.7">${(w*100).toFixed(0)}%</span></span>`).join('');
+    const retColor=r.portRet>=0?'var(--green)':'var(--red)';
+    const excess=r.portRet-(r.spyNav/prevSpy-1);
+    const excColor=excess>=0?'var(--green)':'var(--red)';
+    const tsCount=r.signal?.eligible?.length??'--';
+    const thresh=r.cashRate!=null?((r.cashRate+cfg.buffer)*100).toFixed(2)+'%':'--';
+    const ss=r.shieldScore!=null?r.shieldScore.toFixed(0):'--';
+    const ssColor=r.shieldScore>=60?'var(--green)':r.shieldScore>=40?'var(--yellow)':'var(--red)';
+    const isSPYOnly=Object.keys(r.holdings).length===1&&r.holdings['SPY']>=0.99;
+    const isBILOnly=r.holdings[MOM_CASH_TICKER]>=0.99;
+    const modeLabel=isSPYOnly?'<span style="color:var(--accent);font-size:10px">SPY</span>':isBILOnly?'<span style="color:var(--muted);font-size:10px">現金</span>':'<span style="color:var(--teal);font-size:10px">MOM</span>';
+    return `<tr class="log-row"><td class="mono" style="font-weight:700">${r.month}</td><td style="white-space:nowrap">${hChips}</td><td class="mono" style="color:${ssColor};font-weight:700">${ss}</td><td>${modeLabel}</td><td class="mono" style="text-align:center;color:${tsCount>0?'var(--teal)':'var(--red)'}">${tsCount}</td><td class="mono" style="color:var(--muted)">${thresh}</td><td class="mono" style="color:${retColor};font-weight:700">${r.portRet>=0?'+':''}${(r.portRet*100).toFixed(2)}%</td><td class="mono tt" style="font-weight:700">$${Math.round(r.nav).toLocaleString()}</td><td class="mono" style="color:var(--muted)">$${Math.round(r.spyNav).toLocaleString()}</td><td class="mono" style="color:${excColor};font-weight:700">${excess>=0?'+':''}${(excess*100).toFixed(2)}pp</td></tr>`;
+  }).join('');
+  if($('momTradeBody')){
+    $('momTradeBody').innerHTML=[...MOM_RESULT.trades||[]].reverse().map(t=>{
+      const rc=t.tickerRet>=0?'var(--green)':'var(--red)';
+      const cc=t.contribution>=0?'var(--green)':'var(--red)';
+      const note=t.isCash?'現金停泊':'';
+      return `<tr class="log-row"><td class="mono">${t.entryMonth}</td><td class="mono">${t.exitMonth}</td><td style="font-weight:700;color:${t.isCash?'var(--green)':'var(--teal)'}">${t.ticker}</td><td class="mono">${(t.weight*100).toFixed(1)}%</td><td class="mono">${t.entryPrice.toFixed(2)}</td><td class="mono">${t.exitPrice.toFixed(2)}</td><td class="mono" style="color:${rc};font-weight:700">${t.tickerRet>=0?'+':''}${(t.tickerRet*100).toFixed(2)}%</td><td class="mono" style="color:${cc};font-weight:700">${t.contribution>=0?'+':''}${(t.contribution*100).toFixed(2)}pp</td><td style="font-size:11px;color:var(--muted)">${note}</td></tr>`;
+    }).join('');
+  }
 }
+
 function overlaymomOnShieldChart(){
-if(!BT_RESULT||!MOM_RESULT||!charts.n) return; const {records,initial}=MOM_RESULT; const shieldDates=BT_RESULT.cv.map(c=>c.d); const momMap={};records.forEach(r=>{momMap[r.month]=r.nav;});
-const momLine=shieldDates.map(d=>{ const m=d.slice(0,7); let best=null; for(const [month,nav] of Object.entries(momMap)){if(month<=m) best=nav;} return best?(best/initial)*BT_RESULT.cfgLast.cap:null; });
-const existing=charts.n.data.datasets.findIndex(ds=>ds.label===‘動能輪動’); if(existing>=0) charts.n.data.datasets.splice(existing,1);
-charts.n.data.datasets.push({label:‘動能輪動’,data:momLine,borderColor:’#00d4aa’,borderWidth:2,pointRadius:0,borderDash:[4,3]}); charts.n.update();
-const last=records[records.length-1]; const years=(new Date(last.month+’-01’)-new Date(records[0].month+’-01’))/(365.25*86400000); const totalRet=last.nav/initial-1; const cagr=years>0?Math.pow(1+Math.max(totalRet,-0.999),1/years)-1:0; let pk=records[0].nav,mdd=0; records.forEach(r=>{if(r.nav>pk)pk=r.nav;const dd=(r.nav-pk)/pk;if(dd<mdd)mdd=dd;}); const monthRets=records.map(r=>r.portRet); const avgR=monthRets.reduce((a,b)=>a+b,0)/monthRets.length; const std=Math.sqrt(monthRets.reduce((a,b)=>a+(b-avgR)**2,0)/monthRets.length)*Math.sqrt(12); const sharpe=std>0?(cagr-0.025)/std:0;
-const oldCard=document.getElementById(‘momKpiCard’); if(oldCard) oldCard.remove(); const card=document.createElement(‘div’); card.id=‘momKpiCard’; card.className=‘metric-card’; card.style.borderTop=‘3px solid var(–teal)’;
-card.innerHTML=`<div class="m-title" style="color:var(--teal)">動能輪動 MOM <span style="font-size:9px;font-weight:400;color:var(--dim)">月頻回測</span></div><div class="m-row"><span>區間報酬</span><span class="m-val ${totalRet>=0?'tg':'tr'}">${totalRet>=0?'+':''}${(totalRet*100).toFixed(1)}%</span></div><div class="m-row"><span>CAGR</span><span class="m-val tt">${(cagr*100).toFixed(2)}%</span></div><div class="m-row"><span>MDD</span><span class="m-val tr">${(mdd*100).toFixed(2)}%</span></div><div class="m-row"><span>Sharpe</span><span class="m-val tg">${sharpe.toFixed(2)}</span></div>`;
-$(‘metricsGrid’).appendChild(card);
+  if(!BT_RESULT||!MOM_RESULT||!charts.n) return;
+  const {records,initial}=MOM_RESULT;
+  const shieldDates=BT_RESULT.cv.map(c=>c.d);
+  const momMap={};records.forEach(r=>{momMap[r.month]=r.nav;});
+  const momLine=shieldDates.map(d=>{
+    const m=d.slice(0,7); let best=null;
+    for(const [month,nav] of Object.entries(momMap)){if(month<=m) best=nav;}
+    return best?(best/initial)*BT_RESULT.cfgLast.cap:null;
+  });
+  const existing=charts.n.data.datasets.findIndex(ds=>ds.label==='動能輪動');
+  if(existing>=0) charts.n.data.datasets.splice(existing,1);
+  charts.n.data.datasets.push({label:'動能輪動',data:momLine,borderColor:'#00d4aa',borderWidth:2,pointRadius:0,borderDash:[4,3]});
+  charts.n.update();
+  const last=records[records.length-1];
+  const years=(new Date(last.month+'-01')-new Date(records[0].month+'-01'))/(365.25*86400000);
+  const totalRet=last.nav/initial-1;
+  const cagr=years>0?Math.pow(1+Math.max(totalRet,-0.999),1/years)-1:0;
+  let pk=records[0].nav,mdd=0;
+  records.forEach(r=>{if(r.nav>pk)pk=r.nav;const dd=(r.nav-pk)/pk;if(dd<mdd)mdd=dd;});
+  const monthRets=records.map(r=>r.portRet);
+  const avgR=monthRets.reduce((a,b)=>a+b,0)/monthRets.length;
+  const std=Math.sqrt(monthRets.reduce((a,b)=>a+(b-avgR)**2,0)/monthRets.length)*Math.sqrt(12);
+  const sharpe=std>0?(cagr-0.025)/std:0;
+  const oldCard=document.getElementById('momKpiCard'); if(oldCard) oldCard.remove();
+  const card=document.createElement('div'); card.id='momKpiCard'; card.className='metric-card';
+  card.style.borderTop='3px solid var(--teal)';
+  card.innerHTML=`<div class="m-title" style="color:var(--teal)">動能輪動 MOM <span style="font-size:9px;font-weight:400;color:var(--dim)">月頻回測</span></div>
+    <div class="m-row"><span>區間報酬</span><span class="m-val ${totalRet>=0?'tg':'tr'}">${totalRet>=0?'+':''}${(totalRet*100).toFixed(1)}%</span></div>
+    <div class="m-row"><span>CAGR</span><span class="m-val tt">${(cagr*100).toFixed(2)}%</span></div>
+    <div class="m-row"><span>MDD</span><span class="m-val tr">${(mdd*100).toFixed(2)}%</span></div>
+    <div class="m-row"><span>Sharpe</span><span class="m-val tg">${sharpe.toFixed(2)}</span></div>`;
+  $('metricsGrid').appendChild(card);
 }
-function bdg(m){ const map={PLUS:[‘var(–blue-dim)’,‘var(–blue)’,‘加碼’],NORMAL:[‘var(–surface2)’,‘var(–white)’,‘常態’],CLEAR:[‘var(–red-dim)’,‘var(–red)’,‘清倉’],STRIKE:[‘var(–yellow-dim)’,‘var(–yellow)’,‘短打’]}; const[bg,c,label]=map[m]||[‘var(–surface2)’,‘var(–muted)’,’–’]; return `<span style="background:${bg};color:${c};border:1px solid ${c};padding:2px 8px;border-radius:3px;font-size:12px;font-family:monospace;">${label}</span>`; }
-function calcP(cv,k){ if(!cv.length) return{m:‘0’,c:‘0’,s:‘0’,t:‘0’,yr:‘0’}; let pk=0,mdd=0,rets=[]; for(let i=1;i<cv.length;i++){ const v=cv[i][k];if(v>pk)pk=v; const dd=(v-pk)/pk;if(dd<mdd)mdd=dd; rets.push((v-cv[i-1][k])/cv[i-1][k]); } const d0=new Date(cv[0].d+‘T00:00:00’); const d1=new Date(cv[cv.length-1].d+‘T00:00:00’); const yr=Math.max(0.1,(d1-d0)/(365.25*86400000)); const tr=cv[cv.length-1][k]/cv[0][k]-1; const cagr=Math.pow(1+Math.max(tr,-0.999),1/yr)-1; const ar=rets.reduce((a,b)=>a+b,0)/(rets.length||1); const sd=Math.sqrt(rets.reduce((a,b)=>a+(b-ar)**2,0)/(rets.length||1))*Math.sqrt(252); return{m:(mdd*100).toFixed(2),c:(cagr*100).toFixed(2),s:sd===0?‘0’:(ar*252/sd).toFixed(2),t:(tr*100).toFixed(1),yr:yr.toFixed(1)}; }
-function evalStrike(cfg,vix,vixPeakRecent,rsi,zb,spewRelPerf){ const s=cfg.strk;let hits=0,enabled=0; if(s.useRsi){enabled++;if(rsi<s.rsi)hits++;} if(s.useVix){enabled++;if(s.vixPullback){if(vixPeakRecent>=s.vix&&vix<=vixPeakRecent-s.vixPbAmt)hits++;}else{if(vix>=s.vix)hits++;}} if(s.useBias){enabled++;if(zb<=s.bias)hits++;} if(s.useEWR){enabled++;if(spewRelPerf>=s.ewRatio)hits++;} return hits>=Math.min(s.n,enabled||1); }
-function getMode(score,db,mc,strkHit,pc){ if(score>=mc.s100) return score>=mc.s150?{m:‘PLUS’,p:pc.plusMult}:{m:‘NORMAL’,p:pc.base}; if(db>=mc.clearDays) return strkHit?{m:‘STRIKE’,p:pc.strike}:{m:‘CLEAR’,p:0}; return{m:‘NORMAL’,p:pc.base}; }
-function getRegime(rsi,ycSlope,vix,cfg){ if(!cfg.useRegime) return ‘N’; if(rsi>cfg.regRsiOn&&ycSlope>0&&vix<cfg.regVixOn) return ‘ON’; if(rsi<cfg.regRsiOff&&ycSlope<0&&vix>cfg.regVixOff) return ‘OFF’; return ‘MID’; }
-function applyRegime(result,reg,cfg){ if(!cfg.useV8) return result; if(result.m!==‘PLUS’) return result; if(reg===‘OFF’) return{m:‘NORMAL’,p:cfg.pos.base}; if(reg===‘MID’&&!cfg.regAllowPlusMid) return{m:‘NORMAL’,p:cfg.pos.base}; if(reg===‘ON’&&!cfg.regAllowPlus) return{m:‘NORMAL’,p:cfg.pos.base}; return result; }
-function stepEngine(s,prevM,newM,newMult,ret,spNow,costRate){ const prevBase=(prevM===‘CLEAR’)?0:(prevM===‘STRIKE’)?costRate.strike:1.0; const newBase=(newM===‘CLEAR’)?0:(newM===‘STRIKE’)?costRate.strike:1.0; s.eq*=(1+prevBase*ret); if(prevBase!==newBase) s.eq*=(1-costRate.cost); if(newM===‘PLUS’&&prevM!==‘PLUS’){s.plusN=newMult*s.eq;s.plusSP=spNow;s.eq-=s.plusN*costRate.cost;} let pnl=null; if(newM!==‘PLUS’&&prevM===‘PLUS’&&s.plusN>0){ const plusVal=s.plusN*(spNow/s.plusSP);pnl=plusVal-s.plusN;s.eq+=pnl;s.eq-=plusVal*costRate.cost;s.plusLastPnL=pnl;s.plusN=0;s.plusSP=0; } return pnl; }
+
+// ════════════════════════════════════════
+// 盾牌回測引擎
+// ════════════════════════════════════════
+function bdg(m){
+  const map={PLUS:['var(--blue-dim)','var(--blue)','加碼'],NORMAL:['var(--surface2)','var(--white)','常態'],CLEAR:['var(--red-dim)','var(--red)','清倉'],STRIKE:['var(--yellow-dim)','var(--yellow)','短打']};
+  const[bg,c,label]=map[m]||['var(--surface2)','var(--muted)','--'];
+  return `<span style="background:${bg};color:${c};border:1px solid ${c};padding:2px 8px;border-radius:3px;font-size:12px;font-family:monospace;">${label}</span>`;
+}
+
+function calcP(cv,k){
+  if(!cv.length) return{m:'0',c:'0',s:'0',t:'0'};
+  let pk=0,mdd=0,rets=[];
+  for(let i=1;i<cv.length;i++){
+    const v=cv[i][k];if(v>pk)pk=v;
+    const dd=(v-pk)/pk;if(dd<mdd)mdd=dd;
+    rets.push((v-cv[i-1][k])/cv[i-1][k]);
+  }
+  // ★ 用實際日期差計算年數，避免 cv.length/252 在資料有缺口時算錯
+  const d0=new Date(cv[0].d+'T00:00:00');
+  const d1=new Date(cv[cv.length-1].d+'T00:00:00');
+  const yr=Math.max(0.1,(d1-d0)/(365.25*86400000));
+  const tr=cv[cv.length-1][k]/cv[0][k]-1;
+  const cagr=Math.pow(1+Math.max(tr,-0.999),1/yr)-1;
+  const ar=rets.reduce((a,b)=>a+b,0)/(rets.length||1);
+  const sd=Math.sqrt(rets.reduce((a,b)=>a+(b-ar)**2,0)/(rets.length||1))*Math.sqrt(252);
+  return{m:(mdd*100).toFixed(2),c:(cagr*100).toFixed(2),s:sd===0?'0':(ar*252/sd).toFixed(2),t:(tr*100).toFixed(1),yr:yr.toFixed(1)};
+}
+
+function evalStrike(cfg,vix,vixPeakRecent,rsi,zb,spewRelPerf){
+  const s=cfg.strk;let hits=0,enabled=0;
+  if(s.useRsi){enabled++;if(rsi<s.rsi)hits++;}
+  if(s.useVix){enabled++;
+    if(s.vixPullback){if(vixPeakRecent>=s.vix&&vix<=vixPeakRecent-s.vixPbAmt)hits++;}
+    else{if(vix>=s.vix)hits++;}}
+  if(s.useBias){enabled++;if(zb<=s.bias)hits++;}
+  if(s.useEWR){enabled++;if(spewRelPerf>=s.ewRatio)hits++;}
+  return hits>=Math.min(s.n,enabled||1);
+}
+
+function getMode(score,db,mc,strkHit,pc){
+  if(score>=mc.s100) return score>=mc.s150?{m:'PLUS',p:pc.plusMult}:{m:'NORMAL',p:pc.base};
+  if(db>=mc.clearDays) return strkHit?{m:'STRIKE',p:pc.strike}:{m:'CLEAR',p:0};
+  return{m:'NORMAL',p:pc.base};
+}
+
+function getRegime(rsi,ycSlope,vix,cfg){
+  if(!cfg.useRegime) return 'N';
+  if(rsi>cfg.regRsiOn&&ycSlope>0&&vix<cfg.regVixOn) return 'ON';
+  if(rsi<cfg.regRsiOff&&ycSlope<0&&vix>cfg.regVixOff) return 'OFF';
+  return 'MID';
+}
+
+function applyRegime(result,reg,cfg){
+  if(!cfg.useV8) return result;
+  if(result.m!=='PLUS') return result;
+  if(reg==='OFF') return{m:'NORMAL',p:cfg.pos.base};
+  if(reg==='MID'&&!cfg.regAllowPlusMid) return{m:'NORMAL',p:cfg.pos.base};
+  if(reg==='ON'&&!cfg.regAllowPlus) return{m:'NORMAL',p:cfg.pos.base};
+  return result;
+}
+
+function stepEngine(s,prevM,newM,newMult,ret,spNow,costRate){
+  const prevBase=(prevM==='CLEAR')?0:(prevM==='STRIKE')?costRate.strike:1.0;
+  const newBase=(newM==='CLEAR')?0:(newM==='STRIKE')?costRate.strike:1.0;
+  s.eq*=(1+prevBase*ret);
+  if(prevBase!==newBase) s.eq*=(1-costRate.cost);
+  if(newM==='PLUS'&&prevM!=='PLUS'){s.plusN=newMult*s.eq;s.plusSP=spNow;s.eq-=s.plusN*costRate.cost;}
+  let pnl=null;
+  if(newM!=='PLUS'&&prevM==='PLUS'&&s.plusN>0){
+    const plusVal=s.plusN*(spNow/s.plusSP);pnl=plusVal-s.plusN;s.eq+=pnl;s.eq-=plusVal*costRate.cost;s.plusLastPnL=pnl;s.plusN=0;s.plusSP=0;
+  }
+  return pnl;
+}
+
 function runBacktest(){
-if(DB.length<30){alert(‘資料不足，請先完成步驟 1-2。’);return;}
-const start=$(‘cpStart’).value,end=$(‘cpEnd’).value; const slice=DB.filter(r=>r.d>=start&&r.d<=end); if(slice.length<20){alert(‘區間資料不足，請調整日期。’);return;}
-const cfg={cap:100000,cost:0.0005,A:{s150:gv(‘cpA150’),s100:gv(‘cpA100’),clearDays:gv(‘cpADays’),dlt:gv(‘cpADelta’),w:120},B:{s150:gv(‘cpB150’),s100:gv(‘cpB100’),clearDays:gv(‘cpBDays’),z:gv(‘cpBZ’),w:500},strk:{n:Math.max(1,Math.round(gv(‘cpStrkN’))||2),useRsi:gc(‘useStrkRsi’),rsi:gv(‘cpRsi’),useVix:gc(‘useStrkVix’),vix:gv(‘cpVix’),vixPullback:gc(‘vixPullback’),vixPbAmt:gv(‘cpVixPB’),useBias:gc(‘useStrkBias’),bias:gv(‘cpBias’),useEWR:gc(‘useStrkEWR’),ewRatio:gv(‘cpEWRatio’)},pos:{plusMult:gv(‘cpPosPlus’),base:gv(‘cpPosBase’),strike:gv(‘cpPosStrk’)},useRegime:gc(‘useRegime’),useYC:gc(‘useYC’),useV8:gc(‘useV8’),regRsiOn:gv(‘regRsiOn’),regVixOn:gv(‘regVixOn’),regRsiOff:gv(‘regRsiOff’),regVixOff:gv(‘regVixOff’),regAllowPlus:gc(‘regAllowPlus’),regAllowPlusMid:gc(‘regAllowPlusMid’),ycLo:gv(‘ycLo’),ycHi:gv(‘ycHi’)};
-$(‘loadingOverlay’).classList.remove(‘hidden’); $(‘loadingText’).textContent=‘回測運算中…’;
-setTimeout(()=>{
-try{
-const DATES=slice.map(r=>r.d),SP=slice.map(r=>r.sp),EW=slice.map(r=>r.ew),HY=slice.map(r=>r.hy),TIPS=slice.map(r=>r.tips),VIX=slice.map(r=>r.vix),CAPE=slice.map(r=>r.cape),Y10=slice.map(r=>r.y10),Y2=slice.map(r=>r.y2); const N=DATES.length;
-const costRate={cost:cfg.cost,strike:cfg.pos.strike}; const mkSt=(eq)=>({eq,m:‘NORMAL’,p:0,db:0,ps:100,s:100,f1:50,f5:50,yc:50,plusN:0,plusSP:0,plusLastPnL:null});
-const st={A:mkSt(cfg.cap),B:mkSt(cfg.cap),C:{eq:cfg.cap,m:‘NORMAL’,p:cfg.pos.base},D:{eq:cfg.cap,m:‘NORMAL’,p:cfg.pos.base,plusN:0,plusSP:0,plusLastPnL:null},BH:{eq:cfg.cap},regime:‘N’};
-const cv=[],yrD={},logs=[]; const mddArr={A:[],B:[],C:[],D:[],BH:[]}; const pk={A:cfg.cap,B:cfg.cap,C:cfg.cap,D:cfg.cap,BH:cfg.cap}; const sp0=SP[0];
-const totalEq=(s,spNow)=>s.eq+(s.plusN>0&&s.plusSP>0?s.plusN*(spNow/s.plusSP):0);
-for(let i=1;i<N;i++){
-const ret=(SP[i]-SP[i-1])/SP[i-1]; const hN=HY[i]*100;
-const f1=lerp((100/CAPE[i])-TIPS[i],0,4,10,100);
-// ★★★ 0325 F5刻度校準：HY 6%上限(600bp)，分數區間 90→10 ★★★
-const f5b=lerp(hN,250,600,90,10);
-const ycSlope=Y10[i]-Y2[i]; let shieldBase,ycScore=50;
-if(cfg.useYC){ycScore=lerp(ycSlope,cfg.ycLo,cfg.ycHi,20,100);shieldBase=f1*0.5+f5b*0.3+ycScore*0.2;}
-else shieldBase=f1*0.5+f5b*0.5;
-let rsi=50;
-if(i>=70){ const w=[SP[i]]; for(let j=i-1;j>=0;j–){if(new Date(DATES[j]).getDay()>=new Date(DATES[j+1]).getDay()){w.push(SP[j]);if(w.length===15)break;}} if(w.length===15){w.reverse();let g=0,l=0;for(let k=1;k<15;k++){const d=w[k]-w[k-1];d>=0?g+=d:l-=d;}rsi=100-(100/(1+(g/(l||1))));} }
-let zb=0;
-if(i>=20){ const sl=[];for(let j=i-19;j<=i;j++)sl.push(EW[j]/SP[j]); const m=sl.reduce((a,b)=>a+b)/20; const sd=Math.sqrt(sl.reduce((a,b)=>a+(b-m)**2)/20)||1; zb=(EW[i]/SP[i]-m)/sd; }
-const vixPeak=Math.max(…VIX.slice(Math.max(0,i-20),i+1)); let spewRelPerf=0; const lb63=Math.max(0,i-63); if(i>=63&&EW[lb63]>0&&SP[lb63]>0)spewRelPerf=(SP[i]/SP[lb63])/(EW[i]/EW[lb63])-1;
-const reg=getRegime(rsi,ycSlope,VIX[i],cfg); st.regime=reg; const strkHit=evalStrike(cfg,VIX[i],vixPeak,rsi,zb,spewRelPerf); const pA=st.A.m,pB=st.B.m;
-// A
-let mA=hN;for(let j=Math.max(0,i-cfg.A.w);j<i;j++)if(HY[j]*100<mA)mA=HY[j]*100;
-let sA=Math.round(shieldBase-(((hN-mA)>=cfg.A.dlt&&f5b<80)?10:0)); if(isNaN(sA))sA=st.A.ps;
-if(sA<cfg.A.s100)st.A.db++;else st.A.db=0;
-let nA=getMode(sA,st.A.db,cfg.A,strkHit,cfg.pos);nA=applyRegime(nA,reg,cfg);
-const pnlA=stepEngine(st.A,pA,nA.m,cfg.pos.plusMult,ret,SP[i],costRate);
-if(nA.m!==pA)logs.push({d:DATES[i],mtd:‘A’,fm:pA,to:nA.m,sp:SP[i].toFixed(1),s:sA,ps:st.A.ps,db:st.A.db,pnl:pnlA});
-st.A.p=nA.p;st.A.m=nA.m;st.A.ps=sA;st.A.s=sA;st.A.f1=Math.round(f1);st.A.f5=Math.round(f5b);st.A.yc=Math.round(ycScore);
-// B
-const slB=HY.slice(Math.max(0,i-cfg.B.w),i); const mB=slB.reduce((a,b)=>a+b,0)/slB.length; const sdB=Math.sqrt(slB.reduce((a,b)=>a+(b-mB)**2,0)/slB.length)||1; const zHY=(HY[i]-mB)/sdB;
-let sB=Math.round(shieldBase-(zHY>cfg.B.z?10:0)); if(isNaN(sB))sB=st.B.ps;
-if(sB<cfg.B.s100)st.B.db++;else st.B.db=0;
-let nB=getMode(sB,st.B.db,cfg.B,strkHit,cfg.pos);nB=applyRegime(nB,reg,cfg);
-const pnlB=stepEngine(st.B,pB,nB.m,cfg.pos.plusMult,ret,SP[i],costRate);
-if(nB.m!==pB)logs.push({d:DATES[i],mtd:‘B’,fm:pB,to:nB.m,sp:SP[i].toFixed(1),s:sB,ps:st.B.ps,db:st.B.db,pnl:pnlB});
-st.B.p=nB.p;st.B.m=nB.m;st.B.ps=sB;st.B.s=sB;st.B.f1=Math.round(f1);st.B.f5=Math.round(f5b);st.B.yc=Math.round(ycScore);
-// C
-const bA=(st.A.m===‘NORMAL’||st.A.m===‘PLUS’),bpA=(pA===‘NORMAL’||pA===‘PLUS’),bB=(st.B.m===‘NORMAL’||st.B.m===‘PLUS’),bpB=(pB===‘NORMAL’||pB===‘PLUS’); let nMC=st.C.m;
-if((!bA&&bpA)||(!bB&&bpB))nMC=‘CLEAR’; else if((bA&&!bpA)||(bB&&!bpB))nMC=‘NORMAL’;
-if(nMC!==st.C.m)logs.push({d:DATES[i],mtd:‘C’,fm:st.C.m,to:nMC,sp:SP[i].toFixed(1),s:’–’,ps:’–’,db:’–’,pnl:null});
-const nPC=nMC===‘NORMAL’?cfg.pos.base:0; const prevPC=st.C.m===‘CLEAR’?0:cfg.pos.base;
-st.C.eq*=(1+prevPC*ret);if(prevPC!==nPC)st.C.eq*=(1-cfg.cost);st.C.p=nPC;st.C.m=nMC;
-// D
-const cA=st.A.m!==pA,cB=st.B.m!==pB; let nMD=st.D.m;
-if(cA&&cB){const rank={‘CLEAR’:0,‘STRIKE’:1,‘NORMAL’:2,‘PLUS’:3};nMD=rank[st.A.m]<rank[st.B.m]?st.A.m:st.B.m;}
-else if(cA)nMD=st.A.m;else if(cB)nMD=st.B.m;
-const prevMD=st.D.m; const pnlD=stepEngine(st.D,prevMD,nMD,cfg.pos.plusMult,ret,SP[i],costRate);
-if(nMD!==prevMD)logs.push({d:DATES[i],mtd:‘D’,fm:prevMD,to:nMD,sp:SP[i].toFixed(1),s:’–’,ps:’–’,db:’–’,pnl:pnlD}); st.D.m=nMD;
-st.BH.eq=cfg.cap*(SP[i]/sp0);
-const eqA=totalEq(st.A,SP[i]),eqB=totalEq(st.B,SP[i]),eqD=totalEq(st.D,SP[i]);
-cv.push({d:DATES[i],A:eqA,B:eqB,C:st.C.eq,D:eqD,BH:st.BH.eq});
-const eqs={A:eqA,B:eqB,C:st.C.eq,D:eqD,BH:st.BH.eq};
-[‘A’,‘B’,‘C’,‘D’,‘BH’].forEach(k=>{ if(eqs[k]>pk[k])pk[k]=eqs[k];mddArr[k].push((eqs[k]-pk[k])/pk[k]*100); });
-const yr=DATES[i].slice(0,4); if(!yrD[yr])yrD[yr]={}; [‘A’,‘B’,‘C’,‘D’,‘BH’].forEach(k=>{if(yrD[yr][k]===undefined)yrD[yr][k]={s:eqs[k],e:eqs[k]};yrD[yr][k].e=eqs[k];});
+  if(DB.length<30){alert('資料不足，請先完成步驟 1-2。');return;}
+  const start=$('cpStart').value,end=$('cpEnd').value;
+  const slice=DB.filter(r=>r.d>=start&&r.d<=end);
+  if(slice.length<20){alert('區間資料不足，請調整日期。');return;}
+  const cfg={
+    cap:100000,cost:0.0005,
+    A:{s150:gv('cpA150'),s100:gv('cpA100'),clearDays:gv('cpADays'),dlt:gv('cpADelta'),w:120},
+    B:{s150:gv('cpB150'),s100:gv('cpB100'),clearDays:gv('cpBDays'),z:gv('cpBZ'),w:500},
+    strk:{n:Math.max(1,Math.round(gv('cpStrkN'))||2),useRsi:gc('useStrkRsi'),rsi:gv('cpRsi'),useVix:gc('useStrkVix'),vix:gv('cpVix'),vixPullback:gc('vixPullback'),vixPbAmt:gv('cpVixPB'),useBias:gc('useStrkBias'),bias:gv('cpBias'),useEWR:gc('useStrkEWR'),ewRatio:gv('cpEWRatio')},
+    pos:{plusMult:gv('cpPosPlus'),base:gv('cpPosBase'),strike:gv('cpPosStrk')},
+    useRegime:gc('useRegime'),useYC:gc('useYC'),useV8:gc('useV8'),
+    regRsiOn:gv('regRsiOn'),regVixOn:gv('regVixOn'),regRsiOff:gv('regRsiOff'),regVixOff:gv('regVixOff'),
+    regAllowPlus:gc('regAllowPlus'),regAllowPlusMid:gc('regAllowPlusMid'),ycLo:gv('ycLo'),ycHi:gv('ycHi')
+  };
+  $('loadingOverlay').classList.remove('hidden'); $('loadingText').textContent='回測運算中...';
+  setTimeout(()=>{
+    try{
+      const DATES=slice.map(r=>r.d),SP=slice.map(r=>r.sp),EW=slice.map(r=>r.ew);
+      const HY=slice.map(r=>r.hy),TIPS=slice.map(r=>r.tips);
+      const VIX=slice.map(r=>r.vix),CAPE=slice.map(r=>r.cape);
+      const Y10=slice.map(r=>r.y10),Y2=slice.map(r=>r.y2);
+      const N=DATES.length;
+      const costRate={cost:cfg.cost,strike:cfg.pos.strike};
+      const mkSt=(eq)=>({eq,m:'NORMAL',p:0,db:0,ps:100,s:100,f1:50,f5:50,yc:50,plusN:0,plusSP:0,plusLastPnL:null});
+      const st={A:mkSt(cfg.cap),B:mkSt(cfg.cap),C:{eq:cfg.cap,m:'NORMAL',p:cfg.pos.base},D:{eq:cfg.cap,m:'NORMAL',p:cfg.pos.base,plusN:0,plusSP:0,plusLastPnL:null},BH:{eq:cfg.cap},regime:'N'};
+      const cv=[],yrD={},logs=[];
+      const mddArr={A:[],B:[],C:[],D:[],BH:[]};
+      const pk={A:cfg.cap,B:cfg.cap,C:cfg.cap,D:cfg.cap,BH:cfg.cap};
+      const sp0=SP[0];
+      const totalEq=(s,spNow)=>s.eq+(s.plusN>0&&s.plusSP>0?s.plusN*(spNow/s.plusSP):0);
+      for(let i=1;i<N;i++){
+        const ret=(SP[i]-SP[i-1])/SP[i-1];
+        const hN=HY[i]*100;
+        const f1=lerp((100/CAPE[i])-TIPS[i],0,4,10,100);
+        // ★★★ 0325 F5刻度校準：HY 6%上限(600bp)，分數區間 90→10 ★★★
+        const f5b=lerp(hN,250,600,90,10);
+        const ycSlope=Y10[i]-Y2[i];
+        let shieldBase,ycScore=50;
+        if(cfg.useYC){ycScore=lerp(ycSlope,cfg.ycLo,cfg.ycHi,20,100);shieldBase=f1*0.5+f5b*0.3+ycScore*0.2;}
+        else shieldBase=f1*0.5+f5b*0.5;
+        let rsi=50;
+        if(i>=70){
+          const w=[SP[i]];
+          for(let j=i-1;j>=0;j--){if(new Date(DATES[j]).getDay()>=new Date(DATES[j+1]).getDay()){w.push(SP[j]);if(w.length===15)break;}}
+          if(w.length===15){w.reverse();let g=0,l=0;for(let k=1;k<15;k++){const d=w[k]-w[k-1];d>=0?g+=d:l-=d;}rsi=100-(100/(1+(g/(l||1))));}
+        }
+        let zb=0;
+        if(i>=20){
+          const sl=[];for(let j=i-19;j<=i;j++)sl.push(EW[j]/SP[j]);
+          const m=sl.reduce((a,b)=>a+b)/20;
+          const sd=Math.sqrt(sl.reduce((a,b)=>a+(b-m)**2)/20)||1;
+          zb=(EW[i]/SP[i]-m)/sd;
+        }
+        const vixPeak=Math.max(...VIX.slice(Math.max(0,i-20),i+1));
+        let spewRelPerf=0;
+        const lb63=Math.max(0,i-63);
+        if(i>=63&&EW[lb63]>0&&SP[lb63]>0)spewRelPerf=(SP[i]/SP[lb63])/(EW[i]/EW[lb63])-1;
+        const reg=getRegime(rsi,ycSlope,VIX[i],cfg);
+        st.regime=reg;
+        const strkHit=evalStrike(cfg,VIX[i],vixPeak,rsi,zb,spewRelPerf);
+        const pA=st.A.m,pB=st.B.m;
+        // A
+        let mA=hN;for(let j=Math.max(0,i-cfg.A.w);j<i;j++)if(HY[j]*100<mA)mA=HY[j]*100;
+        let sA=Math.round(shieldBase-(((hN-mA)>=cfg.A.dlt&&f5b<90)?10:0));
+        if(isNaN(sA))sA=st.A.ps;
+        if(sA<cfg.A.s100)st.A.db++;else st.A.db=0;
+        let nA=getMode(sA,st.A.db,cfg.A,strkHit,cfg.pos);nA=applyRegime(nA,reg,cfg);
+        const pnlA=stepEngine(st.A,pA,nA.m,cfg.pos.plusMult,ret,SP[i],costRate);
+        if(nA.m!==pA)logs.push({d:DATES[i],mtd:'A',fm:pA,to:nA.m,sp:SP[i].toFixed(1),s:sA,ps:st.A.ps,db:st.A.db,pnl:pnlA});
+        st.A.p=nA.p;st.A.m=nA.m;st.A.ps=sA;st.A.s=sA;st.A.f1=Math.round(f1);st.A.f5=Math.round(f5b);st.A.yc=Math.round(ycScore);
+        // B
+        const slB=HY.slice(Math.max(0,i-cfg.B.w),i);
+        const mB=slB.reduce((a,b)=>a+b,0)/slB.length;
+        const sdB=Math.sqrt(slB.reduce((a,b)=>a+(b-mB)**2,0)/slB.length)||1;
+        const zHY=(HY[i]-mB)/sdB;
+        let sB=Math.round(shieldBase-(zHY>cfg.B.z?10:0));
+        if(isNaN(sB))sB=st.B.ps;
+        if(sB<cfg.B.s100)st.B.db++;else st.B.db=0;
+        let nB=getMode(sB,st.B.db,cfg.B,strkHit,cfg.pos);nB=applyRegime(nB,reg,cfg);
+        const pnlB=stepEngine(st.B,pB,nB.m,cfg.pos.plusMult,ret,SP[i],costRate);
+        if(nB.m!==pB)logs.push({d:DATES[i],mtd:'B',fm:pB,to:nB.m,sp:SP[i].toFixed(1),s:sB,ps:st.B.ps,db:st.B.db,pnl:pnlB});
+        st.B.p=nB.p;st.B.m=nB.m;st.B.ps=sB;st.B.s=sB;st.B.f1=Math.round(f1);st.B.f5=Math.round(f5b);st.B.yc=Math.round(ycScore);
+        // C
+        const bA=(st.A.m==='NORMAL'||st.A.m==='PLUS'),bpA=(pA==='NORMAL'||pA==='PLUS');
+        const bB=(st.B.m==='NORMAL'||st.B.m==='PLUS'),bpB=(pB==='NORMAL'||pB==='PLUS');
+        let nMC=st.C.m;
+        if((!bA&&bpA)||(!bB&&bpB))nMC='CLEAR';
+        else if((bA&&!bpA)||(bB&&!bpB))nMC='NORMAL';
+        if(nMC!==st.C.m)logs.push({d:DATES[i],mtd:'C',fm:st.C.m,to:nMC,sp:SP[i].toFixed(1),s:'--',ps:'--',db:'--',pnl:null});
+        const nPC=nMC==='NORMAL'?cfg.pos.base:0;
+        const prevPC=st.C.m==='CLEAR'?0:cfg.pos.base;
+        st.C.eq*=(1+prevPC*ret);if(prevPC!==nPC)st.C.eq*=(1-cfg.cost);st.C.p=nPC;st.C.m=nMC;
+        // D
+        const cA=st.A.m!==pA,cB=st.B.m!==pB;
+        let nMD=st.D.m;
+        if(cA&&cB){const rank={'CLEAR':0,'STRIKE':1,'NORMAL':2,'PLUS':3};nMD=rank[st.A.m]<rank[st.B.m]?st.A.m:st.B.m;}
+        else if(cA)nMD=st.A.m;else if(cB)nMD=st.B.m;
+        const prevMD=st.D.m;
+        const pnlD=stepEngine(st.D,prevMD,nMD,cfg.pos.plusMult,ret,SP[i],costRate);
+        if(nMD!==prevMD)logs.push({d:DATES[i],mtd:'D',fm:prevMD,to:nMD,sp:SP[i].toFixed(1),s:'--',ps:'--',db:'--',pnl:pnlD});
+        st.D.m=nMD;
+        st.BH.eq=cfg.cap*(SP[i]/sp0);
+        const eqA=totalEq(st.A,SP[i]),eqB=totalEq(st.B,SP[i]),eqD=totalEq(st.D,SP[i]);
+        cv.push({d:DATES[i],A:eqA,B:eqB,C:st.C.eq,D:eqD,BH:st.BH.eq});
+        const eqs={A:eqA,B:eqB,C:st.C.eq,D:eqD,BH:st.BH.eq};
+        ['A','B','C','D','BH'].forEach(k=>{
+          if(eqs[k]>pk[k])pk[k]=eqs[k];mddArr[k].push((eqs[k]-pk[k])/pk[k]*100);
+        });
+        const yr=DATES[i].slice(0,4);
+        if(!yrD[yr])yrD[yr]={};
+        ['A','B','C','D','BH'].forEach(k=>{if(yrD[yr][k]===undefined)yrD[yr][k]={s:eqs[k],e:eqs[k]};yrD[yr][k].e=eqs[k];});
+      }
+      BT_RESULT={cv,yrD,logs,mdd:mddArr,st,cfgA:cfg.A,cfgB:cfg.B,cfgPos:cfg.pos,cfgLast:cfg};
+      renderUI();
+    }catch(err){alert('回測失敗：'+err.message);console.error(err);}
+    finally{$('loadingOverlay').classList.add('hidden');switchTab({target:document.querySelectorAll('.tab')[2]},'result');}
+  },80);
 }
-BT_RESULT={cv,yrD,logs,mdd:mddArr,st,cfgA:cfg.A,cfgB:cfg.B,cfgPos:cfg.pos,cfgLast:cfg}; renderUI();
-}catch(err){alert(‘回測失敗：’+err.message);console.error(err);}
-finally{$(‘loadingOverlay’).classList.add(‘hidden’);switchTab({target:document.querySelectorAll(’.tab’)[2]},‘result’);}
-},80);
-}
+
 function renderUI(){
-const r=BT_RESULT,st=r.st; const regColor={‘ON’:‘var(–green)’,‘OFF’:‘var(–red)’,‘MID’:‘var(–yellow)’,‘N’:‘var(–muted)’}; const regLabel={‘ON’:‘牛市 ON’,‘OFF’:‘熊市 OFF’,‘MID’:‘中性 MID’,‘N’:‘停用’}; const rb=$(‘regimeBadge’);
-rb.textContent=‘Regime: ‘+(regLabel[st.regime]||’–’); rb.style.background=st.regime===‘ON’?‘var(–green-dim)’:st.regime===‘OFF’?‘var(–red-dim)’:st.regime===‘MID’?‘var(–yellow-dim)’:‘var(–surface2)’; rb.style.color=regColor[st.regime]||‘var(–muted)’; rb.style.borderColor=regColor[st.regime]||‘var(–border)’;
-const liveCard=(k,title,color,showScore)=>{
-const s=showScore?st[k].s:’–’,ps=showScore?st[k].ps:’–’; const delta=showScore?(st[k].s-st[k].ps):null;
-const deltaHtml=delta!==null?`<div class="live-delta"><span style="color:${delta>0?'var(--green)':delta<0?'var(--red)':'var(--muted)'};font-size:12px;font-weight:700;">${delta>0?'▲ +':delta<0?'▼ ':''}${delta}</span><br><span style="font-size:10px;color:var(--muted)">昨:${ps}</span></div>`:’’;
-let dbHtml=’’;
-if(showScore){ const db=st[k].db||0,clearDays=k===‘A’?r.cfgA.clearDays:r.cfgB.clearDays,clearScore=k===‘A’?r.cfgA.s100:r.cfgB.s100; if(st[k].m===‘NORMAL’||st[k].m===‘PLUS’){ if(db>0){const pct=Math.round((db/clearDays)*100);dbHtml=`<div class="db-warn">⚠ 警示：連跌 ${db} / ${clearDays} 日，分數 ${s} &lt; ${clearScore}</div><div class="db-bar"><div class="db-bar-fill" style="width:${pct}%;background:var(--yellow)"></div></div>`;}else dbHtml=`<div style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:10px;padding:3px 7px;border-radius:3px;background:var(--green-dim);border:1px solid var(--green);color:var(--green);font-family:monospace;">✓ 分數正常 (${s}分 ≥ ${clearScore})</div>`; }else if(st[k].m===‘CLEAR’)dbHtml=`<div class="db-warn db-clear">✖ 清倉中：連跌 ${db} 日已達門檻</div>`;else if(st[k].m===‘STRIKE’)dbHtml=`<div class="db-warn">⚡ 短打模式 (分數 ${s})</div>`; }
-let plusHtml=’’; if(st[k].plusN>0&&st[k].plusSP>0){plusHtml=`<div class="plus-live"><div class="pl-title">⚡ 加碼倉位持有中</div><div class="pl-row"><span>建倉本金</span><span>${st[k].plusN.toFixed(0)}</span></div><div class="pl-row"><span>建倉指數</span><span>${st[k].plusSP.toFixed(1)}</span></div></div>`;}else if(st[k].plusLastPnL!==null&&st[k].plusLastPnL!==undefined){ const pnl=st[k].plusLastPnL; plusHtml=`<div class="plus-live" style="background:${pnl>=0?'var(--green-dim)':'var(--red-dim)'};border-color:${pnl>=0?'var(--green)':'var(--red)'}"><div class="pl-title" style="color:${pnl>=0?'var(--green)':'var(--red)'}">上一筆加碼損益</div><div class="pl-pnl" style="color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}${pnl.toFixed(0)}</div></div>`; }
-const hasYC=st[k].yc!==undefined&&showScore;
-const scoreBarHtml=showScore?`<div class="score-bar-row"><div class="score-bar"><div class="fill" style="width:${Math.max(0,Math.min(100,st[k].f1||50))}%;background:var(--accent)"></div></div><div class="score-bar"><div class="fill" style="width:${Math.max(0,Math.min(100,st[k].f5||50))}%;background:var(--green)"></div></div>${hasYC?`<div class="score-bar"><div class="fill" style="width:${Math.max(0,Math.min(100,st[k].yc||50))}%;background:var(--purple)"></div></div>`:''}</div><div class="live-sub"><span>F1 ${st[k].f1||'--'}</span><span>F5 ${st[k].f5||'--'}</span>${hasYC?`<span>YC ${st[k].yc||’–’}</span>`:''}</div>`:’’;
-const modeLabel=st[k].m===‘PLUS’?`${bdg('PLUS')} <span style="font-size:11px;color:var(--blue)">+${(r.cfgLast?.pos?.plusMult||0.5)*100}%</span>`:bdg(st[k].m||‘NORMAL’);
-return `<div class="live-card"><div class="live-label" style="color:var(--${color})">${title}</div><div class="live-main">${modeLabel}<span class="live-score">${s!=='--'?s+'分':'聯集'}</span><div style="flex:1"></div>${deltaHtml}</div>${scoreBarHtml}${dbHtml}${plusHtml}</div>`;
-};
-$(‘liveDash’).innerHTML=liveCard(‘A’,‘方法 A（Delta）’,‘yellow’,true)+liveCard(‘B’,‘方法 B（Z-Score）’,‘green’,true)+liveCard(‘C’,‘方法 C（雙態跟隨）’,‘accent’,false)+liveCard(‘D’,‘方法 D（全態跟隨）’,‘purple’,false);
-$(‘metricsGrid’).innerHTML=[[‘A’,‘方法 A’,‘yellow’],[‘B’,‘方法 B’,‘green’],[‘C’,‘方法 C’,‘accent’],[‘D’,‘方法 D’,‘purple’],[‘BH’,‘B&H 基準’,‘muted’]].map(([k,label,col])=>{ const p=calcP(r.cv,k); return `<div class="metric-card" style="border-top:3px solid var(--${col})"><div class="m-title">${label}</div><div class="m-row"><span>區間報酬</span><span class="m-val ${parseFloat(p.t)>0?'ty':''}">${parseFloat(p.t)>0?'+':''}${p.t}%</span></div><div class="m-row"><span>CAGR</span><span class="m-val">${p.c}%</span></div><div class="m-row"><span>MDD</span><span class="m-val tr">${p.m}%</span></div><div class="m-row"><span>Sharpe</span><span class="m-val tg">${p.s}</span></div><div class="m-row" style="opacity:.5"><span>年數</span><span class="m-val mono" style="font-size:11px">${p.yr}yr</span></div></div>`; }).join(’’);
-if(MOM_RESULT) overlaymomOnShieldChart();
-if(charts.n){charts.n.destroy();charts.d.destroy();}
-const sc={x:{ticks:{color:’#6b7a99’,maxTicksLimit:10},grid:{color:’#1a2030’}},y:{ticks:{color:’#6b7a99’},grid:{color:’#1a2030’}}}; const leg={labels:{color:’#6b7a99’,boxWidth:10,font:{size:11}}}; const opt={responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:‘index’},animation:{duration:300}}; const ds=(arr,label,color,w,dash)=>({label,data:arr,borderColor:color,borderWidth:w,pointRadius:0,borderDash:dash||[]});
-charts.n=new Chart($(‘navChart’).getContext(‘2d’),{type:‘line’,data:{labels:r.cv.map(x=>x.d),datasets:[ds(r.cv.map(x=>x.A),‘方法 A’,’#ffb830’,2),ds(r.cv.map(x=>x.B),‘方法 B’,’#00e5a0’,2),ds(r.cv.map(x=>x.C),‘方法 C’,’#7eb8ff’,2),ds(r.cv.map(x=>x.D),‘方法 D’,’#b388ff’,2),ds(r.cv.map(x=>x.BH),‘B&H’,’#3d4a66’,1)]},options:{…opt,plugins:{legend:leg},scales:{…sc,y:{…sc.y,type:‘logarithmic’}}}});
-charts.d=new Chart($(‘ddChart’).getContext(‘2d’),{type:‘line’,data:{labels:r.cv.map(x=>x.d),datasets:[ds(r.mdd.A,‘A’,’#ffb830’,1),ds(r.mdd.B,‘B’,’#00e5a0’,1),ds(r.mdd.C,‘C’,’#7eb8ff’,1),ds(r.mdd.D,‘D’,’#b388ff’,1),ds(r.mdd.BH,‘BH’,’#3d4a66’,1)]},options:{…opt,plugins:{legend:{display:false}},scales:sc}});
-if(MOM_RESULT) overlaymomOnShieldChart();
-$(‘yHead’).innerHTML=’<th>年份</th><th class="ty">A</th><th class="tg">B</th><th class="tc">C</th><th class="tp">D</th><th>B&H</th>’;
-$(‘yrBody’).innerHTML=Object.keys(r.yrD).sort().reverse().map(yr=>{ const y=r.yrD[yr],t=k=>((y[k].e/y[k].s-1)*100).toFixed(1); return `<tr><td>${yr}</td><td class="${parseFloat(t('A'))>=0?'ty':'tr'}">${t('A')}%</td><td class="${parseFloat(t('B'))>=0?'tg':'tr'}">${t('B')}%</td><td class="${parseFloat(t('C'))>=0?'tc':'tr'}">${t('C')}%</td><td class="${parseFloat(t('D'))>=0?'tp':'tr'}">${t('D')}%</td><td class="${parseFloat(t('BH'))>=0?'':'tr'}">${t('BH')}%</td></tr>`; }).join(’’);
-logFilter=‘ALL’; document.querySelectorAll(’.lfb’).forEach(b=>b.classList.remove(‘active’)); document.querySelector(’.lfb’)?.classList.add(‘active’); renderLogs();
+  const r=BT_RESULT,st=r.st;
+  const regColor={'ON':'var(--green)','OFF':'var(--red)','MID':'var(--yellow)','N':'var(--muted)'};
+  const regLabel={'ON':'牛市 ON','OFF':'熊市 OFF','MID':'中性 MID','N':'停用'};
+  const rb=$('regimeBadge');
+  rb.textContent='Regime: '+(regLabel[st.regime]||'--');
+  rb.style.background=st.regime==='ON'?'var(--green-dim)':st.regime==='OFF'?'var(--red-dim)':st.regime==='MID'?'var(--yellow-dim)':'var(--surface2)';
+  rb.style.color=regColor[st.regime]||'var(--muted)';rb.style.borderColor=regColor[st.regime]||'var(--border)';
+  const liveCard=(k,title,color,showScore)=>{
+    const s=showScore?st[k].s:'--',ps=showScore?st[k].ps:'--';
+    const delta=showScore?(st[k].s-st[k].ps):null;
+    const deltaHtml=delta!==null?`<div class="live-delta"><span style="color:${delta>0?'var(--green)':delta<0?'var(--red)':'var(--muted)'};font-size:12px;font-weight:700;">${delta>0?'▲ +':delta<0?'▼ ':''}${delta}</span><br><span style="font-size:10px;color:var(--muted)">昨:${ps}</span></div>`:'';
+    let dbHtml='';
+    if(showScore){
+      const db=st[k].db||0,clearDays=k==='A'?r.cfgA.clearDays:r.cfgB.clearDays;
+      const clearScore=k==='A'?r.cfgA.s100:r.cfgB.s100;
+      if(st[k].m==='NORMAL'||st[k].m==='PLUS'){
+        if(db>0){const pct=Math.round((db/clearDays)*100);dbHtml=`<div class="db-warn">⚠ 警示：連跌 ${db} / ${clearDays} 日，分數 ${s} &lt; ${clearScore}</div><div class="db-bar"><div class="db-bar-fill" style="width:${pct}%;background:var(--yellow)"></div></div>`;}
+        else dbHtml=`<div style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:10px;padding:3px 7px;border-radius:3px;background:var(--green-dim);border:1px solid var(--green);color:var(--green);font-family:monospace;">✓ 分數正常 (${s}分 ≥ ${clearScore})</div>`;
+      }else if(st[k].m==='CLEAR')dbHtml=`<div class="db-warn db-clear">✖ 清倉中：連跌 ${db} 日已達門檻</div>`;
+      else if(st[k].m==='STRIKE')dbHtml=`<div class="db-warn">⚡ 短打模式 (分數 ${s})</div>`;
+    }
+    let plusHtml='';
+    if(st[k].plusN>0&&st[k].plusSP>0){plusHtml=`<div class="plus-live"><div class="pl-title">⚡ 加碼倉位持有中</div><div class="pl-row"><span>建倉本金</span><span>${st[k].plusN.toFixed(0)}</span></div><div class="pl-row"><span>建倉指數</span><span>${st[k].plusSP.toFixed(1)}</span></div></div>`;}
+    else if(st[k].plusLastPnL!==null&&st[k].plusLastPnL!==undefined){
+      const pnl=st[k].plusLastPnL;
+      plusHtml=`<div class="plus-live" style="background:${pnl>=0?'var(--green-dim)':'var(--red-dim)'};border-color:${pnl>=0?'var(--green)':'var(--red)'}"><div class="pl-title" style="color:${pnl>=0?'var(--green)':'var(--red)'}">上一筆加碼損益</div><div class="pl-pnl" style="color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}${pnl.toFixed(0)}</div></div>`;
+    }
+    const hasYC=st[k].yc!==undefined&&showScore;
+    const scoreBarHtml=showScore?`<div class="score-bar-row"><div class="score-bar"><div class="fill" style="width:${Math.max(0,Math.min(100,st[k].f1||50))}%;background:var(--accent)"></div></div><div class="score-bar"><div class="fill" style="width:${Math.max(0,Math.min(100,st[k].f5||50))}%;background:var(--green)"></div></div>${hasYC?`<div class="score-bar"><div class="fill" style="width:${Math.max(0,Math.min(100,st[k].yc||50))}%;background:var(--purple)"></div></div>`:''}</div><div class="live-sub"><span>F1 ${st[k].f1||'--'}</span><span>F5 ${st[k].f5||'--'}</span>${hasYC?`<span>YC ${st[k].yc||'--'}</span>`:''}</div>`:'';
+    const modeLabel=st[k].m==='PLUS'?`${bdg('PLUS')} <span style="font-size:11px;color:var(--blue)">+${(r.cfgLast?.pos?.plusMult||0.5)*100}%</span>`:bdg(st[k].m||'NORMAL');
+    return `<div class="live-card"><div class="live-label" style="color:var(--${color})">${title}</div><div class="live-main">${modeLabel}<span class="live-score">${s!=='--'?s+'分':'聯集'}</span><div style="flex:1"></div>${deltaHtml}</div>${scoreBarHtml}${dbHtml}${plusHtml}</div>`;
+  };
+  $('liveDash').innerHTML=liveCard('A','方法 A（Delta）','yellow',true)+liveCard('B','方法 B（Z-Score）','green',true)+liveCard('C','方法 C（雙態跟隨）','accent',false)+liveCard('D','方法 D（全態跟隨）','purple',false);
+  $('metricsGrid').innerHTML=[['A','方法 A','yellow'],['B','方法 B','green'],['C','方法 C','accent'],['D','方法 D','purple'],['BH','B&H 基準','muted']].map(([k,label,col])=>{
+    const p=calcP(r.cv,k);
+    return `<div class="metric-card" style="border-top:3px solid var(--${col})"><div class="m-title">${label}</div><div class="m-row"><span>區間報酬</span><span class="m-val ${parseFloat(p.t)>0?'ty':''}">${parseFloat(p.t)>0?'+':''}${p.t}%</span></div><div class="m-row"><span>CAGR</span><span class="m-val">${p.c}%</span></div><div class="m-row"><span>MDD</span><span class="m-val tr">${p.m}%</span></div><div class="m-row"><span>Sharpe</span><span class="m-val tg">${p.s}</span></div><div class="m-row" style="opacity:.5"><span>年數</span><span class="m-val mono" style="font-size:11px">${p.yr}yr</span></div></div>`;
+  }).join('');
+  if(MOM_RESULT) overlaymomOnShieldChart();
+  if(charts.n){charts.n.destroy();charts.d.destroy();}
+  const sc={x:{ticks:{color:'#6b7a99',maxTicksLimit:10},grid:{color:'#1a2030'}},y:{ticks:{color:'#6b7a99'},grid:{color:'#1a2030'}}};
+  const leg={labels:{color:'#6b7a99',boxWidth:10,font:{size:11}}};
+  const opt={responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},animation:{duration:300}};
+  const ds=(arr,label,color,w,dash)=>({label,data:arr,borderColor:color,borderWidth:w,pointRadius:0,borderDash:dash||[]});
+  charts.n=new Chart($('navChart').getContext('2d'),{type:'line',data:{labels:r.cv.map(x=>x.d),datasets:[ds(r.cv.map(x=>x.A),'方法 A','#ffb830',2),ds(r.cv.map(x=>x.B),'方法 B','#00e5a0',2),ds(r.cv.map(x=>x.C),'方法 C','#7eb8ff',2),ds(r.cv.map(x=>x.D),'方法 D','#b388ff',2),ds(r.cv.map(x=>x.BH),'B&H','#3d4a66',1)]},options:{...opt,plugins:{legend:leg},scales:{...sc,y:{...sc.y,type:'logarithmic'}}}});
+  charts.d=new Chart($('ddChart').getContext('2d'),{type:'line',data:{labels:r.cv.map(x=>x.d),datasets:[ds(r.mdd.A,'A','#ffb830',1),ds(r.mdd.B,'B','#00e5a0',1),ds(r.mdd.C,'C','#7eb8ff',1),ds(r.mdd.D,'D','#b388ff',1),ds(r.mdd.BH,'BH','#3d4a66',1)]},options:{...opt,plugins:{legend:{display:false}},scales:sc}});
+  if(MOM_RESULT) overlaymomOnShieldChart();
+  $('yHead').innerHTML='<th>年份</th><th class="ty">A</th><th class="tg">B</th><th class="tc">C</th><th class="tp">D</th><th>B&H</th>';
+  $('yrBody').innerHTML=Object.keys(r.yrD).sort().reverse().map(yr=>{
+    const y=r.yrD[yr],t=k=>((y[k].e/y[k].s-1)*100).toFixed(1);
+    return `<tr><td>${yr}</td><td class="${parseFloat(t('A'))>=0?'ty':'tr'}">${t('A')}%</td><td class="${parseFloat(t('B'))>=0?'tg':'tr'}">${t('B')}%</td><td class="${parseFloat(t('C'))>=0?'tc':'tr'}">${t('C')}%</td><td class="${parseFloat(t('D'))>=0?'tp':'tr'}">${t('D')}%</td><td class="${parseFloat(t('BH'))>=0?'':'tr'}">${t('BH')}%</td></tr>`;
+  }).join('');
+  logFilter='ALL';
+  document.querySelectorAll('.lfb').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.lfb')?.classList.add('active');
+  renderLogs();
 }
-function setLogFilter(f,el){ logFilter=f; document.querySelectorAll(’#panel-logs .lfb’).forEach(b=>b.classList.remove(‘active’)); el.classList.add(‘active’); renderLogs(); }
+
+function setLogFilter(f,el){
+  logFilter=f;
+  document.querySelectorAll('#panel-logs .lfb').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');renderLogs();
+}
+
 function renderLogs(){
-if(!BT_RESULT)return; const allLogs=[…BT_RESULT.logs].reverse(); const filtered=logFilter===‘ALL’?allLogs:allLogs.filter(L=>L.mtd===logFilter); $(‘logCount’).textContent=filtered.length+’ 筆’; const cm={A:‘yellow’,B:‘green’,C:‘accent’,D:‘purple’};
-$(‘historyBody’).innerHTML=filtered.length?filtered.map(L=>{ const pnlHtml=L.pnl!==null&&L.pnl!==undefined?`<span style="font-family:monospace;font-weight:700;color:${L.pnl>=0?'var(--green)':'var(--red)'};">${L.pnl>=0?'+':''}${L.pnl.toFixed(0)}</span>`:’<span style="color:var(--dim)">—</span>’; return `<tr class="log-row"><td class="mono">${L.d}</td><td style="color:var(--${cm[L.mtd]||'muted'});font-weight:700;">方法 ${L.mtd}</td><td>${bdg(L.fm)} <span style="color:var(--muted);font-size:10px">➔</span> ${bdg(L.to)}</td><td class="mono">${L.sp}</td><td class="mono" style="font-weight:700;color:var(--white)">${L.s}</td><td class="mono" style="color:var(--muted)">${L.ps}</td><td class="mono">${L.db}</td><td>${pnlHtml}</td></tr>`; }).join(’’):’<tr><td colspan="8" style="text-align:center;color:var(--muted)">無符合條件的紀錄</td></tr>’;
+  if(!BT_RESULT)return;
+  const allLogs=[...BT_RESULT.logs].reverse();
+  const filtered=logFilter==='ALL'?allLogs:allLogs.filter(L=>L.mtd===logFilter);
+  $('logCount').textContent=filtered.length+' 筆';
+  const cm={A:'yellow',B:'green',C:'accent',D:'purple'};
+  $('historyBody').innerHTML=filtered.length
+    ?filtered.map(L=>{
+        const pnlHtml=L.pnl!==null&&L.pnl!==undefined
+          ?`<span style="font-family:monospace;font-weight:700;color:${L.pnl>=0?'var(--green)':'var(--red)'};">${L.pnl>=0?'+':''}${L.pnl.toFixed(0)}</span>`
+          :'<span style="color:var(--dim)">—</span>';
+        return `<tr class="log-row"><td class="mono">${L.d}</td><td style="color:var(--${cm[L.mtd]||'muted'});font-weight:700;">方法 ${L.mtd}</td><td>${bdg(L.fm)} <span style="color:var(--muted);font-size:10px">➔</span> ${bdg(L.to)}</td><td class="mono">${L.sp}</td><td class="mono" style="font-weight:700;color:var(--white)">${L.s}</td><td class="mono" style="color:var(--muted)">${L.ps}</td><td class="mono">${L.db}</td><td>${pnlHtml}</td></tr>`;
+      }).join('')
+    :'<tr><td colspan="8" style="text-align:center;color:var(--muted)">無符合條件的紀錄</td></tr>';
 }
-function downloadLogCSV(){ if(!BT_RESULT){alert(‘請先執行回測推演’);return;} const src=logFilter===‘ALL’?BT_RESULT.logs:BT_RESULT.logs.filter(L=>L.mtd===logFilter); const header=‘日期,引擎,由,至,大盤點位,當日分數,前日分數,連跌天數,加碼損益’; const rows=src.map(L=>[L.d,‘方法’+L.mtd,L.fm,L.to,L.sp,L.s,L.ps,L.db,L.pnl!==null&&L.pnl!==undefined?L.pnl.toFixed(0):’’].join(’,’)); const blob=new Blob([[header,…rows].join(’\n’)],{type:‘text/csv;charset=utf-8;’}); const a=document.createElement(‘a’);a.href=URL.createObjectURL(blob);a.download=‘Shield_Logs’+(logFilter!==‘ALL’?’_’+logFilter:’’)+’.csv’;document.body.appendChild(a);a.click();document.body.removeChild(a); }
-function switchTab(e,name){ document.querySelectorAll(’.tab’).forEach(t=>t.classList.remove(‘active’)); document.querySelectorAll(’.panel’).forEach(p=>p.classList.remove(‘active’)); if(e.target?.classList)e.target.classList.add(‘active’); document.getElementById(‘panel-’+name)?.classList.add(‘active’); }
+
+function downloadLogCSV(){
+  if(!BT_RESULT){alert('請先執行回測推演');return;}
+  const src=logFilter==='ALL'?BT_RESULT.logs:BT_RESULT.logs.filter(L=>L.mtd===logFilter);
+  const header='日期,引擎,由,至,大盤點位,當日分數,前日分數,連跌天數,加碼損益';
+  const rows=src.map(L=>[L.d,'方法'+L.mtd,L.fm,L.to,L.sp,L.s,L.ps,L.db,L.pnl!==null&&L.pnl!==undefined?L.pnl.toFixed(0):''].join(','));
+  const blob=new Blob([[header,...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='Shield_Logs'+(logFilter!=='ALL'?'_'+logFilter:'')+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+function switchTab(e,name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  if(e.target?.classList)e.target.classList.add('active');
+  document.getElementById('panel-'+name)?.classList.add('active');
+}
 </script>
 
 </body>
