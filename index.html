@@ -41,6 +41,8 @@ input[type=text],input[type=number],input[type=date],select{
   background:var(--bg);border:1px solid var(--border-hi);color:var(--white);
   padding:7px 9px;border-radius:3px;font-size:13px;font-family:'IBM Plex Mono',monospace;width:100%}
 input:focus,select:focus{outline:none;border-color:var(--accent)}
+/* ★ iOS修復：file input 用 clip 隱藏而非 display:none ★ */
+.file-inp{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .span2{grid-column:span 2}
@@ -55,9 +57,9 @@ button{padding:10px 16px;border:none;border-radius:3px;cursor:pointer;font-size:
 .stat-box{background:var(--bg);border:1px solid var(--border);padding:10px 14px;border-radius:3px;flex:1;min-width:140px}
 .stat-box .n{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--white)}
 .stat-box .s{font-size:11px;color:var(--muted);margin-top:2px}
+/* ★ upload-label 現在用於 <label> 元素 ★ */
 .upload-label{display:block;background:var(--surface2);border:2px dashed var(--border-hi);padding:12px;text-align:center;cursor:pointer;color:var(--accent);font-weight:700;border-radius:3px;margin-bottom:8px}
 .upload-label:hover{border-color:var(--accent)}
-input[type=file]{display:none}
 #fetchLog{font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:8px;min-height:16px;word-break:break-all}
 .cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
 .cfg-box{background:var(--surface);border:1px solid var(--border);padding:12px}
@@ -198,8 +200,9 @@ td{padding:9px;border-bottom:1px solid var(--border)}
   <div class="step-body">
     <div id="csvLockMsg" class="hidden" style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border-hi);border-radius:3px;font-size:12px;color:var(--muted);margin-bottom:8px">🔒 已使用自動抓取（SPY adjclose），CSV 上傳已停用以避免資料不一致。<br>如需重置，請重新整理頁面。</div>
     <div id="csvUploadArea">
-      <input type="file" id="csvUpload" accept=".csv" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px" onchange="loadCSV(event)">
-      <button onclick="document.getElementById('csvUpload').click()" class="upload-label" style="width:100%;border:2px dashed var(--border-hi)">📂 點擊選擇 CSV 檔案</button>
+      <!-- ★ iOS修復：改用 label 元素，input 用 clip 隱藏 ★ -->
+      <label for="csvUpload" class="upload-label" style="width:100%">📂 點擊選擇 CSV 檔案</label>
+      <input type="file" id="csvUpload" accept=".csv" class="file-inp" onchange="loadCSV(event)">
     </div>
     <div id="csvStatus" style="font-size:12px;color:var(--green);min-height:16px;margin-bottom:10px"></div>
     <div class="stat-row">
@@ -218,8 +221,9 @@ td{padding:9px;border-bottom:1px solid var(--border)}
     <div style="margin-top:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:3px">
       <div style="font-size:11px;color:var(--teal);font-weight:700;margin-bottom:6px">📎 CAPE 歷史資料上傳</div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.6">CSV 格式：第一欄 DATE（YYYY-MM-DD 或 YYYY-MM），第二欄 CAPE<br>月頻資料會自動填充至當月所有交易日<br><span style="color:var(--dim)">範例：2024-01,34.50</span></div>
-      <input type="file" id="capeUpload" accept=".csv,.txt" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px" onchange="loadCapeCSV(event)">
-      <button onclick="document.getElementById('capeUpload').click()" style="width:100%;padding:10px;background:var(--teal-dim);border:1px solid var(--teal);color:var(--teal);border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">📂 選擇 CAPE CSV 檔案</button>
+      <!-- ★ iOS修復：CAPE upload 也改用 label ★ -->
+      <input type="file" id="capeUpload" accept=".csv,.txt" class="file-inp" onchange="loadCapeCSV(event)">
+      <label for="capeUpload" style="display:block;width:100%;padding:10px;background:var(--teal-dim);border:1px solid var(--teal);color:var(--teal);border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:center">📂 選擇 CAPE CSV 檔案</label>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:11px;color:var(--muted)">手動輸入當月值</span>
         <input type="number" id="apiCape" value="" step="0.1" placeholder="36.5" style="width:90px;font-size:12px">
@@ -598,8 +602,26 @@ async function fetchAndMerge(quickMode=false){
   if(proxy&&!proxy.includes('url=')) proxy=proxy.endsWith('/')?proxy+'?url=':proxy+'/?url=';
   const PROXIES=[proxy,'https://api.allorigins.win/raw?url=','https://api.codetabs.com/v1/proxy?quest='].filter(Boolean);
   $('loadingOverlay').classList.remove('hidden'); setLog(quickMode?'⚡ 每日快速更新中...':'🔄 完整抓取中（含 CAPE）...');
-  const fetchFB=async url=>{ let lastErr; for(const p of PROXIES){ try{ const res=await fetch(p+encodeURIComponent(url)); if(!res.ok) throw new Error('HTTP '+res.status); if((res.headers.get('content-type')||'').includes('text/html')&&!url.includes('multpl')) throw new Error('Proxy 回傳 HTML'); return res; }catch(e){lastErr=e;} } throw lastErr||new Error('所有 Proxy 失敗'); };
-  const getYf=async ticker=>{ setLog((quickMode?'⚡':'🔄')+' Yahoo: '+ticker+'...'); $('loadingText').textContent='抓取 '+ticker; const range=quickMode?'1mo':'max'; const url='https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?range='+range+'&interval=1d'; const res=await fetchFB(url); const j=await res.json(); const d={},chart=j.chart.result[0]; chart.timestamp.forEach((t,i)=>{ const adj=chart.indicators?.adjclose?.[0]?.adjclose?.[i]; const cl=chart.indicators?.quote?.[0]?.close?.[i]; const val=adj??cl; if(val&&val>0) d[new Date(t*1000).toISOString().slice(0,10)]=val; }); return d; };
+  const fetchFB=async url=>{ let lastErr; for(const p of PROXIES){ try{ const res=await fetch(p+encodeURIComponent(url)); if(!res.ok) throw new Error('HTTP '+res.status); if((res.headers.get('content-type')||'').includes('text/html')&&!url.includes('multpl')) throw new Error('Proxy 回傳 HTML'); return res; }catch(e){lastErr=e;} } throw lastErr||new Error('所有 Proxy 失敗，請檢查 Proxy 設定或改用 CSV 上傳'); };
+  // ★ iOS修復：getYf 加入 query1/query2 雙端點輪詢 ★
+  const getYf=async ticker=>{
+    setLog((quickMode?'⚡':'🔄')+' Yahoo: '+ticker+'...');
+    $('loadingText').textContent='抓取 '+ticker;
+    const range=quickMode?'1mo':'max';
+    const endpoints=[
+      'https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?range='+range+'&interval=1d',
+      'https://query2.finance.yahoo.com/v8/finance/chart/'+ticker+'?range='+range+'&interval=1d',
+    ];
+    for(const url of endpoints){
+      try{
+        const res=await fetchFB(url); const j=await res.json();
+        const chart=j?.chart?.result?.[0]; if(!chart) continue;
+        const d={}; chart.timestamp.forEach((t,i)=>{ const adj=chart.indicators?.adjclose?.[0]?.adjclose?.[i]; const cl=chart.indicators?.quote?.[0]?.close?.[i]; const val=adj??cl; if(val&&val>0) d[new Date(t*1000).toISOString().slice(0,10)]=val; });
+        if(Object.keys(d).length>5) return d;
+      }catch(e){ console.warn(ticker+' endpoint failed:',e.message); }
+    }
+    throw new Error(ticker+' 所有端點失敗，請改用 CSV 上傳');
+  };
   const getFred=async id=>{ setLog((quickMode?'⚡':'🔄')+' FRED: '+id+'...'); $('loadingText').textContent='抓取 FRED: '+id; let url='https://api.stlouisfed.org/fred/series/observations?series_id='+id+'&api_key='+key+'&file_type=json'; if(quickMode){const from=new Date(Date.now()-45*86400000).toISOString().slice(0,10);url+='&observation_start='+from;} const res=await fetchFB(url); const j=await res.json(); if(j.error_message) throw new Error('FRED: '+j.error_message); const d={};j.observations.forEach(o=>{if(o.value!=='.') d[o.date]=parseFloat(o.value);});return d; };
   const fetchCape=async()=>{
     setLog('🔄 CAPE：抓取中...'); $('loadingText').textContent='抓取 CAPE 歷史...'; const capeByMonth={};
@@ -651,8 +673,23 @@ function exportCSV(){
 }
 function getProxies(){ let proxy=$('apiProxy').value.trim(); if(proxy&&!proxy.includes('url=')) proxy=proxy.endsWith('/')?proxy+'?url=':proxy+'/?url='; return [proxy,'https://api.allorigins.win/raw?url=','https://api.codetabs.com/v1/proxy?quest='].filter(Boolean); }
 async function fetchYfMonthly(ticker,proxies){
-  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=max&interval=1mo`; let lastErr;
-  for(const p of proxies){ try{ const res=await fetch(p+encodeURIComponent(url)); if(!res.ok) throw new Error('HTTP '+res.status); const j=await res.json(); const chart=j?.chart?.result?.[0]; if(!chart) throw new Error('無資料'); const prices=[]; chart.timestamp.forEach((t,i)=>{ const close=chart.indicators?.adjclose?.[0]?.adjclose?.[i]??chart.indicators?.quote?.[0]?.close?.[i]; if(close&&close>0) prices.push({date:new Date(t*1000).toISOString().slice(0,7),close:+close.toFixed(4)}); }); const seen={};prices.forEach(p=>{seen[p.date]=p;}); return Object.values(seen).sort((a,b)=>a.date.localeCompare(b.date)); }catch(e){lastErr=e;} }
+  // ★ 雙端點輪詢 ★
+  const endpoints=[
+    'https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?range=max&interval=1mo',
+    'https://query2.finance.yahoo.com/v8/finance/chart/'+ticker+'?range=max&interval=1mo',
+  ];
+  let lastErr;
+  for(const url of endpoints){
+    for(const p of proxies){
+      try{
+        const res=await fetch(p+encodeURIComponent(url)); if(!res.ok) throw new Error('HTTP '+res.status);
+        const j=await res.json(); const chart=j?.chart?.result?.[0]; if(!chart) throw new Error('無資料');
+        const prices=[]; chart.timestamp.forEach((t,i)=>{ const close=chart.indicators?.adjclose?.[0]?.adjclose?.[i]??chart.indicators?.quote?.[0]?.close?.[i]; if(close&&close>0) prices.push({date:new Date(t*1000).toISOString().slice(0,7),close:+close.toFixed(4)}); });
+        const seen={};prices.forEach(p2=>{seen[p2.date]=p2;}); const result=Object.values(seen).sort((a,b)=>a.date.localeCompare(b.date));
+        if(result.length>5) return result;
+      }catch(e){lastErr=e;}
+    }
+  }
   throw lastErr||new Error('抓取失敗');
 }
 async function fetchMomData(){
@@ -669,15 +706,12 @@ async function fetchMomData(){
 }
 
 // ★★★ 0325 F5刻度校準 ★★★
-// HY 上限：8%（800bp）→ 6%（600bp），分數區間：80-20 → 90-10
-// 方法論：校準近代有效範圍，非 in-sample 最佳化門檻
-// 依據：2010年後 HY>6% 已屬嚴重信用壓力（2015-16, 2020 COVID, 2022短暫幾個月）
 function getShieldScore(dateStr){
 if(!DB.length) return 50;
 let best=DB[DB.length-1];
 for(const r of DB){if(r.d<=dateStr) best=r; else break;}
 const f1=lerp((100/(best.cape||30))-(best.tips||1.5),0,4,10,100);
-const f5=lerp((best.hy||3.5)*100,250,600,90,10); // ★0325: 80,20→90,10
+const f5=lerp((best.hy||3.5)*100,250,600,90,10);
 return f1*0.5+f5*0.5;
 }
 
@@ -710,7 +744,14 @@ const cfg={buffer:gv(‘momBuffer’)/100,maxHold:parseInt($(‘momMaxHold’).v
 const signal=calcMomSignalAt(months,lastIdx,cfg); const useShield=gc(‘momShieldGate’); const finalH=momApplyShield(signal.rawHoldings||{[MOM_CASH_TICKER]:1.0},shieldScore,useShield);
 $(‘momSignalSection’).classList.remove(‘hidden’); $(‘momCashRateDisplay’).textContent=(signal.cashRate*100).toFixed(2)+’%’; $(‘momMuDisplay’).textContent=`門檻 ${(signal.threshold*100).toFixed(2)}%  |  相關閾值 ${(signal.corrThresh||0.75).toFixed(2)}`;
 const allScored=Object.entries(signal.scoreMap||{}).sort((a,b)=>b[1]-a[1]); const maxAbsS=Math.max(…allScored.map(([t,s])=>Math.abs(s)),0.01); const tsSet=new Set(signal.tsPass||[]);const csSet=new Set(signal.eligible||[]);
-$(‘momSignalRows’).innerHTML=allScored.map(([t,s])=>{ const ts=tsSet.has(t),cs=csSet.has(t),w=finalH[t]; const r12=signal.r12Map?.[t]; const bw=Math.round(Math.min(100,Math.abs(s)/maxAbsS*100)); const bc=s>=0?‘var(–teal)’:‘var(–red)’; const nc=w&&w>0.005?‘var(–teal)’:cs?‘var(–accent)’:ts?‘var(–muted)’:‘var(–dim)’; return `<div class="mom-signal-row"><span style="width:42px;font-weight:700;color:${nc}">${t}</span><span style="width:54px;color:${s>=0?'var(--teal)':'var(--red)'}">${s>=0?'+':''}${s.toFixed(2)}</span><span style="width:50px;font-size:10px;color:${r12!=null?(r12>signal.threshold?'var(--green)':'var(--red)'):'var(--dim)'}">${r12!=null?(r12*100).toFixed(1)+'%':'--'}</span><div class="mom-bar-wrap"><div class="mom-bar-fill" style="width:${bw}%;background:${bc};opacity:${cs?1:0.2}"></div></div><span style="width:26px;text-align:center;font-weight:700;color:${ts?'var(--green)':'var(--red)'}">${ts?'✓':'✗'}</span><span style="width:26px;text-align:center;font-weight:700;color:${cs?'var(--teal)':'var(--dim)'}">${ts?(cs?'✓':'✗'):'—'}</span><span style="width:60px;text-align:right;font-weight:700;color:${w&&w>0.005?'var(--teal)':'var(--dim)'}"> ${w&&w>0.005?'● '+(w*100).toFixed(1)+'%':''}</span></div>`; }).join(’’);
+$(‘momSignalRows’).innerHTML=allScored.map(([t,s])=>{
+const ts=tsSet.has(t),cs=csSet.has(t),w=finalH[t];
+const r12=signal.r12Map?.[t]; const bw=Math.round(Math.min(100,Math.abs(s)/maxAbsS*100));
+// ★ 修正：使用正確 CSS 雙橫線 – ★
+const bc=s>=0?‘var(–teal)’:‘var(–red)’;
+const nc=w&&w>0.005?‘var(–teal)’:cs?‘var(–accent)’:ts?‘var(–muted)’:‘var(–dim)’;
+return `<div class="mom-signal-row"><span style="width:42px;font-weight:700;color:${nc}">${t}</span><span style="width:54px;color:${s>=0?'var(--teal)':'var(--red)'}">${s>=0?'+':''}${s.toFixed(2)}</span><span style="width:50px;font-size:10px;color:${r12!=null?(r12>signal.threshold?'var(--green)':'var(--red)'):'var(--dim)'}">${r12!=null?(r12*100).toFixed(1)+'%':'--'}</span><div class="mom-bar-wrap"><div class="mom-bar-fill" style="width:${bw}%;background:${bc};opacity:${cs?1:0.2}"></div></div><span style="width:26px;text-align:center;font-weight:700;color:${ts?'var(--green)':'var(--red)'}">${ts?'✓':'✗'}</span><span style="width:26px;text-align:center;font-weight:700;color:${cs?'var(--teal)':'var(--dim)'}">${ts?(cs?'✓':'✗'):'—'}</span><span style="width:60px;text-align:right;font-weight:700;color:${w&&w>0.005?'var(--teal)':'var(--dim)'}"> ${w&&w>0.005?'● '+(w*100).toFixed(1)+'%':''}</span></div>`;
+}).join(’’);
 $(‘momRecommendHoldings’).innerHTML=Object.entries(finalH).filter(([t,w])=>w>0.005).sort((a,b)=>b[1]-a[1]).map(([t,w])=>`<span class="holding-chip ${t===MOM_CASH_TICKER?'cash':''}">${t} ${(w*100).toFixed(1)}%</span>`).join(’ ‘);
 if(useShield){ const exp=momShieldExposure(shieldScore); $(‘momRecommendHoldings’).innerHTML+=` <span style="font-size:11px;color:var(--muted)">（盾牌${shieldScore.toFixed(0)}分→曝露${(exp*100).toFixed(0)}%）</span>`; }
 const badge=$(‘momCurrentBadge’); badge.classList.remove(‘hidden’); badge.textContent=`MOM: ${Object.entries(finalH).filter(([t,w])=>w>0.005&&t!==MOM_CASH_TICKER).map(([t])=>t).slice(0,2).join('+')||'BIL'}`;
@@ -759,7 +800,7 @@ const monthRets=records.map(r=>r.portRet); const avgRet=monthRets.reduce((a,b)=>
 const sm=MOM_RESULT.shieldMonthly; const ABCD_COLORS={A:’#ffb830’,B:’#00e5a0’,C:’#7eb8ff’,D:’#b388ff’}; const ABCD_LABELS={A:‘方法 A’,B:‘方法 B’,C:‘方法 C’,D:‘方法 D’};
 function shieldMetrics(key){ if(!sm||!sm[key]||!sm[key].length) return null; const vals=sm[key].filter(v=>v!==null); if(vals.length<2) return null; const tr=vals[vals.length-1]/vals[0]-1; const yrs=sm.months.length/12; const cagr2=yrs>0?Math.pow(1+Math.max(tr,-0.999),1/yrs)-1:0; let pk=vals[0],mdd2=0; vals.forEach(v=>{if(v>pk)pk=v;const dd=(v-pk)/pk;if(dd<mdd2)mdd2=dd;}); const mRets=[]; for(let i=1;i<vals.length;i++) mRets.push((vals[i]-vals[i-1])/vals[i-1]); const ar=mRets.reduce((a,b)=>a+b,0)/(mRets.length||1); const sd=Math.sqrt(mRets.reduce((a,b)=>a+(b-ar)**2,0)/(mRets.length||1))*Math.sqrt(12); const sh=sd>0?(cagr2-0.025)/sd:0; return {tr,cagr:cagr2,mdd:mdd2,sharpe:sh,final:vals[vals.length-1]}; }
 const abcdCards=sm?[‘A’,‘B’,‘C’,‘D’].map(k=>{ const m=shieldMetrics(k); if(!m) return ‘’; return {label:ABCD_LABELS[k],sub:‘盾牌策略’,color:k===‘A’?‘yellow’:k===‘B’?‘green’:k===‘C’?‘accent’:‘purple’,rows:[[‘最終淨值’,`$${Math.round(m.final).toLocaleString()}`,‘white’],[‘區間報酬’,`${m.tr>=0?'+':''}${(m.tr*100).toFixed(1)}%`,m.tr>=0?‘tg’:‘tr’],[‘CAGR’,`${(m.cagr*100).toFixed(2)}%`,’’],[‘MDD’,`${(m.mdd*100).toFixed(2)}%`,‘tr’],[‘Sharpe’,m.sharpe.toFixed(2),‘tg’]]}; }).filter(Boolean):[];
-$(‘momMetricsGrid’).innerHTML=[{label:‘動能輪動’,sub:‘MOM策略’,color:‘teal’,rows:[[‘最終淨值’,`$${Math.round(last.nav).toLocaleString()}`,‘white’],[‘區間報酬’,`${totalRet>=0?'+':''}${(totalRet*100).toFixed(1)}%`,totalRet>=0?‘tg’:‘tr’],[‘CAGR’,`${(cagr*100).toFixed(2)}%`,‘tt’],[‘MDD’,`${(mdd*100).toFixed(2)}%`,‘tr’],[‘Sharpe’,sharpe.toFixed(2),‘tg’],[‘持現金月’,`${cashMonths}月`,’’],]},{label:‘SPY 買持’,sub:‘B&H基準’,color:‘muted’,rows:[[‘最終淨值’,`$${Math.round(last.spyNav).toLocaleString()}`,‘white’],[‘區間報酬’,`${spyRet>=0?'+':''}${(spyRet*100).toFixed(1)}%`,spyRet>=0?‘tg’:‘tr’],[‘CAGR’,`${(spyCagr*100).toFixed(2)}%`,’’],[‘超額CAGR’,`${((cagr-spyCagr)*100)>=0?'+':''}${((cagr-spyCagr)*100).toFixed(2)}pp`,(cagr-spyCagr)>=0?‘tg’:‘tr’]]},  …abcdCards].map(({label,sub,color,rows})=>`<div class="metric-card" style="border-top:3px solid var(--${color})"><div class="m-title">${label}<span style="font-size:10px;font-weight:400;color:var(--dim);margin-left:5px">${sub}</span></div>${rows.map(([k,v,cls])=>`<div class="m-row"><span>${k}</span><span class="m-val ${cls||''}">${v}</span></div>`).join('')}</div>`).join(’’);
+$(‘momMetricsGrid’).innerHTML=[{label:‘動能輪動’,sub:‘MOM策略’,color:‘teal’,rows:[[‘最終淨值’,`$${Math.round(last.nav).toLocaleString()}`,‘white’],[‘區間報酬’,`${totalRet>=0?'+':''}${(totalRet*100).toFixed(1)}%`,totalRet>=0?‘tg’:‘tr’],[‘CAGR’,`${(cagr*100).toFixed(2)}%`,‘tt’],[‘MDD’,`${(mdd*100).toFixed(2)}%`,‘tr’],[‘Sharpe’,sharpe.toFixed(2),‘tg’],[‘持現金月’,`${cashMonths}月`,’’],]},{label:‘SPY 買持’,sub:‘B&H基準’,color:‘muted’,rows:[[‘最終淨值’,`$${Math.round(last.spyNav).toLocaleString()}`,‘white’],[‘區間報酬’,`${spyRet>=0?'+':''}${(spyRet*100).toFixed(1)}%`,spyRet>=0?‘tg’:‘tr’],[‘CAGR’,`${(spyCagr*100).toFixed(2)}%`,’’],[‘超額CAGR’,`${((cagr-spyCagr)*100)>=0?'+':''}${((cagr-spyCagr)*100).toFixed(2)}pp`,(cagr-spyCagr)>=0?‘tg’:‘tr’]]},…abcdCards].map(({label,sub,color,rows})=>`<div class="metric-card" style="border-top:3px solid var(--${color})"><div class="m-title">${label}<span style="font-size:10px;font-weight:400;color:var(--dim);margin-left:5px">${sub}</span></div>${rows.map(([k,v,cls])=>`<div class="m-row"><span>${k}</span><span class="m-val ${cls||''}">${v}</span></div>`).join('')}</div>`).join(’’);
 if(MOM_CHART.nav){MOM_CHART.nav.destroy();MOM_CHART.dd.destroy();}
 const labels=records.map(r=>r.month); const sc={x:{ticks:{color:’#6b7a99’,maxTicksLimit:12},grid:{color:’#1a2030’}},y:{ticks:{color:’#6b7a99’},grid:{color:’#1a2030’}}}; const opt={responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:‘index’},animation:{duration:200}};
 const abcdDatasets=sm?[‘A’,‘B’,‘C’,‘D’].map(k=>{ if(!sm[k]) return null; const monthMap={};sm.months.forEach((m,i)=>{monthMap[m]=sm[k][i];}); return {label:ABCD_LABELS[k],data:labels.map(m=>monthMap[m]??null),borderColor:ABCD_COLORS[k],borderWidth:1.5,pointRadius:0,borderDash:[3,3]}; }).filter(Boolean):[];
@@ -802,8 +843,6 @@ for(let i=1;i<N;i++){
 const ret=(SP[i]-SP[i-1])/SP[i-1]; const hN=HY[i]*100;
 const f1=lerp((100/CAPE[i])-TIPS[i],0,4,10,100);
 // ★★★ 0325 F5刻度校準：HY 6%上限(600bp)，分數區間 90→10 ★★★
-// 舊版：lerp(hN,250,600,80,20) — 2010年後 HY 幾乎從未達 8%(800bp)，形成死區
-// 新版：90→10 讓近代信用壓力（6%=600bp）能真實壓低盾分，並提前在 2007-08 發出警示
 const f5b=lerp(hN,250,600,90,10);
 const ycSlope=Y10[i]-Y2[i]; let shieldBase,ycScore=50;
 if(cfg.useYC){ycScore=lerp(ycSlope,cfg.ycLo,cfg.ycHi,20,100);shieldBase=f1*0.5+f5b*0.3+ycScore*0.2;}
