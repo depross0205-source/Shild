@@ -170,7 +170,7 @@ td{padding:9px;border-bottom:1px solid var(--border)}
 <div class="hdr">
   <div>
     <div class="hdr-title">🛡️ 矛與盾 × 動能策劃 <span class="v">0325</span></div>
-    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5校準(HY下界80→上界10) ｜ 即時信號修正 ｜ HY動量懲罰 ｜ 寬度動量懲罰</div>
+    <div class="hdr-sub">A/B/C/D 四軌 ｜ Regime ｜ YC ｜ V9.6 動能輪動（多週期z · TS+CS · 相關性過濾 · 分段盾牌）｜ EW斷層修復 ｜ F5校準(HY下界80→上界10) ｜ 即時信號修正 ｜ Z-Score動量懲罰 ｜ 50分中性校準</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span id="momCurrentBadge" class="hidden" style="font-size:11px;padding:3px 10px;border-radius:3px;font-family:monospace;background:var(--teal-dim);color:var(--teal);border:1px solid var(--teal)">MOM: --</span>
@@ -1115,36 +1115,62 @@ async function fetchMomData(){
   calcMomCurrentSignal(); saveToStorage();
 }
 
-// ★★★ 0325 F5 刻度校準 + 動量懲罰 ★★★
-// F5：不對稱壓縮（下界80保持，上界壓至10），捕捉高HY環境
-// ① HY動量懲罰：60日內利差上升速度 → 每33bp/60d扣10分（上限25）
-//   效果：2020 COVID暴升650bp→立即扣25；2008緩升150bp→扣~15
-// ③ 寬度動量懲罰：EW/SP比率60日惡化 → 每5%惡化扣10分（上限20）
-//   效果：2022年初寬度惡化先於HY，2000年長期惡化有效
+// ════ Z-Score 動態懲罰輔助函式 ════
+// 以滾動歷史分布（最多252筆）為基準，只有統計上顯著的異常（>zThresh σ）才扣分
+// direction=1：懲罰偏高值（HY動量↑）；direction=-1：懲罰偏低值（寬度動量↓）
+// zThresh→0分，3.0σ→maxPenalty，線性插值
+function zScorePenalty(series,current,direction,zThresh,maxPenalty){
+  const n=Math.min(series.length,252); if(n<20) return 0;
+  const vals=series.slice(-n);
+  const mean=vals.reduce((a,b)=>a+b,0)/n;
+  const std=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/n)||0.0001;
+  const z=(current-mean)/std*direction;
+  if(z<=zThresh) return 0;
+  return Math.min(maxPenalty,maxPenalty*(z-zThresh)/(3.0-zThresh));
+}
+
+// ★★★ 0325 50分中性校準 + Z-Score 動量懲罰 ★★★
+// 設計原則：正常市場=50分，清場門檻40/45才有明確統計意義
+//   F1=50 @ ERP=2.0%（CAPE≈28.6, TIPS=1.5%，後危機長期均值）
+//     lerp(ERP, 0, 4, 10, 90)：midpoint ERP=2% → F1=50
+//   F5=50 @ HY=350bp（2010年後正常信用環境均值）
+//     lerp(HY, 250, 600, 66, 10)：(350-250)/(600-250)=2/7 → 66-56*2/7=50
+//   Z-Score懲罰：>1.5σ才開始扣分，3σ=上限（15/10分）
+//     正常波動完全不扣；2020 COVID暴升≈5σ→扣滿；2008緩升≈2σ→扣~5分
 function getShieldScore(dateStr){
   if(!DB.length) return 50;
-  let best=DB[DB.length-1];
-  for(const r of DB){if(r.d<=dateStr) best=r; else break;}
-  const f1=lerp((100/(best.cape||30))-(best.tips||1.5),0,4,10,100);
-  const f5=lerp((best.hy||3.5)*100,250,600,80,10);
+  let bestIdx=DB.length-1;
+  for(let i=0;i<DB.length;i++){if(DB[i].d>dateStr){bestIdx=Math.max(0,i-1);break;}}
+  const best=DB[bestIdx];
+
+  // ── 基礎盾分（50分中性校準）──
+  const erp=(100/(best.cape||30))-(best.tips||1.5);
+  const f1=lerp(erp,0,4,10,90);                           // 50 @ ERP=2.0%
+  const f5=lerp((best.hy||3.5)*100,250,600,66,10);        // 50 @ HY=350bp
   const base=f1*0.5+f5*0.5;
 
-  // ① HY動量懲罰（60交易日≈85曆日）
-  const d60=new Date(best.d+'T12:00:00');
-  d60.setDate(d60.getDate()-85);
-  const d60str=d60.toISOString().slice(0,10);
-  let r60=DB[0];
-  for(const r of DB){if(r.d<=d60str) r60=r; else break;}
-  const hyMom60=(best.hy||3.5)*100-(r60.hy||3.5)*100;
-  const hyMomPenalty=Math.min(25,Math.max(0,hyMom60*0.3));
+  // ── 建立滾動動量序列（近350筆≈1.5年）──
+  const startIdx=Math.max(0,bestIdx-350);
+  const hyMomSeries=[],breadthMomSeries=[];
+  for(let i=startIdx+60;i<=bestIdx;i++){
+    const i60=Math.max(startIdx,i-60);
+    hyMomSeries.push((DB[i].hy||3.5)*100-(DB[i60].hy||3.5)*100);
+    const r=DB[i],r0=DB[i60];
+    const ew=r.ew||r.sp||1,sp=r.sp||1,ew0=r0.ew||r0.sp||1,sp0=r0.sp||1;
+    breadthMomSeries.push(sp0>0&&ew0>0?(ew/sp)/(ew0/sp0)-1:0);
+  }
+  // 當前值
+  const ci60=Math.max(0,bestIdx-60);
+  const curHyMom=(best.hy||3.5)*100-(DB[ci60].hy||3.5)*100;
+  const r0=DB[ci60];
+  const ew=best.ew||best.sp||1,sp=best.sp||1,ew0=r0.ew||r0.sp||1,sp0=r0.sp||1;
+  const curBrdMom=sp0>0&&ew0>0?(ew/sp)/(ew0/sp0)-1:0;
 
-  // ③ 寬度動量懲罰（EW/SP比率60日變化）
-  const ewspNow=(best.ew||1)/(best.sp||1);
-  const ewsp60=(r60.ew||1)/(r60.sp||1);
-  const breadthMom=ewsp60>0?ewspNow/ewsp60-1:0;
-  const breadthPenalty=breadthMom<-0.05?Math.min(20,(Math.abs(breadthMom)-0.05)*200):0;
+  // ── Z-Score 動量懲罰（統計異常才扣分）──
+  const hyPenalty=zScorePenalty(hyMomSeries,curHyMom,1,1.5,15);
+  const brdPenalty=zScorePenalty(breadthMomSeries,curBrdMom,-1,1.5,10);
 
-  return Math.max(0,Math.min(100,base-hyMomPenalty-breadthPenalty));
+  return Math.max(0,Math.min(100,base-hyPenalty-brdPenalty));
 }
 
 function getCashRate(yyyymm){
@@ -1683,32 +1709,27 @@ function runBacktest(){
       const pk={A:cfg.cap,B:cfg.cap,C:cfg.cap,D:cfg.cap,BH:cfg.cap};
       const sp0=SP[0];
       const totalEq=(s,spNow)=>s.eq+(s.plusN>0&&s.plusSP>0?s.plusN*(spNow/s.plusSP):0);
+      const hyMomArr=[],breadthMomArr=[]; // 滾動動量序列，供 Z-Score 懲罰計算
       for(let i=1;i<N;i++){
         const ret=(SP[i]-SP[i-1])/SP[i-1];
         const hN=HY[i]*100;
-        const f1=lerp((100/CAPE[i])-TIPS[i],0,4,10,100);
-        // ★★★ 0325 F5刻度校準：不對稱壓縮 ★★★
-        // 保留下界80（低HY時盾分不被墊高）
-        // 壓縮上界至10（高HY時盾分下降更敏感）
-        // 上限從800bp縮至600bp（近代有效範圍）
-        const f5b=lerp(hN,250,600,80,10);
+        const f1=lerp((100/CAPE[i])-TIPS[i],0,4,10,90);
+        // ★★★ 0325 F5刻度校準 + Z-Score動量懲罰 ★★★
+        // F5=50 @ HY=350bp, F1=50 @ ERP=2.0%, YC=50 @ 斜率=(ycLo+ycHi)/2
+        const f5b=lerp(hN,250,600,66,10);
         const ycSlope=Y10[i]-Y2[i];
         let shieldBase,ycScore=50;
-        if(cfg.useYC){ycScore=lerp(ycSlope,cfg.ycLo,cfg.ycHi,20,100);shieldBase=f1*0.5+f5b*0.3+ycScore*0.2;}
+        if(cfg.useYC){ycScore=lerp(ycSlope,cfg.ycLo,cfg.ycHi,10,90);shieldBase=f1*0.5+f5b*0.3+ycScore*0.2;}
         else shieldBase=f1*0.5+f5b*0.5;
 
-        // ① HY動量懲罰：60日利差上升速度（每33bp扣10分，上限25）
+        // Z-Score 動量懲罰：以滾動歷史分布為基準，>1.5σ才扣分（上限15/10分）
         const i60=Math.max(0,i-60);
-        const hyMom60=hN-HY[i60]*100;
-        const hyMomPenalty=Math.min(25,Math.max(0,hyMom60*0.3));
-
-        // ③ 寬度動量懲罰：EW/SP比率60日惡化（每5%惡化扣10分，上限20）
-        const ewspNow=EW[i]/SP[i];
-        const ewsp60=EW[i60]/SP[i60];
-        const breadthMom=ewsp60>0?ewspNow/ewsp60-1:0;
-        const breadthPenalty=breadthMom<-0.05?Math.min(20,(Math.abs(breadthMom)-0.05)*200):0;
-
-        shieldBase=Math.max(0,Math.min(100,shieldBase-hyMomPenalty-breadthPenalty));
+        hyMomArr.push(hN-HY[i60]*100);
+        const ewI=EW[i]/SP[i],ewI60=EW[i60]/SP[i60];
+        breadthMomArr.push(ewI60>0?ewI/ewI60-1:0);
+        const hyPenalty=zScorePenalty(hyMomArr,hyMomArr[hyMomArr.length-1],1,1.5,15);
+        const brdPenalty=zScorePenalty(breadthMomArr,breadthMomArr[breadthMomArr.length-1],-1,1.5,10);
+        shieldBase=Math.max(0,Math.min(100,shieldBase-hyPenalty-brdPenalty));
         let rsi=50;
         if(i>=70){
           const w=[SP[i]];
@@ -1732,7 +1753,7 @@ function runBacktest(){
         const pA=st.A.m,pB=st.B.m;
         // A（delta 條件：f5b<80 保留下界判斷）
         let mA=hN;for(let j=Math.max(0,i-cfg.A.w);j<i;j++)if(HY[j]*100<mA)mA=HY[j]*100;
-        let sA=Math.round(shieldBase-(((hN-mA)>=cfg.A.dlt&&f5b<80)?10:0));
+        let sA=Math.round(shieldBase-(((hN-mA)>=cfg.A.dlt&&f5b<55)?10:0));
         if(isNaN(sA))sA=st.A.ps;
         if(sA<cfg.A.s100)st.A.db++;else st.A.db=0;
         let nA=getMode(sA,st.A.db,cfg.A,strkHit,cfg.pos);nA=applyRegime(nA,reg,cfg);
