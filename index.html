@@ -342,6 +342,7 @@ tr:hover{background:var(--sf2)}
       <div class="fi"><label>&#x91CF;&#x80FD;(%)</label><input type="number" id="wVol" value="10" min="0" max="100"></div>
       <div class="fi"><label>K&#x68D2;(%)</label><input type="number" id="wKbar" value="10" min="0" max="100"></div>
       <div class="fi"><label>Corr Thresh</label><input type="number" id="corrT" value="0.75" step="0.05" min="0.3" max="1"></div>
+      <div class="fi"><label>Corr Window (mo)</label><input type="number" id="corrW" value="24" min="6" max="60" step="6"></div>
     </div>
     <div class="ib2">
       <b>&#x52D5;&#x80FD;</b>: 0.5z12+0.3z6+0.2z3 (&#x6708;&#x983B;) |
@@ -442,6 +443,14 @@ tr:hover{background:var(--sf2)}
           <input type="checkbox" id="btSTSF" style="width:14px;accent-color:var(--bl)"> R12 &lt; 0 only
         </label>
       </div>
+      <div class="fi"><label>Rolling Periods</label>
+        <div style="display:flex;gap:10px;margin-top:6px;font-size:12px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="rl1" checked style="width:13px;accent-color:var(--tw)"> 1Y</label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="rl2" checked style="width:13px;accent-color:var(--tw)"> 2Y</label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="rl3" checked style="width:13px;accent-color:var(--tw)"> 3Y</label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="rl5" style="width:13px;accent-color:var(--tw)"> 5Y</label>
+        </div>
+      </div>
       <div class="fi"><label>Skip Month</label>
         <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;cursor:pointer">
           <input type="checkbox" id="btSkipMo" style="width:14px;accent-color:var(--tw)"> &#x8DF3;&#x904E;&#x6700;&#x8FD1;1&#x6708;
@@ -452,6 +461,7 @@ tr:hover{background:var(--sf2)}
       <button class="btw" onclick="runBT()" style="flex:1">&#x25B6; &#x57F7;&#x884C;&#x56DE;&#x6E2C;</button>
       <button class="bo" onclick="runCompare()" style="flex:1">&#x25B6; &#x6BD4;&#x8F03; N=1~max</button>
     </div>
+    <button class="bte" onclick="runRolling()" style="width:100%;margin-top:6px">&#x25B6; &#x6EFE;&#x52D5;&#x5831;&#x916C;&#x5206;&#x6790;</button>
     <div class="log" id="btLog"></div>
   </div>
   <div id="btRes" class="hidden">
@@ -469,12 +479,13 @@ tr:hover{background:var(--sf2)}
     <div class="tw-wrap"><table><thead><tr>
       <th>Month / Stock</th><th>Holdings</th><th>Hurdle%</th><th>Return%</th><th>NAV / +$PnL</th><th>TAIEX / Contrib</th><th>Alpha%</th>
     </tr></thead><tbody id="btBody"></tbody></table></div>
+    <div id="rollingRes" class="hidden" style="margin-top:10px"></div>
   </div>
 </div>
 </div>
 <script>
 var WEEKLY={},MONTHLY={},DAILY={},BENCH_MONTHLY=[],TNX_MONTHLY=[];
-var RAW_SCORES={},BT_RESULT=null,CHART={},CACHE_BUILT=false,CACHE_TS=null,SKIP_MO=false,CACHE_SKIP_MO=false;
+var RAW_SCORES={},BT_RESULT=null,CHART={},CACHE_BUILT=false,CACHE_TS=null,SKIP_MO=false,CACHE_SKIP_MO=false,CORR_WIN=24;
 var N_TW=13,N_US=50;
 function $(i){return document.getElementById(i);}
 function gv(i){var e=$(i);return e?parseFloat(e.value)||0:0;}
@@ -829,7 +840,7 @@ function calcAllScores(yyyymm){
   });
 }
 function calcCorr(c1,c2,yyyymm,n){
-  n=n||12;var m1=MONTHLY[c1],m2=MONTHLY[c2];if(!m1||!m2)return 0;
+  n=n||CORR_WIN;var m1=MONTHLY[c1],m2=MONTHLY[c2];if(!m1||!m2)return 0;
   var i1=getMonthIdx(m1,yyyymm),i2=getMonthIdx(m2,yyyymm),mi=Math.min(i1,i2);
   if(mi<n+1)return 0;var r1=[],r2=[];
   for(var i=mi-n;i<mi;i++){
@@ -847,6 +858,7 @@ function calcCorr(c1,c2,yyyymm,n){
 async function calcSignal(){
   if(!CACHE_BUILT){alert('Fetch data first');return;}
   SKIP_MO=!!($('btSkipMo')&&$('btSkipMo').checked);
+  CORR_WIN=parseInt($('corrW')?$('corrW').value:'24')||24;
   if(CACHE_SKIP_MO!==SKIP_MO){await buildCache();}
   var stocks=getEnabledStocks().filter(function(s){return RAW_SCORES[s.c];});
   if(!stocks.length){alert('No cached data');return;}
@@ -1001,6 +1013,7 @@ function kpi(records,init){
 function runBT(){
   if(!CACHE_BUILT){alert('Fetch data first');return;}
   SKIP_MO=!!($('btSkipMo')&&$('btSkipMo').checked);
+  CORR_WIN=parseInt($('corrW')?$('corrW').value:'24')||24;
   sl('btLog','Calculating...',null);showL('Backtesting...');
   setTimeout(async function(){
     try{
@@ -1019,6 +1032,7 @@ function runBT(){
 function runCompare(){
   if(!CACHE_BUILT){alert('Fetch data first');return;}
   SKIP_MO=!!($('btSkipMo')&&$('btSkipMo').checked);
+  CORR_WIN=parseInt($('corrW')?$('corrW').value:'24')||24;
   var maxN=parseInt($('btH')?$('btH').value:'5')||5,mode=getWeightMode();
   sl('btLog','Comparing N=1 to '+maxN+'...',null);showL('Comparing...');
   setTimeout(async function(){
@@ -1184,6 +1198,111 @@ async function upJson(el){
     updFetchStat();updTNX();await buildCache();sl('dlLog','Loaded! Ready to calculate.',true);
   }catch(err){sl('dlLog','Error: '+err.message,false);}
   el.value='';
+}
+function pct(v,d){return(v>=0?'+':'')+(v*100).toFixed(d===undefined?1:d)+'%';}
+function median(arr){
+  if(!arr.length)return 0;
+  var s=arr.slice().sort(function(a,b){return a-b;});
+  var m=Math.floor(s.length/2);
+  return s.length%2?s[m]:(s[m-1]+s[m])/2;
+}
+function percentile(arr,p){
+  if(!arr.length)return 0;
+  var s=arr.slice().sort(function(a,b){return a-b;});
+  var i=(p/100)*(s.length-1);
+  var lo=Math.floor(i),hi=Math.ceil(i);
+  return s[lo]+(s[hi]-s[lo])*(i-lo);
+}
+function runRolling(){
+  if(!BT_RESULT){alert('Run backtest first');return;}
+  var recs=BT_RESULT.records,init=BT_RESULT.initial;
+  var periods=[1,2,3,5].filter(function(n){var e=$('rl'+n);return e&&e.checked;});
+  if(!periods.length){alert('Select at least one period');return;}
+  var res={};
+  periods.forEach(function(N){
+    var mo=N*12,wins=[];
+    for(var i=0;i+mo<=recs.length;i++){
+      var sub=recs.slice(i,i+mo);
+      var navS=i>0?recs[i-1].nav:init;
+      var navE=sub[sub.length-1].nav;
+      var cagr=Math.pow(navE/navS,1/N)-1;
+      var bNavS=i>0?recs[i-1].bNav:init;
+      var bNavE=sub[sub.length-1].bNav;
+      var bcagr=Math.pow(bNavE/bNavS,1/N)-1;
+      var rets=sub.map(function(r){return r.pRet;});
+      var avg=rets.reduce(function(a,b){return a+b;},0)/rets.length;
+      var variance=rets.reduce(function(a,b){return a+(b-avg)*(b-avg);},0)/rets.length;
+      var std=Math.sqrt(variance)*Math.sqrt(12);
+      var sharpe=std>0?(cagr-0.015)/std:0;
+      var peak=navS,mdd=0;
+      sub.forEach(function(r){if(r.nav>peak)peak=r.nav;var dd=(r.nav-peak)/peak;if(dd<mdd)mdd=dd;});
+      wins.push({cagr:cagr,bcagr:bcagr,std:std,sharpe:sharpe,mdd:mdd});
+    }
+    res[N]=wins;
+  });
+  renderRolling(res,periods);
+}
+function renderRolling(res,periods){
+  var el=$('rollingRes');if(!el)return;
+  el.classList.remove('hidden');
+  var fmt=function(v,d){return(v>=0?'+':'')+(v*100).toFixed(d===undefined?1:d)+'%';};
+  var fmtN=function(v,d){return v.toFixed(d===undefined?2:d);};
+  var gc=function(v){return v>=0?'var(--gr)':'var(--re)';};
+  var html='<div class="card"><div class="ct">&#x6EFE;&#x52D5;&#x5831;&#x916C;&#x5206;&#x6790; (CAGR)</div>';
+  // one table per period
+  periods.forEach(function(N){
+    var ws=res[N];if(!ws||!ws.length)return;
+    var cagrs=ws.map(function(w){return w.cagr;});
+    var bcagrs=ws.map(function(w){return w.bcagr;});
+    var stds=ws.map(function(w){return w.std;});
+    var sharpes=ws.map(function(w){return w.sharpe;});
+    var mdds=ws.map(function(w){return w.mdd;});
+    var winRate=cagrs.filter(function(v){return v>0;}).length/cagrs.length;
+    var beatRate=ws.filter(function(w){return w.cagr>w.bcagr;}).length/ws.length;
+    html+='<div style="margin-bottom:14px">';
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tw);margin-bottom:6px">'+N+' &#x5E74; ('+ws.length+' &#x7A97;&#x53E3;)</div>';
+    html+='<div class="tw-wrap" style="max-height:none"><table><thead><tr>';
+    html+='<th>&#x6307;&#x6A19;</th><th>&#x4E2D;&#x4F4D;</th><th>&#x5E73;&#x5747;</th><th>P10</th><th>P90</th><th>&#x52DD;&#x7387;</th><th>&#x8D85;TAIEX</th></tr></thead><tbody>';
+    // strategy rows
+    var rows=[
+      ['CAGR',cagrs,true],
+      ['&#x5E74;&#x5316;&#x6A19;&#x6E96;&#x5DEE;',stds,false],
+      ['Sharpe',sharpes,false],
+      ['MDD',mdds,true],
+    ];
+    rows.forEach(function(row){
+      var label=row[0],arr=row[1],isCagr=row[2];
+      var med=median(arr),avg=arr.reduce(function(a,b){return a+b;},0)/arr.length;
+      var p10=percentile(arr,10),p90=percentile(arr,90);
+      var isPct=label!=='Sharpe';
+      var f=function(v){return isPct?fmt(v,1):fmtN(v,2);};
+      html+='<tr><td style="color:var(--mu);font-size:10px">'+label+'</td>';
+      html+='<td class="mono" style="color:'+gc(med)+'">'+f(med)+'</td>';
+      html+='<td class="mono" style="color:'+gc(avg)+'">'+f(avg)+'</td>';
+      html+='<td class="mono" style="color:'+gc(p10)+'">'+f(p10)+'</td>';
+      html+='<td class="mono" style="color:'+gc(p90)+'">'+f(p90)+'</td>';
+      if(isCagr&&label==='CAGR'){
+        html+='<td class="mono" style="color:var(--gr)">'+(winRate*100).toFixed(0)+'%</td>';
+        html+='<td class="mono" style="color:var(--ye)">'+(beatRate*100).toFixed(0)+'%</td>';
+      }else{
+        html+='<td></td><td></td>';
+      }
+      html+='</tr>';
+    });
+    // TAIEX row for CAGR comparison
+    var bmed=median(bcagrs),bavg=bcagrs.reduce(function(a,b){return a+b;},0)/bcagrs.length;
+    var bp10=percentile(bcagrs,10),bp90=percentile(bcagrs,90);
+    var bwin=bcagrs.filter(function(v){return v>0;}).length/bcagrs.length;
+    html+='<tr style="border-top:1px solid var(--bhi)"><td style="color:var(--mu);font-size:10px">TAIEX CAGR</td>';
+    html+='<td class="mono" style="color:'+gc(bmed)+'">'+fmt(bmed,1)+'</td>';
+    html+='<td class="mono" style="color:'+gc(bavg)+'">'+fmt(bavg,1)+'</td>';
+    html+='<td class="mono" style="color:'+gc(bp10)+'">'+fmt(bp10,1)+'</td>';
+    html+='<td class="mono" style="color:'+gc(bp90)+'">'+fmt(bp90,1)+'</td>';
+    html+='<td class="mono" style="color:var(--mu)">'+(bwin*100).toFixed(0)+'%</td><td></td></tr>';
+    html+='</tbody></table></div></div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
 }
 function dlBtCsv(){
   if(!BT_RESULT){sl('btLog','Run backtest first',false);return;}
