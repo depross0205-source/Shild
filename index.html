@@ -115,13 +115,16 @@ tr:hover{background:var(--sf2)}
     <input type="number" id="shieldScore" placeholder="0-100" min="0" max="100">
     <span>&#x7559;&#x7A7A;=&#x4E0D;&#x904E;&#x6FFE;</span>
   </div>
-  <div class="card">
+   <div class="card">
     <div class="ct">&#x80A1;&#x6C60;
       <div style="display:flex;gap:6px">
-        <button class="bo sm" onclick="selectAll()">&#x5168;&#x9078;</button>
-        <button class="bo sm" onclick="selectNone()">&#x5168;&#x505C;</button>
+        <button class="bo sm" onclick="selectAll()">全選</button>
+        <button class="bo sm" onclick="selectNone()">全停</button>
+        <button class="bo sm" style="color:var(--tw);border-color:var(--tw)" onclick="selectTW(true)">台股全選</button>
+        <button class="bo sm" style="color:var(--tw);border-color:var(--tw)" onclick="selectTW(false)">台股全停</button>
       </div>
     </div>
+ 
 <div class="ig"><div class="ih" onclick="toggleInd(this)"><span class="in">[US] US-ETF</span><span class="ic" id="ic0">11/11</span></div><div class="ib" id="ib0">
 <span class="sc act usc" onclick="toggleStock('SPY')" data-code="SPY" data-type="mid" data-tw="0" data-on="1"><span class="cc">SPY</span><span class="cn">SPY500</span><span class="cd" onclick="event.stopPropagation();deleteStock('SPY')">&times;</span></span>
 <span class="sc act usc" onclick="toggleStock('QQQ')" data-code="QQQ" data-type="mid" data-tw="0" data-on="1"><span class="cc">QQQ</span><span class="cn">NasdaqETF</span><span class="cd" onclick="event.stopPropagation();deleteStock('QQQ')">&times;</span></span>
@@ -558,6 +561,18 @@ function deleteStock(code){
 }
 function toggleInd(ih){var ib=ih.nextElementSibling;if(ib)ib.classList.toggle('col');}
 function selectAll(){document.querySelectorAll('[data-code]').forEach(function(el){el.dataset.on='1';el.classList.add('act');});updAllCounts();}
+  function selectAll(){document.querySelectorAll('[data-code]').forEach(function(el){el.dataset.on='1';el.classList.add('act');});updAllCounts();}
+function selectNone(){document.querySelectorAll('[data-code]').forEach(function(el){el.dataset.on='0';el.classList.remove('act');});updAllCounts();}
+
+// 新增：專門控制台股 (data-tw="1") 的開關邏輯
+function selectTW(turnOn){
+  document.querySelectorAll('[data-code][data-tw="1"]').forEach(function(el){
+    el.dataset.on = turnOn ? '1' : '0';
+    turnOn ? el.classList.add('act') : el.classList.remove('act');
+  });
+  updAllCounts();
+}
+
 function selectNone(){document.querySelectorAll('[data-code]').forEach(function(el){el.dataset.on='0';el.classList.remove('act');});updAllCounts();}
 function updCount(chip){var ib=chip.closest('.ib');if(ib)updCountByIb(ib);}
 function updCountByIb(ib){
