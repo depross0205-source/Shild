@@ -983,20 +983,24 @@ function runBTcore(mh,mode){
     var allC=Object.keys(holdings).concat(Object.keys(newH)),seen2={};
     allC.forEach(function(c){seen2[c]=true;});
     var tv=0;Object.keys(seen2).forEach(function(c){tv+=Math.abs((newH[c]||0)-(holdings[c]||0));});
-        var pRet=0,cr=getTNXRate(sigM),stockRets={};
+    var pRet=0,cr=getTNXRate(sigM),stockRets={};
+        // 將 holdings 改為 newH
     Object.keys(newH).forEach(function(c){
       var wt=newH[c];
       if(c==='CASH'){pRet+=wt*(cr/12);stockRets.CASH={ret:cr/12,w:wt};return;}
       var p0=getMo(c,sigM),p1=getMo(c,nextM);
       if(p0&&p1&&p0>0){var ret=p1/p0-1;pRet+=wt*ret;stockRets[c]={ret:ret,w:wt};}
     });
+
     pRet-=(tv/2)*COST;nav*=(1+pRet);
     var b0=getBench(sigM),b1=getBench(nextM);
     if(b0&&b1&&b0>0)bNav*=(1+b1/b0-1);
-    var hCopy={};Object.keys(newH).forEach(function(k){hCopy[k]=newH[k];});
-    records.push({month:nextM,nav:nav,bNav:bNav,holdings:hCopy,pRet:pRet,hurdle:hurdle,stockRets:stockRets});
+    
+    // 【修正區塊】：將報表紀錄的持股，從「剛選出的 newH」改為「實際產生當月報酬的 holdings」
+    var hActual={};Object.keys(holdings).forEach(function(k){hActual[k]=holdings[k];});
+    
+    records.push({month:nextM,nav:nav,bNav:bNav,holdings:hActual,pRet:pRet,hurdle:hurdle,stockRets:stockRets});
     holdings=newH;
-
   }
   return records.length>=6?records:null;
 }
