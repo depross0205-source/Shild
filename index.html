@@ -984,8 +984,8 @@ function runBTcore(mh,mode){
     allC.forEach(function(c){seen2[c]=true;});
     var tv=0;Object.keys(seen2).forEach(function(c){tv+=Math.abs((newH[c]||0)-(holdings[c]||0));});
     var pRet=0,cr=getTNXRate(sigM),stockRets={};
-    Object.keys(holdings).forEach(function(c){
-      var wt=holdings[c];
+    Object.keys(newH).forEach(function(c){
+      var wt=newH[c];
       if(c==='CASH'){pRet+=wt*(cr/12);stockRets.CASH={ret:cr/12,w:wt};return;}
       var p0=getMo(c,sigM),p1=getMo(c,nextM);
       if(p0&&p1&&p0>0){var ret=p1/p0-1;pRet+=wt*ret;stockRets[c]={ret:ret,w:wt};}
