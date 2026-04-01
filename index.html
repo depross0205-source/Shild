@@ -107,7 +107,7 @@ tr:hover{background:var(--sf2)}
   <button class="tab active" onclick="switchTab('pool',this)">&#x1F4CB; &#x80A1;&#x6C60;</button>
   <button class="tab" onclick="switchTab('fetch',this)">&#x1F310; &#x6293;&#x53D6;</button>
   <button class="tab" onclick="switchTab('signal',this)">&#x1F4E1; &#x4FE1;&#x865F;</button>
-  <button class="tab" onclick="switchTab('Realbacktest',this)">&#x1F4C8; &#x56DE;&#x6E2C;</button>
+  <button class="tab" onclick="switchTab('backtest',this)">&#x1F4C8; &#x56DE;&#x6E2C;</button>
 </div>
 <div class="panel active" id="panel-pool">
   <div class="shbar">
@@ -484,59 +484,6 @@ tr:hover{background:var(--sf2)}
 </div>
 </div>
 <script>
-  function backtestEngine(priceData, dateList) {
-
-  let nav = [1];
-  let navDates = [];
-
-  for (let i = 252; i < dateList.length - 1; i++) {
-
-    let scores = {};
-
-    // === 計算動能（只用過去資料） ===
-    Object.keys(priceData).forEach(stock => {
-      let p = priceData[stock];
-
-      if (i < 252) return;
-
-      let r12 = p[i] / p[i - 252] - 1;
-      let r6  = p[i] / p[i - 126] - 1;
-      let r3  = p[i] / p[i - 63]  - 1;
-
-      let vol = std(p.slice(i - 63, i));
-
-      if (!isNaN(vol) && vol > 0) {
-        scores[stock] = (r12 + r6 + r3) / vol;
-      }
-    });
-
-    // === 排序 ===
-    let selected = Object.entries(scores)
-      .sort((a,b)=>b[1]-a[1])
-      .slice(0,3)
-      .map(x=>x[0]);
-
-    // === 下一期報酬（關鍵！） ===
-    let ret = 0;
-
-    if (selected.length === 0) {
-      ret = 0.03 / 252; // 現金 → 類似 [BIL](chatgpt://generic-entity?number=0)
-    } else {
-      let w = 1 / selected.length;
-
-      selected.forEach(s => {
-        let r = priceData[s][i+1] / priceData[s][i] - 1;
-        ret += w * r;
-      });
-    }
-
-    // === 複利 ===
-    nav.push(nav[nav.length-1] * (1 + ret));
-    navDates.push(dateList[i+1]);
-  }
-
-  return { nav, navDates };
-}
 var WEEKLY={},MONTHLY={},DAILY={},BENCH_MONTHLY=[],TNX_MONTHLY=[];
 var RAW_SCORES={},BT_RESULT=null,CHART={},CACHE_BUILT=false,CACHE_TS=null,SKIP_MO=false,CACHE_SKIP_MO=false,CORR_WIN=24;
 var N_TW=13,N_US=50;
@@ -570,11 +517,6 @@ function updCount(chip){var ib=chip.closest('.ib');if(ib)updCountByIb(ib);}
 function updCountByIb(ib){
   var all=ib.querySelectorAll('[data-code]'),act=ib.querySelectorAll('[data-on="1"]');
   var ih=ib.previousElementSibling;if(ih){var ic=ih.querySelector('.ic');if(ic)ic.textContent=act.length+'/'+all.length;}
-}
-  function std(arr) {
-  let mean = arr.reduce((a,b)=>a+b,0)/arr.length;
-  let variance = arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length;
-  return Math.sqrt(variance);
 }
 function updAllCounts(){document.querySelectorAll('.ib').forEach(function(ib){updCountByIb(ib);});}
 function addCustom(){
