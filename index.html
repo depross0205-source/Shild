@@ -995,12 +995,16 @@ function runBTcore(mh,mode){
     pRet-=(tv/2)*COST;nav*=(1+pRet);
     var b0=getBench(sigM),b1=getBench(nextM);
     if(b0&&b1&&b0>0)bNav*=(1+b1/b0-1);
-    var hCopy={};Object.keys(newH).forEach(function(k){hCopy[k]=newH[k];});
-    records.push({month:nextM,nav:nav,bNav:bNav,holdings:hCopy,pRet:pRet,hurdle:hurdle,stockRets:stockRets});
+    
+    // 【修正區塊】：將報表紀錄的持股，從「剛選出的 newH」改為「實際產生當月報酬的 holdings」
+    var hActual={};Object.keys(holdings).forEach(function(k){hActual[k]=holdings[k];});
+    
+    records.push({month:nextM,nav:nav,bNav:bNav,holdings:hActual,pRet:pRet,hurdle:hurdle,stockRets:stockRets});
     holdings=newH;
   }
   return records.length>=6?records:null;
 }
+
 function kpi(records,init){
   var last=records[records.length-1];
   var yrs=(new Date(last.month+'-01')-new Date(records[0].month+'-01'))/(365.25*86400000);
