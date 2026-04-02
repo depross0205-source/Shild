@@ -22,7 +22,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--tx);
 h1{font-size:18px;font-weight:700;color:var(--wh);display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .tag{font-size:11px;padding:2px 8px;border-radius:3px;background:var(--tw);color:#000;font-weight:700}
 .sub{font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.8}
-.tabs{display:flex;border-bottom:2px solid var(--bd);margin-bottom:14px;overflow-x:auto;white-space:nowrap}
+.tabs{display:flex;border-bottom:2px solid wood var(--bd);margin-bottom:14px;overflow-x:auto;white-space:nowrap}
 .tab{padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--mu);border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;font-family:inherit;transition:.15s}
 .tab.active{color:var(--tw);border-bottom-color:var(--tw)}
 .panel{display:none}.panel.active{display:block}
@@ -1178,7 +1178,7 @@ function renderSig(sel,wk,all,yyyymm,hurdle){
     +'<div class="sname">'+r.s.n+'</div></div><span class="srank">W'+(rk+1)+'</span></div>'
     +'<div class="sscore" style="color:var(--re)">'+(r.score>=0?'+':'')+r.score.toFixed(2)+'</div></div>';
   });
-  html+='</div>';$('sigContent').innerHTML=html;renderST(all,hurdle);
+  html+='</div>';$('sigContent').innerHTML=html;
 }
 function renderST(all, hurdle, selectedCodes, rejectedMap) {
   $('stCard').classList.remove('hidden');
