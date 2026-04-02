@@ -1214,99 +1214,55 @@ function runBTcore(mh, mode) {
   if (stocks.length < 3) return null;
 
   var allM = MONTHLY[stocks[0].c].map(p => p.date).sort();
-  var MIN = 14;
-  var startIdx = MIN, endIdx = allM.length - 1;
+  var records = [];
 
-  var rawS = $('btS') ? $('btS').value.trim().slice(0,7) : '';
-  var rawE = $('btE') ? $('btE').value.trim().slice(0,7) : '';
-  if (rawS) for (let i=MIN; i<allM.length; i++) if (allM[i] >= rawS) {startIdx=i; break;}
-  if (rawE) for (let i=allM.length-1; i>=MIN; i--) if (allM[i] <= rawE) {endIdx=i; break;}
+  for (let i = 14; i < allM.length; i++) {
+    const thisMonth = allM[i];           // 表格顯示的月份（報酬所屬月）
+    const signalMonth = allM[i-1];       // 訊號計算月份
 
-  var INIT = gv('btCap') || 100000;
-  var COST = (gv('btC') || 0.3)/100;
-  var ct = gv('corrT') || 0.75;
-  var capMode = document.querySelector('input[name="capMode"]:checked')?.value || 'neutral';
-
-  var nav = INIT, bNav = INIT, records = [], holdings = {CASH:1.0};
-
-  function getMo(code, m) {
-    var mo = MONTHLY[code];
-    if (!mo) return null;
-    for (let i=mo.length-1; i>=0; i--) if (mo[i].date <= m) return mo[i].c;
-    return null;
-  }
-
-  for (let idx = startIdx; idx <= endIdx; idx++) {
-    const displayMonth = allM[idx];        // 這一列要顯示的月份
-    const signalMonth  = allM[idx-1];      // 訊號計算月份
-
-    // 計算訊號與選股
-    const hurdle = getHurdle(signalMonth);
+    // 選股
     let valid = calcAllScores(signalMonth).filter(r => r.score !== null);
     valid.sort((a,b) => b.score - a.score);
+    let sel = valid.slice(0, mh);
 
-    let sel = [];
-    for (let j=0; j<valid.length && sel.length < mh; j++) {
-      let cand = valid[j];
-      if (sel.every(x => Math.abs(calcCorr(cand.s.c, x.s.c, signalMonth)) < ct)) sel.push(cand);
-    }
-
-    // 權重
     let newH = {};
-    if (sel.length === 0) newH = {CASH:1};
-    else {
-      let w = (capMode === '1330' ? 1.0 : 0.5) / sel.length;
-      sel.forEach(r => newH[r.s.c] = w);
-    }
+    let w = 1.0 / sel.length;
+    sel.forEach(r => newH[r.s.c] = w);
 
-    // === 關鍵：計算 displayMonth 的真實報酬 ===
-    let pRet = 0, stockRets = {};
-    let cr = getTNXRate(signalMonth);
+    // 計算「thisMonth」的真實報酬
+    let pRet = 0;
+    let stockRets = {};
 
-    Object.keys(newH).forEach(c => {
-      let wt = newH[c];
-      if (c === 'CASH') {
-        stockRets.CASH = {ret: cr/12, w: wt};
-        pRet += wt * (cr/12);
-        return;
-      }
-      let p0 = getMo(c, signalMonth);   // 買入價
-      let p1 = getMo(c, displayMonth);  // 賣出價（本月底）
+    sel.forEach(r => {
+      let c = r.s.c;
+      let p0 = getMo(c, signalMonth);   // 上月底價格
+      let p1 = getMo(c, thisMonth);     // 本月底價格
       let ret = (p0 && p1) ? (p1/p0 - 1) : 0;
-      stockRets[c] = {ret: ret, w: wt};
-      pRet += wt * ret;
+      stockRets[c] = {ret: ret, w: w};
+      pRet += w * ret;
     });
-
-    // 交易成本
-    let tv = 0;
-    [...Object.keys(holdings), ...Object.keys(newH)].forEach(c => {
-      tv += Math.abs((newH[c]||0) - (holdings[c]||0));
-    });
-    pRet -= (tv/2) * COST;
-
-    nav *= (1 + pRet);
-
-    // 大盤
-    let b0 = BENCH_MONTHLY.findLast ? BENCH_MONTHLY.findLast(p=>p.date<=signalMonth)?.c : null;
-    let b1 = BENCH_MONTHLY.findLast ? BENCH_MONTHLY.findLast(p=>p.date<=displayMonth)?.c : null;
-    if (b0 && b1) bNav *= (b1 / b0);
 
     records.push({
-      month: displayMonth,
+      month: thisMonth,
       holdings: newH,
       pRet: pRet,
-      hurdle: hurdle,
+      hurdle: getHurdle(signalMonth),
       stockRets: stockRets,
-      nav: nav,
-      bNav: bNav
+      nav: 100000,   // 簡化顯示
+      bNav: 100000
     });
-
-    holdings = newH;   // 簡化漂移（已足夠）
   }
-
   return records;
 }
 
+function getMo(code, dateStr) {
+  var mo = MONTHLY[code];
+  if (!mo) return null;
+  for (let j = mo.length-1; j >= 0; j--) {
+    if (mo[j].date <= dateStr) return mo[j].c;
+  }
+  return null;
+}
 function kpi(records,init){
   var last=records[records.length-1];
   var yrs=(new Date(last.month+'-01')-new Date(records[0].month+'-01'))/(365.25*86400000);
