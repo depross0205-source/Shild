@@ -1221,138 +1221,106 @@ function runBTcore(mh, mode) {
   var rawS = $('btS') ? ($('btS').value || '').trim().slice(0, 7) : '';
   var rawE = $('btE') ? ($('btE').value || '').trim().slice(0, 7) : '';
 
-  // 設定計算起點，必須從 index 1 開始（因為需要 idx-1 作為基期）
+  // 索引起點：從 index 1 開始，因為需要 index 0 作為起點價格
+  // MIN=14 確保有足夠動量計算空間
   var MIN = 14, cS = MIN;
   if (rawS) {
     for (var i = MIN; i < allM.length; i++) {
-      if (allM[i] >= rawS) { cS = i; break; }
+      if (allM[i].slice(0,7) >= rawS) { cS = i; break; }
     }
   }
 
-  // 結束點到最後一個月
-  var cE = allM.length - 1;
+  // 索引終點：直到最後一筆數據 (例如 2026-04-02)
+  var cE = allM.length - 1; 
   if (rawE) {
     for (var i2 = allM.length - 1; i2 >= MIN; i2--) {
-      if (allM[i2] <= rawE) { cE = i2; break; }
+      if (allM[i2].slice(0,7) <= rawE) { cE = i2; break; }
     }
   }
 
   if (cS > cE) return null;
 
   var INIT = gv('btCap') || 100000, COST = (gv('btC') || 0.3) / 100, ct = gv('corrT') || 0.75;
-  var shortN = parseInt($('btSN') ? $('btSN').value : '0') || 0;
-  var capModeEl = document.querySelector('input[name="capMode"]:checked');
-  var capMode = capModeEl ? capModeEl.value : 'neutral';
-  var shortTSF = !!($('btSTSF') && $('btSTSF').checked);
+  var nav = INIT, bNav = INIT, records = [], prevDriftedHoldings = { CASH: 1.0 };
 
-  var nav = INIT, bNav = INIT, records = [], holdings = { CASH: 1.0 };
-
-  function getBench(m) {
+  function getPriceAt(code, date) {
+    var mo = MONTHLY[code]; if (!mo) return null;
+    var best = null;
+    for (var i = 0; i < mo.length; i++) { if (mo[i].date <= date) best = mo[i].c; }
+    return best;
+  }
+  function getBenchAt(date) {
     if (!BENCH_MONTHLY.length) return null;
     var best = null;
-    BENCH_MONTHLY.forEach(function(p) { if (p.date <= m) best = p; });
-    return best ? best.c : null;
+    BENCH_MONTHLY.forEach(function(p) { if (p.date <= date) best = p.c; });
+    return best;
   }
 
-  function getMo(code, m) {
-    var mo = MONTHLY[code];
-    if (!mo) return null;
-    var best = null;
-    mo.forEach(function(p) { if (p.date <= m) best = p; });
-    return best ? best.c : null;
-  }
-
-  // --- 開始回測 ---
+  // --- 回測核心迴圈 ---
   for (var idx = cS; idx <= cE; idx++) {
-    var tradingMonth = allM[idx];    // 表格標記月份 (例如 2026-03)
-    var prevMonth = allM[idx - 1];   // 買入點/訊號月份 (例如 2026-02 底)
+    var currentEnd = allM[idx];    // 結算日 (如 2026-03-31)
+    var prevEnd = allM[idx - 1];   // 起始日 (如 2026-02-28)
+    var displayLabel = currentEnd.slice(0, 7); // 報表標籤 (如 2026-03)
 
-    // 1. 訊號來源：使用「上個月底」結算的技術指標 (不偷看未來)
-    var signalMonth = prevMonth; 
-    var hurdle = getHurdle(signalMonth), sc2 = calcAllScores(signalMonth);
+    // 1. 【選股】：使用上一月月底數據 (prevEnd) 計算本月要持有的標的
+    var signalDate = prevEnd; 
+    var hurdle = getHurdle(signalDate), sc2 = calcAllScores(signalDate);
     var valid = sc2.filter(function(r) { return r.score !== null; });
     valid.sort(function(a, b) { return b.score - a.score; });
 
-    // 多單過濾
     var tsP = valid.filter(function(r) { return r.r12 !== null && r.r12 > hurdle; });
     var sel = [];
     for (var j = 0; j < tsP.length && sel.length < mh; j++) {
       var cand = tsP[j];
-      if (sel.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, signalMonth)) < ct; })) sel.push(cand);
+      if (sel.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, signalDate)) < ct; })) sel.push(cand);
     }
 
-    // 空單過濾
-    var selS = [];
-    if (shortN > 0 && sel.length > 0) {
-      var longMap = {}; sel.forEach(function(r) { longMap[r.s.c] = 1; });
-      var sCands = valid.filter(function(r) { return !longMap[r.s.c]; });
-      if (shortTSF) sCands = sCands.filter(function(r) { return r.r12 !== null && r.r12 < 0; });
-      sCands.sort(function(a, b) { return a.score - b.score; });
-      for (var ks = 0; ks < sCands.length && selS.length < shortN; ks++) {
-        var cs = sCands[ks];
-        if (selS.every(function(x) { return Math.abs(calcCorr(cs.s.c, x.s.c, signalMonth)) < ct; })) selS.push(cs);
-      }
-    }
-
-    // 2. 權重分配 (不變)
-    var newH = {};
-    if (!sel.length) { newH = { CASH: 1.0 }; }
+    // 2. 【權重配置】
+    var targetH = {};
+    if (!sel.length) { targetH = { CASH: 1.0 }; }
     else {
-      var is1330 = capMode === '1330';
-      var lScale = is1330 ? 1.0 : 0.5, sScale = is1330 ? 0.3 : 0.5;
-      if (mode === 'rank') {
-        var ldenom = sel.length * (sel.length + 1) / 2;
-        sel.forEach(function(r, i) { newH[r.s.c] = lScale * (sel.length - i) / ldenom; });
-      } else {
-        var lw = lScale / sel.length;
-        sel.forEach(function(r) { newH[r.s.c] = lw; });
-      }
-      if (selS.length) {
-        var sdenom = mode === 'rank' ? selS.length * (selS.length + 1) / 2 : selS.length;
-        selS.forEach(function(r, i) {
-          newH[r.s.c] = -sScale * (mode === 'rank' ? (selS.length - i) / sdenom : 1 / sdenom);
-        });
-      }
+      var lw = 0.5 / sel.length; 
+      sel.forEach(function(r) { targetH[r.s.c] = lw; });
     }
 
-    // 3. 報酬計算：(本月底價格 / 上月底價格) - 1
-    // 例如：3月報酬 = Price(2026-03) / Price(2026-02) - 1
-    var pRet = 0, cr = getTNXRate(signalMonth), stockRets = {}, pureRet = 0;
-    Object.keys(newH).forEach(function(c) {
-      var wt = newH[c];
-      if (c === 'CASH') {
-        var r_c = cr / 12; pRet += wt * r_c; pureRet += wt * r_c;
-        stockRets.CASH = { ret: r_c, w: wt }; return;
+    // 3. 【換倉成本】：月初調倉費
+    var turnover = 0, allK = Object.keys(prevDriftedHoldings).concat(Object.keys(targetH)), seen = {};
+    allK.forEach(function(k){ if(!seen[k]){ turnover += Math.abs((targetH[k]||0)-(prevDriftedHoldings[k]||0)); seen[k]=true; } });
+
+    // 4. 【績效計算】：(本月底價格 / 上月底價格) - 1
+    var pRet = 0, stockRets = {}, pureRet = 0, riskFree = getTNXRate(signalDate);
+    Object.keys(targetH).forEach(function(code) {
+      var w = targetH[code];
+      if (code === 'CASH') {
+        var r_c = riskFree / 12; pRet += w * r_c; pureRet += w * r_c;
+        stockRets.CASH = { ret: r_c, w: w }; return;
       }
-      var p0 = getMo(c, prevMonth);    // 買入價 (上月底)
-      var p1 = getMo(c, tradingMonth); // 結算價 (本月底)
-      if (p0 && p1 && p0 > 0) {
-        var r_s = p1 / p0 - 1; pRet += wt * r_s; pureRet += wt * r_s;
-        stockRets[c] = { ret: r_s, w: wt };
-      } else { stockRets[c] = { ret: 0, w: wt }; }
+      var pStart = getPriceAt(code, prevEnd);
+      var pEnd = getPriceAt(code, currentEnd);
+      if (pStart && pEnd && pStart > 0) {
+        var r_s = (pEnd / pStart) - 1;
+        pRet += w * r_s; pureRet += w * r_s;
+        stockRets[code] = { ret: r_s, w: w };
+      } else { stockRets[code] = { ret: 0, w: w }; }
     });
 
-    // 4. 週轉與淨值更新 (與前一月底飄移權重比較)
-    var allC = Object.keys(holdings).concat(Object.keys(newH)), seen2 = {};
-    allC.forEach(function(c) { seen2[c] = true; });
-    var tv = 0; Object.keys(seen2).forEach(function(c) { tv += Math.abs((newH[c] || 0) - (holdings[c] || 0)); });
-    pRet -= (tv / 2) * COST;
-    var prevNav = nav;
+    pRet -= (turnover / 2) * COST;
     nav *= (1 + pRet);
 
-    // 5. 大盤基準對齊
-    var b0 = getBench(prevMonth), b1 = getBench(tradingMonth);
-    if (b0 && b1 && b0 > 0) bNav *= (1 + b1 / b0 - 1);
+    // 5. 【大盤基準】
+    var b0 = getBenchAt(prevEnd), b1 = getBenchAt(currentEnd);
+    if (b0 && b1 && b0 > 0) bNav *= (1 + (b1 / b0 - 1));
 
-    // 6. 權重飄移 (用於下個月成本計算)
+    // 6. 【權重漂移與紀錄】
     var driftedH = {};
-    Object.keys(newH).forEach(function(c) {
-      driftedH[c] = newH[c] * (1 + (stockRets[c] ? stockRets[c].ret : 0)) / (1 + pureRet);
+    Object.keys(targetH).forEach(function(c) {
+      driftedH[c] = targetH[c] * (1 + (stockRets[c] ? stockRets[c].ret : 0)) / (1 + pureRet);
     });
 
-    var hCopy = {}; Object.keys(newH).forEach(function(k) { hCopy[k] = newH[k]; });
-    records.push({ month: tradingMonth, nav: nav, bNav: bNav, holdings: hCopy, pRet: pRet, hurdle: hurdle, stockRets: stockRets });
-    holdings = driftedH;
+    var hCopy = {}; Object.keys(targetH).forEach(function(k) { hCopy[k] = targetH[k]; });
+    records.push({ month: displayLabel, nav: nav, bNav: bNav, holdings: hCopy, pRet: pRet, hurdle: hurdle, stockRets: stockRets });
+    
+    prevDriftedHoldings = driftedH;
   }
   return records.length >= 6 ? records : null;
 }
