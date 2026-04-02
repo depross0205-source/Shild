@@ -1631,18 +1631,15 @@ function dlBtCsv(){
   });
   dlText(rows.join('\n'),'tw_backtest_'+new Date().toISOString().slice(0,10)+'.csv','text/csv;charset=utf-8');
 }
-  // ... 這是原本腳本最後一個函式的結尾
-    dlText(rows.join('\n'), 'tw_backtest_' + new Date().toISOString().slice(0, 10) + '.csv', 'text/csv;charset=utf-8');
-}
 
-// === 新增的自動讀取邏輯放在這裡 ===
+// === 自動讀取邏輯 ===
 window.onload = async () => {
   const hasData = await loadFromDB();
   if (!hasData) {
     console.log('No local data found in IndexedDB.');
   }
 };
-// =============================
 </script>
 </body>
 </html>
+
