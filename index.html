@@ -1209,7 +1209,7 @@ function renderST(all, hurdle, selectedCodes, rejectedMap) {
     + '<td>' + (ts ? '<span style="color:var(--gr)">Y</span>' : '<span style="color:var(--re)">N</span>') + '</td></tr>';
   }).join('');
 }
-function runBTcore(mh mode) {
+function runBTcore(mh, mode) {
   var stocks = getEnabledStocks().filter(s => RAW_SCORES[s.c]);
   if (stocks.length < 3) return null;
 
