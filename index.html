@@ -1209,7 +1209,6 @@ function renderST(all, hurdle, selectedCodes, rejectedMap) {
     + '<td>' + (ts ? '<span style="color:var(--gr)">Y</span>' : '<span style="color:var(--re)">N</span>') + '</td></tr>';
   }).join('');
 }
-
 function runBTcore(mh, mode) {
   var stocks = getEnabledStocks().filter(function(s) { return RAW_SCORES[s.c]; });
   if (stocks.length < 3) return null;
@@ -1221,7 +1220,7 @@ function runBTcore(mh, mode) {
   var rawS = $('btS') ? ($('btS').value || '').trim().slice(0, 7) : '';
   var rawE = $('btE') ? ($('btE').value || '').trim().slice(0, 7) : '';
 
-  // 索引起點：MIN=14 確保有足夠動量數據
+  // 索引起點
   var MIN = 14, cS = MIN;
   if (rawS) {
     for (var i = MIN; i < allM.length; i++) {
@@ -1229,7 +1228,7 @@ function runBTcore(mh, mode) {
     }
   }
 
-  // 索引終點：包含最後一個月 (例如 2026-04)，以便計算「當月至今」的報酬
+  // 索引終點：必須包含最後一列（例如 2026-04），以計算 4 月至今
   var cE = allM.length - 1; 
   if (rawE) {
     for (var i2 = allM.length - 1; i2 >= MIN; i2--) {
@@ -1242,95 +1241,95 @@ function runBTcore(mh, mode) {
   var INIT = gv('btCap') || 100000, COST = (gv('btC') || 0.3) / 100, ct = gv('corrT') || 0.75;
   var nav = INIT, bNav = INIT, records = [], prevDriftedHoldings = { CASH: 1.0 };
 
-  // 輔助函式：取得特定月份價格，若 m 為 null 則取該股最新價格
-  function getPrice(code, m) {
+  // 內部取價函式：m = "2026-04" 代表取得 3 月底（4/1）的價格
+  function getPriceAt(code, m) {
     var mo = MONTHLY[code];
     if (!mo || mo.length === 0) return null;
-    if (!m) return mo[mo.length - 1].c; // 取數組最後一個值 (最新價)
-    var best = null;
+    if (!m) return mo[mo.length - 1].c; // 如果沒有下個月，取最後一筆即時價
+    var res = null;
     for (var i = 0; i < mo.length; i++) {
-      if (mo[i].date <= m) best = mo[i].c;
+      if (mo[i].date === m) return mo[i].c;
+      if (mo[i].date < m) res = mo[i].c;
     }
-    return best;
+    return res;
   }
 
-  function getBenchPrice(m) {
+  function getBenchAt(m) {
     if (!BENCH_MONTHLY.length) return null;
     if (!m) return BENCH_MONTHLY[BENCH_MONTHLY.length - 1].c;
-    var best = null;
-    BENCH_MONTHLY.forEach(function(p) { if (p.date <= m) best = p.c; });
-    return best;
+    var res = null;
+    for (var i = 0; i < BENCH_MONTHLY.length; i++) {
+      if (BENCH_MONTHLY[i].date === m) return BENCH_MONTHLY[i].c;
+      if (BENCH_MONTHLY[i].date < m) res = BENCH_MONTHLY[i].c;
+    }
+    return res;
   }
 
-  // --- 回測迴圈 ---
+  // --- 回測迴圈：idx 指向哪個月，就計算哪個月的績效 ---
   for (var idx = cS; idx <= cE; idx++) {
-    var displayMonth = allM[idx];    // 報表顯示月 (如 2026-03)
-    var nextMonth = allM[idx + 1];   // 下月初 (如 2026-04)
+    var currentM = allM[idx];     // 標記月份 (例如 2026-03)
+    var nextM = allM[idx + 1];    // 結算月份 (例如 2026-04)
 
-    // 1. 【選股】：使用 displayMonth (即月初可見的上一月結算數據)
-    var hurdle = getHurdle(displayMonth), sc2 = calcAllScores(displayMonth);
+    // 1. 【選股】：2026-03 的持股應根據 2 月底數據選出
+    // 您的 RAW_SCORES[currentM] 內存的就是 3/1 開盤前（即 2 月底）的分數
+    var hurdle = getHurdle(currentM), sc2 = calcAllScores(currentM);
     var valid = sc2.filter(function(r) { return r.score !== null; });
     valid.sort(function(a, b) { return b.score - a.score; });
 
     var tsP = valid.filter(function(r) { return r.r12 !== null && r.r12 > hurdle; });
-    var selectedLongs = [];
-    for (var j = 0; j < tsP.length && selectedLongs.length < mh; j++) {
+    var sel = [];
+    for (var j = 0; j < tsP.length && sel.length < mh; j++) {
       var cand = tsP[j];
-      if (selectedLongs.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, displayMonth)) < ct; })) {
-        selectedLongs.push(cand);
-      }
+      if (sel.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, currentM)) < ct; })) sel.push(cand);
     }
 
-    // 2. 【權重】 (以 50/50 模式為例，您可以根據需要加入空單邏輯)
+    // 2. 【權重】
     var targetHoldings = {};
-    if (!selectedLongs.length) { targetHoldings = { CASH: 1.0 }; }
+    if (!sel.length) { targetHoldings = { CASH: 1.0 }; }
     else {
-      var lw = 0.5 / selectedLongs.length;
-      selectedLongs.forEach(function(r) { targetHoldings[r.s.c] = lw; });
+      var lw = 0.5 / sel.length; // 50% 權重分配
+      sel.forEach(function(r) { targetHoldings[r.s.c] = lw; });
     }
 
-    // 3. 【成本】：月初調倉成本
-    var allK = Object.keys(prevDriftedHoldings).concat(Object.keys(targetHoldings)), seen = {};
-    allK.forEach(function(k){ seen[k]=true; });
-    var turnover = 0;
-    Object.keys(seen).forEach(function(k){ turnover += Math.abs((targetHoldings[k]||0)-(prevDriftedHoldings[k]||0)); });
-    
+    // 3. 【換倉成本】：月初調倉
+    var turnover = 0, allK = Object.keys(prevDriftedHoldings).concat(Object.keys(targetHoldings)), seen = {};
+    allK.forEach(function(k){ if(!seen[k]){ turnover += Math.abs((targetHoldings[k]||0)-(prevDriftedHoldings[k]||0)); seen[k]=true; } });
+
     // 4. 【績效計算】：
-    // p0 = 本月 1 日價格 (displayMonth)
-    // p1 = 下月 1 日價格 (nextMonth)，若無 nextMonth 則取 Latest
-    var pRet = 0, cr = getTNXRate(displayMonth), stockDetails = {}, pureRet = 0;
+    // 3 月報酬 = Price("2026-04") / Price("2026-03") - 1
+    var pRet = 0, stockDetails = {}, pureRet = 0, riskFree = getTNXRate(currentM);
     Object.keys(targetHoldings).forEach(function(code) {
-      var weight = targetHoldings[code];
+      var w = targetHoldings[code];
       if (code === 'CASH') {
-        var r_c = cr / 12; pRet += weight * r_c; pureRet += weight * r_c;
-        stockDetails.CASH = { ret: r_c, w: weight }; return;
+        var r_c = riskFree / 12; pRet += w * r_c; pureRet += w * r_c;
+        stockDetails.CASH = { ret: r_c, w: w }; return;
       }
-      var p0 = getPrice(code, displayMonth);
-      var p1 = getPrice(code, nextMonth); // nextMonth 為 null 會自動取最新價
-      if (p0 && p1 && p0 > 0) {
-        var r_s = (p1 / p0) - 1;
-        pRet += weight * r_s; pureRet += weight * r_s;
-        stockDetails[code] = { ret: r_s, w: weight };
-      } else { stockDetails[code] = { ret: 0, w: weight }; }
+      var pStart = getPriceAt(code, currentM); // 3月1日價
+      var pEnd = getPriceAt(code, nextM);      // 4月1日價 (若 nextM 為空則取 Latest)
+      if (pStart && pEnd && pStart > 0) {
+        var r_s = (pEnd / pStart) - 1;
+        pRet += w * r_s; pureRet += w * r_s;
+        stockDetails[code] = { ret: r_s, w: w };
+      } else { stockDetails[code] = { ret: 0, w: w }; }
     });
 
     pRet -= (turnover / 2) * COST;
     nav *= (1 + pRet);
 
-    // 5. 【大盤同步】
-    var b0 = getBenchPrice(displayMonth), b1 = getBenchPrice(nextMonth);
-    if (b0 && b1 && b0 > 0) bNav *= (1 + (b1 / b0 - 1));
+    // 5. 【大盤對齊】
+    var bStart = getBenchAt(currentM), bEnd = getBenchAt(nextM);
+    if (bStart && bEnd && bStart > 0) bNav *= (1 + (bEnd / bStart - 1));
 
-    // 6. 【漂移與記錄】
-    var driftedHoldings = {};
-    Object.keys(targetHoldings).forEach(function(code) {
-      driftedHoldings[code] = targetHoldings[code] * (1 + (stockDetails[code]?stockDetails[code].ret:0)) / (1 + pureRet);
+    // 6. 【記錄與漂移】
+    var driftedH = {};
+    Object.keys(targetHoldings).forEach(function(c) {
+      driftedH[c] = targetHoldings[c] * (1 + (stockDetails[c]?stockDetails[c].ret:0)) / (1 + pureRet);
     });
 
     var hCopy = {}; Object.keys(targetHoldings).forEach(function(k) { hCopy[k] = targetHoldings[k]; });
-    records.push({ month: displayMonth, nav: nav, bNav: bNav, holdings: hCopy, pRet: pRet, hurdle: hurdle, stockRets: stockDetails });
+    records.push({ month: currentM, nav: nav, bNav: bNav, holdings: hCopy, pRet: pRet, hurdle: hurdle, stockRets: stockDetails });
     
-    prevDriftedHoldings = driftedHoldings;
+    prevDriftedHoldings = driftedH;
   }
   return records.length >= 6 ? records : null;
 }
