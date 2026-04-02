@@ -1217,10 +1217,10 @@ function runBTcore(mh, mode) {
   var records = [];
 
   for (let i = 14; i < allM.length; i++) {
-    const thisMonth = allM[i];           // 表格顯示的月份（報酬所屬月）
-    const signalMonth = allM[i-1];       // 訊號計算月份
+    const displayMonth = allM[i];        // 表格這一列要顯示的月份
+    const signalMonth  = allM[i-1];      // 訊號產生於上一個月底
 
-    // 選股
+    // 選股（根據 signalMonth）
     let valid = calcAllScores(signalMonth).filter(r => r.score !== null);
     valid.sort((a,b) => b.score - a.score);
     let sel = valid.slice(0, mh);
@@ -1229,27 +1229,25 @@ function runBTcore(mh, mode) {
     let w = 1.0 / sel.length;
     sel.forEach(r => newH[r.s.c] = w);
 
-    // 計算「thisMonth」的真實報酬
+    // 計算「displayMonth」的真實報酬（從 signalMonth → displayMonth）
     let pRet = 0;
     let stockRets = {};
 
     sel.forEach(r => {
       let c = r.s.c;
-      let p0 = getMo(c, signalMonth);   // 上月底價格
-      let p1 = getMo(c, thisMonth);     // 本月底價格
-      let ret = (p0 && p1) ? (p1/p0 - 1) : 0;
+      let p0 = getMo(c, signalMonth);   // 上月底買入價
+      let p1 = getMo(c, displayMonth);  // 本月底結算價
+      let ret = (p0 && p1) ? (p1 / p0 - 1) : 0;
       stockRets[c] = {ret: ret, w: w};
       pRet += w * ret;
     });
 
     records.push({
-      month: thisMonth,
+      month: displayMonth,
       holdings: newH,
       pRet: pRet,
       hurdle: getHurdle(signalMonth),
-      stockRets: stockRets,
-      nav: 100000,   // 簡化顯示
-      bNav: 100000
+      stockRets: stockRets
     });
   }
   return records;
