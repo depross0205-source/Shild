@@ -414,6 +414,39 @@ tr:hover{background:var(--sf2)}
 <div class="panel" id="panel-fetch">
   <div class="card">
     <div class="ct">Proxy</div>
+    <!-- 新增：資料監控儀表板 -->
+<div class="card" style="border-left: 4px solid var(--ye);">
+  <div class="ct">🚦 資料健康診斷 <button class="bo sm" onclick="checkDataHealth()">🔄 立即診斷</button></div>
+  <div id="healthDashboard">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+      <div class="ib2" style="margin-top:0">🔴 待更新股數：<b id="staleCount" style="color:var(--re)">0</b></div>
+      <div class="ib2" style="margin-top:0">📅 平均延遲：<b id="avgDelay" style="color:var(--ye)">0</b> 天</div>
+    </div>
+    <div class="tw-wrap" style="max-height: 200px;">
+      <table>
+        <thead>
+          <tr><th>市場</th><th>代碼</th><th>最後日期</th><th>延遲天數</th><th>狀態</th></tr>
+        </thead>
+        <tbody id="healthBody">
+          <tr><td colspan="5" style="text-align:center; color:var(--mu)">請點擊診斷按鈕</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 新增：備用來源切換 -->
+<div class="card">
+  <div class="ct">⚙️ 資料來源引擎設定</div>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <select id="dataSource" style="flex:1">
+      <option value="yahoo">主要來源：Yahoo Finance (JSON)</option>
+      <option value="stooq">備用來源：Stooq (CSV/Global)</option>
+    </select>
+    <span style="font-size:11px; color:var(--mu)">※ 若主要來源失效請切換</span>
+  </div>
+</div>
+
     <div class="fi"><label>URL</label>
       <input type="text" id="proxyUrl" value="https://shield-proxy.depross0205.workers.dev?url=" autocorrect="off" spellcheck="false">
     </div>
@@ -546,6 +579,47 @@ tr:hover{background:var(--sf2)}
 var WEEKLY={},MONTHLY={},DAILY={},BENCH_MONTHLY=[],TNX_MONTHLY=[];
 var RAW_SCORES={},BT_RESULT=null,CHART={},CACHE_BUILT=false,CACHE_TS=null,SKIP_MO=false,CACHE_SKIP_MO=false,CORR_WIN=24;
 var N_TW=13,N_US=50;
+  function checkDataHealth() {
+    const stocks = getEnabledStocks();
+    const now = new Date();
+    const tbody = $('healthBody');
+    let staleNum = 0;
+    let totalDelay = 0;
+    let html = '';
+
+    stocks.forEach(s => {
+        const data = s.tw ? WEEKLY[s.c] : DAILY[s.c];
+        let delay = 999;
+        let lastD = '無資料';
+        
+        if (data && data.length > 0) {
+            const lastDate = new Date(data[data.length - 1].date);
+            lastD = data[data.length - 1].date;
+            // 計算天數差距
+            delay = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+        }
+
+        const isStale = s.tw ? delay > 5 : delay > 2; // 台股週頻大於5天, 美股日頻大於2天算過期
+        if (isStale) staleNum++;
+        if (delay !== 999) totalDelay += delay;
+
+        const statusLabel = isStale ? `<span style="color:var(--re)">✘ 需更新</span>` : `<span style="color:var(--te)">✔ 正常</span>`;
+        const marketLabel = s.tw ? '🇹🇼 台股' : '🇺🇸 美股';
+
+        html += `<tr>
+            <td>${marketLabel}</td>
+            <td class="mono">${s.c}</td>
+            <td class="mono">${lastD}</td>
+            <td class="mono">${delay === 999 ? '∞' : delay + 'd'}</td>
+            <td>${statusLabel}</td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html || '<tr><td colspan="5">無啟用中的標的</td></tr>';
+    $('staleCount').textContent = staleNum;
+    $('avgDelay').textContent = stocks.length ? (totalDelay / stocks.length).toFixed(1) : 0;
+}
+
 function $(i){return document.getElementById(i);}
 function gv(i){var e=$(i);return e?parseFloat(e.value)||0:0;}
 function sl(id,msg,ok){var e=$(id);if(!e)return;e.textContent=msg;e.style.color=ok===true?'var(--gr)':ok===false?'var(--re)':'var(--mu)';}
@@ -656,6 +730,46 @@ async function fetchMonthly(tkOrS,prx){
   var seen={};out.forEach(function(p){seen[p.date]=p;});
   return Object.values(seen).sort(function(a,b){return a.date.localeCompare(b.date);});
 }
+  async function fetchFromStooq(s) {
+    const prx = buildProxies();
+    // Stooq 代碼格式: 台股 2330.TW -> 2330.TW, 美股 AAPL -> AAPL.US
+    const ticker = s.tw ? `${s.c}.TW` : `${s.c}.US`;
+    const url = `https://stooq.com/q/d/l/?s=${ticker}&i=d`; // i=d 為日頻
+    
+    try {
+        const r = await fp(url, prx);
+        const text = await r.text();
+        const lines = text.split('\n').slice(1); // 跳過 Header
+        
+        return lines.map(line => {
+            const [date, open, high, low, close, vol] = line.split(',');
+            if(!close) return null;
+            return {
+                date: date.trim(),
+                h: parseFloat(high),
+                l: parseFloat(low),
+                c: parseFloat(close),
+                v: parseInt(vol)
+            };
+        }).filter(x => x && !isNaN(x.c));
+    } catch (e) {
+        throw new Error('Stooq 來源失敗: ' + e.message);
+    }
+}
+
+// 修改原有的 fetchAll 邏輯，加入來源判斷
+async function smartFetch(s, type) {
+    const engine = $('dataSource').value;
+    if (engine === 'stooq') {
+        return await fetchFromStooq(s);
+    } else {
+        // 原有的 Yahoo Finance 邏輯
+        const prx = buildProxies();
+        if (type === 'ohlcv') return await fetchOHLCV(s, s.tw ? '1wk' : '1d', prx);
+        if (type === 'monthly') return await fetchMonthly(s, prx);
+    }
+}
+
 function mergeArr(existing,newData){
   var map={};
   (existing||[]).forEach(function(d){map[d.date]=d;});
