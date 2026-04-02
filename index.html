@@ -1217,27 +1217,28 @@ function runBTcore(mh, mode) {
   var records = [];
 
   for (let i = 14; i < allM.length; i++) {
-    const displayMonth = allM[i];        // 表格這一列要顯示的月份
-    const signalMonth  = allM[i-1];      // 訊號產生於上一個月底
+    const displayMonth = allM[i];        // 這一列應該顯示的月份
+    const buyMonth     = allM[i-1];      // 買入月份（上月底）
 
-    // 選股（根據 signalMonth）
-    let valid = calcAllScores(signalMonth).filter(r => r.score !== null);
+    // 簡單取前 mh 名
+    let valid = calcAllScores(buyMonth).filter(r => r.score !== null);
     valid.sort((a,b) => b.score - a.score);
     let sel = valid.slice(0, mh);
 
     let newH = {};
-    let w = 1.0 / sel.length;
+    let w = 1.0 / Math.max(sel.length, 1);
     sel.forEach(r => newH[r.s.c] = w);
 
-    // 計算「displayMonth」的真實報酬（從 signalMonth → displayMonth）
+    // 計算報酬：從 buyMonth → displayMonth
     let pRet = 0;
     let stockRets = {};
 
     sel.forEach(r => {
       let c = r.s.c;
-      let p0 = getMo(c, signalMonth);   // 上月底買入價
-      let p1 = getMo(c, displayMonth);  // 本月底結算價
-      let ret = (p0 && p1) ? (p1 / p0 - 1) : 0;
+      let pBuy  = getMo(c, buyMonth);     // 買入價
+      let pSell = getMo(c, displayMonth); // 賣出價
+      let ret = (pBuy && pSell) ? (pSell / pBuy - 1) : 0;
+      
       stockRets[c] = {ret: ret, w: w};
       pRet += w * ret;
     });
@@ -1246,17 +1247,18 @@ function runBTcore(mh, mode) {
       month: displayMonth,
       holdings: newH,
       pRet: pRet,
-      hurdle: getHurdle(signalMonth),
+      hurdle: getHurdle(buyMonth),
       stockRets: stockRets
     });
   }
   return records;
 }
 
+// 確保 getMo 存在
 function getMo(code, dateStr) {
   var mo = MONTHLY[code];
   if (!mo) return null;
-  for (let j = mo.length-1; j >= 0; j--) {
+  for (let j = mo.length - 1; j >= 0; j--) {
     if (mo[j].date <= dateStr) return mo[j].c;
   }
   return null;
