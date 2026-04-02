@@ -1221,20 +1221,21 @@ function runBTcore(mh, mode) {
   var rawS = $('btS') ? ($('btS').value || '').trim().slice(0, 7) : '';
   var rawE = $('btE') ? ($('btE').value || '').trim().slice(0, 7) : '';
 
-  // 索引起點：因為要計算 T 月報酬，需要 T-1 月價格作為基期
+  // 索引起點：T 月需要 T 月價格與 T+1 月價格結算，故 cE 到 length-2
   var MIN = 14, cS = MIN;
   if (rawS) {
     for (var i = MIN; i < allM.length; i++) {
       if (allM[i] >= rawS) { cS = i; break; }
     }
   }
-  // 索引終點：到資料最後一個月
-  var cE = allM.length - 1;
+
+  var cE = allM.length - 2; 
   if (rawE) {
-    for (var i2 = allM.length - 1; i2 >= MIN; i2--) {
+    for (var i2 = allM.length - 2; i2 >= MIN; i2--) {
       if (allM[i2] <= rawE) { cE = i2; break; }
     }
   }
+
   if (cS > cE) return null;
 
   var INIT = gv('btCap') || 100000, COST = (gv('btC') || 0.3) / 100, ct = gv('corrT') || 0.75;
@@ -1259,85 +1260,77 @@ function runBTcore(mh, mode) {
     return best ? best.c : null;
   }
 
-  // --- 回測迴圈：idx 代表「當前持有的交易月份」 ---
+  // --- 核心迴圈：idx 代表「當前顯示/執行的月份」 ---
   for (var idx = cS; idx <= cE; idx++) {
-    var tradingMonth = allM[idx];     // 交易執行月 (例如 2026-03)
-    var endOfPrevMonth = allM[idx-1]; // 訊號產生月 / 買入基期 (例如 2026-02 底)
+    var labelM = allM[idx];     // 例如 2026-04 (顯示在表格的月份)
+    var nextM = allM[idx + 1];  // 例如 2026-05 (用來取得 4 月底結算價)
 
-    // 1. 【選股訊號】：嚴格使用「上個月底」可見之數據
-    var hurdle = getHurdle(endOfPrevMonth);
-    var scoresAtEntry = calcAllScores(endOfPrevMonth);
-    var valid = scoresAtEntry.filter(function(r) { return r.score !== null; });
+    // 1. 【選股】：使用 labelM 當下的技術指標
+    // 註：在系統中 RAW_SCORES[labelM] 存的是「labelM 月初可見，即上一月結束」的數據
+    var signalDate = labelM; 
+    var hurdle = getHurdle(signalDate), sc2 = calcAllScores(signalDate);
+    var valid = sc2.filter(function(r) { return r.score !== null; });
     valid.sort(function(a, b) { return b.score - a.score; });
 
-    // 多單篩選
     var tsP = valid.filter(function(r) { return r.r12 !== null && r.r12 > hurdle; });
     var selectedLongs = [];
     for (var j = 0; j < tsP.length && selectedLongs.length < mh; j++) {
       var cand = tsP[j];
-      if (selectedLongs.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, endOfPrevMonth)) < ct; })) {
+      if (selectedLongs.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, signalDate)) < ct; })) {
         selectedLongs.push(cand);
       }
     }
 
-    // 2. 【權重配置】 (邏輯維持)
+    // 2. 【配置權重】 (保持原樣)
     var targetHoldings = {};
-    if (!selectedLongs.length) {
-      targetHoldings = { CASH: 1.0 };
-    } else {
-      var is1330 = (capMode === '1330'), lScale = is1330 ? 1.0 : 0.5;
-      if (mode === 'rank') {
-        var ldenom = selectedLongs.length * (selectedLongs.length + 1) / 2;
-        selectedLongs.forEach(function(r, i) { targetHoldings[r.s.c] = lScale * (selectedLongs.length - i) / ldenom; });
-      } else {
-        var lw = lScale / selectedLongs.length;
-        selectedLongs.forEach(function(r) { targetHoldings[r.s.c] = lw; });
-      }
-      // (若有空單 shortN 邏輯也在此處使用 endOfPrevMonth 訊號... 略)
+    if (!selectedLongs.length) { targetHoldings = { CASH: 1.0 }; }
+    else {
+      var lScale = (capMode === '1330') ? 1.0 : 0.5;
+      var lw = lScale / selectedLongs.length;
+      selectedLongs.forEach(function(r) { targetHoldings[r.s.c] = lw; });
     }
 
-    // 3. 【計算週轉成本】：月初 (3/1) 調整持倉產生的成本
+    // 3. 【換倉成本】：月初 (4/1) 依據新清單調整持倉
     var allKeys = Object.keys(currentHoldings).concat(Object.keys(targetHoldings)), seen = {};
     allKeys.forEach(function(k){ seen[k]=true; });
     var turnover = 0;
     Object.keys(seen).forEach(function(k){ turnover += Math.abs((targetHoldings[k]||0)-(currentHoldings[k]||0)); });
-    var transCost = (turnover / 2) * COST;
-
-    // 4. 【計算績效】：持有 targetHoldings 從 3/1 漲跌到 3/31
-    var monthRet = 0, riskFree = getTNXRate(endOfPrevMonth), stockDetails = {}, pureRet = 0;
     
+    // 4. 【計算績效】：關鍵修正處
+    // 持有標的從 labelM(4/1) 漲跌到 nextM(5/1)
+    var pRet = 0, cr = getTNXRate(signalDate), stockDetails = {}, pureRet = 0;
     Object.keys(targetHoldings).forEach(function(code) {
       var weight = targetHoldings[code];
       if (code === 'CASH') {
-        var r_c = riskFree / 12; monthRet += weight * r_c; pureRet += weight * r_c;
+        var r_c = cr / 12; pRet += weight * r_c; pureRet += weight * r_c;
         stockDetails.CASH = { ret: r_c, w: weight }; return;
       }
-      var priceStart = getMo(code, endOfPrevMonth); // 2月底價格
-      var priceEnd = getMo(code, tradingMonth);    // 3月底價格
-      if (priceStart && priceEnd && priceStart > 0) {
-        var r_s = (priceEnd / priceStart) - 1;
-        monthRet += weight * r_s; pureRet += weight * r_s;
+      var pStart = getMo(code, labelM); // 4月1日價格
+      var pEnd = getMo(code, nextM);    // 5月1日價格 (即 4 月底結算)
+      if (pStart && pEnd && pStart > 0) {
+        var r_s = (pEnd / pStart) - 1;
+        pRet += weight * r_s; pureRet += weight * r_s;
         stockDetails[code] = { ret: r_s, w: weight };
       } else { stockDetails[code] = { ret: 0, w: weight }; }
     });
 
-    monthRet -= transCost; // 扣除月初調倉成本
-    nav *= (1 + monthRet);
+    pRet -= (turnover / 2) * COST;
+    nav *= (1 + pRet);
 
-    // 5. 【基準對齊】：大盤 3 月份漲跌
-    var bStart = getBench(endOfPrevMonth), bEnd = getBench(tradingMonth);
+    // 5. 【基準同步】：大盤 4 月份表現
+    var bStart = getBench(labelM), bEnd = getBench(nextM);
     if (bStart && bEnd && bStart > 0) bNav *= (1 + (bEnd / bStart - 1));
 
-    // 6. 【權重自然移動】：用於計算下個月月初的週轉率
+    // 6. 【權重自然移動】
     var driftedHoldings = {};
     Object.keys(targetHoldings).forEach(function(code) {
       driftedHoldings[code] = targetHoldings[code] * (1 + (stockDetails[code]?stockDetails[code].ret:0)) / (1 + pureRet);
     });
 
     var hCopy = {}; Object.keys(targetHoldings).forEach(function(k) { hCopy[k] = targetHoldings[k]; });
-    records.push({ month: tradingMonth, nav: nav, bNav: bNav, holdings: hCopy, pRet: monthRet, hurdle: hurdle, stockRets: stockDetails });
+    records.push({ month: labelM, nav: nav, bNav: bNav, holdings: hCopy, pRet: pRet, hurdle: hurdle, stockRets: stockDetails });
     
-    currentHoldings = driftedHoldings; // 將月底漂移後的權重傳給下個月
+    currentHoldings = driftedHoldings;
   }
   return records.length >= 6 ? records : null;
 }
