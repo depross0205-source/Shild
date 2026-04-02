@@ -1211,38 +1211,95 @@ function renderST(all, hurdle, selectedCodes, rejectedMap) {
 }
 
 function runBTcore(mh, mode) {
-  // ... (前面所有變數宣告不變) ...
+  var stocks = getEnabledStocks().filter(function(s) { return RAW_SCORES[s.c]; });
+  if (stocks.length < 3) return null;
 
-  var records = [];
+  var refMo = MONTHLY[stocks[0].c];
+  if (!refMo) return null;
+  var allM = refMo.map(function(p) { return p.date; }).sort();
+
+  var rawS = $('btS') ? ($('btS').value || '').trim().slice(0, 7) : '';
+  var rawE = $('btE') ? ($('btE').value || '').trim().slice(0, 7) : '';
+
+  var MIN = 14;
+  var cS = MIN;   // ← 這裡是 cS 的正確宣告位置
+  if (rawS) {
+    for (var i = MIN; i < allM.length; i++) {
+      if (allM[i] >= rawS) { cS = i; break; }
+    }
+  }
+
+  var cE = allM.length - 1;
+  if (rawE) {
+    for (var i2 = allM.length - 1; i2 >= MIN; i2--) {
+      if (allM[i2] <= rawE) { cE = i2; break; }
+    }
+  }
+
+  if (cS > cE) return null;
+
+  var INIT = gv('btCap') || 100000;
+  var COST = (gv('btC') || 0.3) / 100;
+  var ct = gv('corrT') || 0.75;
+  var shortN = parseInt($('btSN') ? $('btSN').value : '0') || 0;
+  var capMode = document.querySelector('input[name="capMode"]:checked') ? document.querySelector('input[name="capMode"]:checked').value : 'neutral';
+  var shortTSF = !!($('btSTSF') && $('btSTSF').checked);
+
+  var nav = INIT, bNav = INIT, records = [], holdings = { CASH: 1.0 };
+
+  function getBench(m) {
+    if (!BENCH_MONTHLY.length) return null;
+    var best = null;
+    BENCH_MONTHLY.forEach(function(p) { if (p.date <= m) best = p; });
+    return best ? best.c : null;
+  }
+
+  function getMo(code, m) {
+    var mo = MONTHLY[code];
+    if (!mo) return null;
+    var best = null;
+    mo.forEach(function(p) { if (p.date <= m) best = p; });
+    return best ? best.c : null;
+  }
 
   for (var idx = cS; idx <= cE; idx++) {
-    var tradingMonth = allM[idx];      // ← 本列要顯示的月份（例如 2026-04）
-    var signalMonth  = allM[idx - 1];  // ← 訊號計算月份（3月底）
+    var tradingMonth = allM[idx];      // 表格顯示的月份 (報酬實現月)
+    var signalMonth  = allM[idx - 1];  // 訊號計算月份
 
-    // 1. 訊號（使用上月底資料）
     var hurdle = getHurdle(signalMonth);
     var sc2 = calcAllScores(signalMonth);
-    var valid = sc2.filter(r => r.score !== null);
-    valid.sort((a, b) => b.score - a.score);
+    var valid = sc2.filter(function(r) { return r.score !== null; });
+    valid.sort(function(a, b) { return b.score - a.score; });
 
-    // 多單 + 空單選股（不變）
+    // 多單選股
     var sel = [];
     for (var j = 0; j < valid.length && sel.length < mh; j++) {
       var cand = valid[j];
-      if (sel.every(x => Math.abs(calcCorr(cand.s.c, x.s.c, signalMonth)) < ct)) sel.push(cand);
+      if (sel.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, signalMonth)) < ct; })) {
+        sel.push(cand);
+      }
     }
-    // ... 空單 selS 部分不變 ...
 
-    // 2. 權重（不變）
+    // 空單選股（目前 shortN=0 通常不會用到）
+    var selS = [];
+
+    // 權重分配
     var newH = {};
     if (!sel.length) {
       newH = { CASH: 1.0 };
     } else {
-      // ... 原本的權重計算邏輯保持不變 ...
-      // (1330 / rank / equal 等)
+      var is1330 = capMode === '1330';
+      var lScale = is1330 ? 1.0 : 0.5;
+      if (mode === 'rank') {
+        var ldenom = sel.length * (sel.length + 1) / 2;
+        sel.forEach(function(r, i) { newH[r.s.c] = lScale * (sel.length - i) / ldenom; });
+      } else {
+        var lw = lScale / sel.length;
+        sel.forEach(function(r) { newH[r.s.c] = lw; });
+      }
     }
 
-    // 3. 【修正重點】報酬計算
+    // 計算本月實際報酬（已修正）
     var pRet = 0, pureRet = 0, stockRets = {}, cr = getTNXRate(signalMonth);
     Object.keys(newH).forEach(function(c) {
       var wt = newH[c];
@@ -1252,8 +1309,8 @@ function runBTcore(mh, mode) {
         stockRets.CASH = { ret: r_c, w: wt };
         return;
       }
-      var p0 = getMo(c, signalMonth);   // ← 買入價 = 訊號月底價格（3月底）
-      var p1 = getMo(c, tradingMonth);  // ← 結算價 = 本月底價格（4月底）
+      var p0 = getMo(c, signalMonth);   // 買入價（訊號月底）
+      var p1 = getMo(c, tradingMonth);  // 結算價（本月底）
       if (p0 && p1 && p0 > 0) {
         var r_s = p1 / p0 - 1;
         pRet += wt * r_s;
@@ -1264,22 +1321,39 @@ function runBTcore(mh, mode) {
       }
     });
 
-    // 4. 交易成本 + NAV 更新（不變）
-    // ... 原本的 tv、pRet -= cost、nav *= ... 保持不變 ...
+    // 交易成本與 NAV 更新
+    var allC = Object.keys(holdings).concat(Object.keys(newH));
+    var seen2 = {};
+    allC.forEach(function(c){ seen2[c]=true; });
+    var tv = 0;
+    Object.keys(seen2).forEach(function(c){ tv += Math.abs((newH[c]||0) - (holdings[c]||0)); });
+    pRet -= (tv / 2) * COST;
 
-    var hCopy = {}; Object.keys(newH).forEach(k => hCopy[k] = newH[k]);
+    nav *= (1 + pRet);
 
-    records.push({
-      month: tradingMonth,          // 表格顯示月份 = 報酬實現月份
-      nav: nav,
-      bNav: bNav,
-      holdings: hCopy,              // 本列持股（3月底選出，4月持有）
-      pRet: pRet,
-      hurdle: hurdle,
-      stockRets: stockRets          // 關鍵：存入「本月（4月）真正的個股報酬」
+    // 大盤基準
+    var b0 = getBench(signalMonth), b1 = getBench(tradingMonth);
+    if (b0 && b1 && b0 > 0) bNav *= (1 + b1 / b0 - 1);
+
+    // 權重漂移給下個月
+    var driftedH = {};
+    Object.keys(newH).forEach(function(c) {
+      driftedH[c] = newH[c] * (1 + (stockRets[c] ? stockRets[c].ret : 0)) / (1 + pureRet);
     });
 
-    holdings = driftedH;  // 權重漂移給下個月使用
+    var hCopy = {}; Object.keys(newH).forEach(function(k){ hCopy[k] = newH[k]; });
+
+    records.push({
+      month: tradingMonth,
+      nav: nav,
+      bNav: bNav,
+      holdings: hCopy,
+      pRet: pRet,
+      hurdle: hurdle,
+      stockRets: stockRets
+    });
+
+    holdings = driftedH;
   }
 
   return records.length >= 6 ? records : null;
