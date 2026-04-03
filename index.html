@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+o<!DOCTYPE html>
 
 <html lang="zh-TW">
 <head>
@@ -774,20 +774,49 @@ async function fetchOHLCV(s,interval,prx){
   });
   return out;
 }
-async function fetchMonthly(tkOrS,prx){
-  var tk=typeof tkOrS==='string'?tkOrS:buildTicker(tkOrS);
-  var r=await fp('https://query1.finance.yahoo.com/v8/finance/chart/'+tk+'?range=max&interval=1mo',prx);
-  var j=await r.json();var ch=j&&j.chart&&j.chart.result&&j.chart.result[0];
-  if(!ch||!ch.timestamp)throw new Error('no data');
-  var out=[];
-  ch.timestamp.forEach(function(ts,i){
-    var adj=ch.indicators.adjclose&&ch.indicators.adjclose[0]?ch.indicators.adjclose[0].adjclose[i]:null;
-    var cl=ch.indicators.quote[0].close[i];var c=adj!=null?adj:cl;
-    if(c&&c>0)out.push({date:new Date(ts*1000).toISOString().slice(0,7),c:+c.toFixed(4)});
+/**
+ * 獲取月線歷史數據
+ * @param {string|object} tickerOrSymbol - 股票代碼或物件
+ * @param {object} proxyOptions - Fetch 配置項或代理設定
+ */
+async function fetchMonthly(tickerOrSymbol, proxyOptions) {
+  const symbol = typeof tickerOrSymbol === 'string' 
+    ? tickerOrSymbol 
+    : buildTicker(tickerOrSymbol);
+
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=max&interval=1mo`;
+  
+  const response = await fp(url, proxyOptions);
+  const data = await response.json();
+  const result = data?.chart?.result?.[0];
+
+  if (!result || !result.timestamp) {
+    throw new Error('No data found for the given ticker');
+  }
+
+  const { timestamp, indicators } = result;
+  const quote = indicators.quote[0];
+  const adjClose = indicators.adjclose?.[0]?.adjclose;
+
+  // 使用 Map 處理重複日期並過濾無效數據
+  const dataMap = new Map();
+
+  timestamp.forEach((ts, i) => {
+    const dateStr = new Date(ts * 1000).toISOString().slice(0, 7); // YYYY-MM
+    const price = adjClose?.[i] ?? quote.close[i];
+
+    if (price && price > 0) {
+      dataMap.set(dateStr, {
+        date: dateStr,
+        c: Number(price.toFixed(4))
+      });
+    }
   });
-  var seen={};out.forEach(function(p){seen[p.date]=p;});
-  return Object.values(seen).sort(function(a,b){return a.date.localeCompare(b.date);});
+
+  // 轉為陣列並按日期排序
+  return Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
+
   async function fetchFromStooq(s) {
     const prx = buildProxies();
     // Stooq 代碼格式: 台股 2330.TW -> 2330.TW, 美股 AAPL -> AAPL.US
