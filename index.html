@@ -1033,21 +1033,33 @@ function calcKbar(bars,N){
   return v.reduce(function(a,b){return a+b;},0)/v.length;
 }
 function momZ(mo,idx,n){
-  if(idx<n)return null;var pn=mo[idx-1].c,p0=mo[idx-n].c;if(!p0||p0<=0)return null;
+  if(idx<n)return null;
+  var pn=mo[idx].c,p0=mo[idx-n].c;  // 用 mo[idx] 而非 mo[idx-1]
+  if(!p0||p0<=0)return null;
   var ret=pn/p0-1,rets=[];
-  for(var i=idx-n+1;i<idx;i++)if(mo[i-1].c>0)rets.push(mo[i].c/mo[i-1].c-1);
+  for(var i=idx-n+1;i<=idx;i++)if(mo[i-1].c>0)rets.push(mo[i].c/mo[i-1].c-1);  // 迴圈到 idx
   if(rets.length<3)return null;
   var avg=rets.reduce(function(a,b){return a+b;},0)/rets.length;
   var std=Math.sqrt(rets.reduce(function(a,b){return a+(b-avg)*(b-avg);},0)/rets.length);
   return std>0?ret/std:null;
 }
+
 function rawMom(mo,idx,skip){
   var ri=skip?idx-1:idx;if(ri<1)return null;
   var z12=momZ(mo,ri,12),z6=momZ(mo,ri,6),z3=momZ(mo,ri,3);
   if(z12===null||z6===null||z3===null)return null;
   return 0.5*z12+0.3*z6+0.2*z3;
 }
-function getMonthIdx(mo,yyyymm){for(var i=0;i<mo.length;i++){if(mo[i].date>yyyymm)return i;}return mo.length;}
+function getMonthIdx(mo,yyyymm){
+  // 找到完全匹配或小於該月份的最近索引
+  var best=-1;
+  for(var i=0;i<mo.length;i++){
+    if(mo[i].date<=yyyymm)best=i;
+    else break;
+  }
+  return best>=0?best:-1;
+}
+}
 async function buildCache(stocks){
   stocks=stocks||getEnabledStocks();
   var withData=stocks.filter(function(s){return s.tw?(WEEKLY[s.c]&&MONTHLY[s.c]):(DAILY[s.c]&&MONTHLY[s.c]);});
