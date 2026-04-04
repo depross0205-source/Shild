@@ -768,10 +768,17 @@ async function fetchOHLCV(s,interval,prx){
   var j=await r.json();var ch=j&&j.chart&&j.chart.result&&j.chart.result[0];
   if(!ch||!ch.timestamp)throw new Error('no data');
   var out=[];
-  ch.timestamp.forEach(function(ts,i){
-    var q=ch.indicators.quote[0];var h=q.high[i],l=q.low[i],c=q.close[i],v=q.volume[i];
-    if(c&&c>0&&h&&l&&v!=null)out.push({date:new Date(ts*1000).toISOString().slice(0,10),h:+h.toFixed(3),l:+l.toFixed(3),c:+c.toFixed(3),v:+v});
+    ch.timestamp.forEach(function(ts,i){
+    var adj=ch.indicators.adjclose&&ch.indicators.adjclose[0]?ch.indicators.adjclose[0].adjclose[i]:null;
+    var cl=ch.indicators.quote[0].close[i];var c=adj!=null?adj:cl;
+    if(c&&c>0){
+      // Yahoo monthly label = T-1 actual close, shift +1 month to correct
+      var d=new Date(ts*1000);
+      d.setUTCMonth(d.getUTCMonth()+1);
+      out.push({date:d.toISOString().slice(0,7),c:+c.toFixed(4)});
+    }
   });
+
   return out;
 }
 async function fetchMonthly(tkOrS,prx){
