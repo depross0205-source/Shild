@@ -783,11 +783,20 @@ async function fetchMonthly(tkOrS,prx){
   ch.timestamp.forEach(function(ts,i){
     var adj=ch.indicators.adjclose&&ch.indicators.adjclose[0]?ch.indicators.adjclose[0].adjclose[i]:null;
     var cl=ch.indicators.quote[0].close[i];var c=adj!=null?adj:cl;
-    if(c&&c>0)out.push({date:new Date(ts*1000).toISOString().slice(0,7),c:+c.toFixed(4)});
+    if(c&&c>0){
+      // Yahoo monthly timestamp = bar 開始日 (月初)，但 close 實際是該 bar 結束的月末
+      // 直接用 timestamp 當月即正確，不需位移
+      // 但實測發現 Yahoo 的月 timestamp 比實際收盤日早一個月
+      // 修正：將日期往後推一個月
+      var d=new Date(ts*1000);
+      d.setMonth(d.getMonth()+1);
+      out.push({date:d.toISOString().slice(0,7),c:+c.toFixed(4)});
+    }
   });
   var seen={};out.forEach(function(p){seen[p.date]=p;});
   return Object.values(seen).sort(function(a,b){return a.date.localeCompare(b.date);});
 }
+
   async function fetchFromStooq(s) {
     const prx = buildProxies();
     // Stooq 代碼格式: 台股 2330.TW -> 2330.TW, 美股 AAPL -> AAPL.US
