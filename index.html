@@ -477,6 +477,9 @@ tr:hover{background:var(--sf2)}
     <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <input type="file" id="fileJson" accept=".json" style="display:none" onchange="upJson(this)">
       <button class="bo sm" onclick="document.getElementById('fileJson').click()">&#x2B06; JSON &#x9084;&#x539F;</button>
+      <button class="bo sm" style="color:var(--re);border-color:var(--re)" onclick="clearAndReset()">&#x1F5D1; Clear DB</button>
+      <button class="bo sm" style="color:var(--ye);border-color:var(--ye)" onclick="debugDataLen()">&#x1F50D; Debug</button>
+
       <span style="font-size:10px;color:var(--mu)">&#x4E0A;&#x50B3;&#x5F8C;&#x81EA;&#x52D5;&#x91CD;&#x5EFA;&#x5FEB;&#x53D6;</span>
     </div>
     <div class="log" id="dlLog"></div>
@@ -543,11 +546,22 @@ tr:hover{background:var(--sf2)}
           <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="rl5" style="width:13px;accent-color:var(--tw)"> 5Y</label>
         </div>
       </div>
-      <div class="fi"><label>Skip Month</label>
+            <div class="fi"><label>Skip Month</label>
         <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;cursor:pointer">
           <input type="checkbox" id="btSkipMo" style="width:14px;accent-color:var(--tw)"> &#x8DF3;&#x904E;&#x6700;&#x8FD1;1&#x6708;
         </label>
       </div>
+      <div class="fi"><label>Signal Lag</label>
+        <div style="display:flex;gap:10px;margin-top:6px;font-size:12px">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="radio" name="lagMode" id="lagT1" value="1" checked style="width:14px;accent-color:var(--tw)"> t-1
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="radio" name="lagMode" id="lagT2" value="2" style="width:14px;accent-color:var(--tw)"> t-2
+          </label>
+        </div>
+      </div>
+
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btw" onclick="runBT()" style="flex:1">&#x25B6; &#x57F7;&#x884C;&#x56DE;&#x6E2C;</button>
@@ -1079,8 +1093,14 @@ function getTNXRate(yyyymm){
 }
 function getHurdle(yyyymm){return Math.max(0,getTNXRate(yyyymm)+(gv('btSpread')||0.5)/100);}
 function calcAllScores(yyyymm){
-  var stocks=getEnabledStocks().filter(function(s){return RAW_SCORES[s.c]&&RAW_SCORES[s.c][yyyymm];});
-  if(!stocks.length)return[];
+  var stocks=getEnabledStocks().filter(function(s){
+    var mo=MONTHLY[s.c];
+    if(!mo)return false;
+    var idx=mo.findIndex(function(p){return p.date===yyyymm;});
+    return idx>=13;
+  });
+  if(stocks.length<5)return[];
+
   var wM=gv('wMom')/100,wB=gv('wBias')/100,wS=gv('wSlope')/100,wV=gv('wVol')/100,wK=gv('wKbar')/100;
   var rMs=[],rBs=[],rSs=[],rVs=[],rKs=[];
   var infos=stocks.map(function(s){
@@ -1222,25 +1242,45 @@ function renderST(all, hurdle, selectedCodes, rejectedMap) {
 function runBTcore(mh, mode) {
   var stocks = getEnabledStocks().filter(function(s) { return RAW_SCORES[s.c]; });
   if (stocks.length < 3) return null;
-  var refMo = MONTHLY[stocks[0].c];
-  if (!refMo) return null;
+      var refMo = BENCH_MONTHLY.length ? BENCH_MONTHLY : MONTHLY[stocks[0].c];
+  if (!refMo || !refMo.length) return null;
   var allM = refMo.map(function(p) { return p.date; }).sort();
 
-  var rawS = $('btS') ? ($('btS').value || '').trim().slice(0, 7) : '';
+
+    var rawS = $('btS') ? ($('btS').value || '').trim().slice(0, 7) : '';
   var rawE = $('btE') ? ($('btE').value || '').trim().slice(0, 7) : '';
 
-  var MIN = 14, cS = MIN + 1;
+  var lagEl = document.querySelector('input[name="lagMode"]:checked');
+  var LAG = lagEl ? parseInt(lagEl.value) : 1;
+
+    var MIN = 14, cS = MIN + LAG;
   if (rawS) {
-    for (var i = MIN + 1; i < allM.length; i++) {
+    for (var i = MIN + LAG; i < allM.length; i++) {
       if (allM[i] >= rawS) { cS = i; break; }
     }
   }
+
+
+  var dataEnd = allM[allM.length - 1];
+  stocks.forEach(function(s) {
+    var mo = MONTHLY[s.c];
+    if (mo && mo.length) {
+      var last = mo[mo.length - 1].date;
+      if (last < dataEnd) dataEnd = last;
+    }
+  });
+  var todayM = new Date().toISOString().slice(0, 7);
+  if (dataEnd > todayM) dataEnd = todayM;
+
   var cE = allM.length - 1;
+  while (cE >= MIN + LAG && allM[cE] > dataEnd) cE--;
   if (rawE) {
-    for (var i2 = allM.length - 1; i2 >= MIN + 1; i2--) {
+    for (var i2 = cE; i2 >= MIN + LAG; i2--) {
       if (allM[i2] <= rawE) { cE = i2; break; }
     }
   }
+
+
   if (cS > cE) return null;
 
 
@@ -1257,27 +1297,42 @@ function runBTcore(mh, mode) {
     BENCH_MONTHLY.forEach(function(p) { if (p.date <= m) best = p; });
     return best ? best.c : null;
   }
-  function getMo(code, m) {
+    function getMo(code, m) {
     var mo = MONTHLY[code]; if (!mo) return null;
-    var best = null;
-    mo.forEach(function(p) { if (p.date <= m) best = p; });
-    return best ? best.c : null;
+    // 只接受精確該月的收盤，不用前值填補
+    for (var i = mo.length - 1; i >= 0; i--) {
+      if (mo[i].date === m) return mo[i].c;
+    }
+    return null;
   }
 
-  for (var idx = cS; idx <= cE; idx++) {
-    var sigM  = allM[idx];    // 報酬月（row label）
-    var prevM = allM[idx-1];  // 訊號月（上月底資料選股）
 
-    var hurdle = getHurdle(prevM);
-    var sc2 = calcAllScores(prevM);
+    for (var idx = cS; idx <= cE; idx++) {
+    var sigM   = allM[idx];
+    var prevM  = allM[idx-1];
+    var scoreM = allM[idx-LAG];
+
+    var hurdle = getHurdle(scoreM);
+    var sc2 = calcAllScores(scoreM);
     var valid = sc2.filter(function(r) { return r.score !== null; });
     valid.sort(function(a, b) { return b.score - a.score; });
 
+
+
+    if (valid.length < 5) {
+      var b0x = getBench(prevM), b1x = getBench(sigM);
+      if (b0x && b1x && b0x > 0) bNav *= (1 + b1x / b0x - 1);
+      records.push({ month: sigM, nav: nav, bNav: bNav, holdings: { CASH: 1.0 }, pRet: 0, hurdle: hurdle, stockRets: {} });
+      holdings = { CASH: 1.0 };
+      continue;
+    }
+
     var tsP = valid.filter(function(r) { return r.r12 !== null && r.r12 > hurdle; });
+
     var sel = [];
     for (var j = 0; j < tsP.length && sel.length < mh; j++) {
       var cand = tsP[j];
-      if (sel.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, prevM)) < ct; })) {
+           if (sel.every(function(x) { return Math.abs(calcCorr(cand.s.c, x.s.c, scoreM)) < ct; })) {
         sel.push(cand);
       }
     }
@@ -1290,7 +1345,8 @@ function runBTcore(mh, mode) {
       sCands.sort(function(a, b) { return a.score - b.score; });
       for (var ks = 0; ks < sCands.length && selS.length < shortN; ks++) {
         var candS = sCands[ks];
-        if (selS.every(function(x) { return Math.abs(calcCorr(candS.s.c, x.s.c, prevM)) < ct; })) {
+                    if (selS.every(function(x) { return Math.abs(calcCorr(candS.s.c, x.s.c, scoreM)) < ct; })) {
+ 
           selS.push(candS);
         }
       }
@@ -1320,12 +1376,22 @@ function runBTcore(mh, mode) {
       }
     }
 
+        var totalW = 0;
+    Object.keys(newH).forEach(function(c) { totalW += newH[c]; });
+    var cashW = 1.0 - totalW;
+    if (cashW > 0.001) newH['CASH'] = cashW;
+    if (Math.abs(totalW - 1) > 0.02 && cashW <= 0.001) { console.warn('Weight error:', totalW); }
+
+    var maxW = Object.keys(newH).reduce(function(a,c){return Math.max(a,newH[c]);},0);
+    if (idx < cS + 12) console.log(sigM, 'scoreM:', scoreM, 'pool:', valid.length, 'pos:', Object.keys(newH).length, 'maxW:', maxW.toFixed(2));
+
     var allC = Object.keys(holdings).concat(Object.keys(newH)), seen2 = {};
     allC.forEach(function(c) { seen2[c] = true; });
     var tv = 0;
     Object.keys(seen2).forEach(function(c) { tv += Math.abs((newH[c] || 0) - (holdings[c] || 0)); });
 
-    var cr = getTNXRate(prevM);
+    var cr = getTNXRate(scoreM);
+
     var pRet = 0, stockRets = {}, pureRet = 0;
     Object.keys(newH).forEach(function(c) {
       var wt = newH[c];
@@ -1340,7 +1406,9 @@ function runBTcore(mh, mode) {
       } else { stockRets[c] = { ret: 0, w: wt }; }
     });
     pRet -= (tv / 2) * COST;
-    nav *= (1 + pRet);
+pRet = Math.max(-0.30, Math.min(0.30, pRet));
+nav *= (1 + pRet);
+
 
 
     // 6. 計算月底權重飄移
@@ -1558,8 +1626,37 @@ async function upJson(el){
     BENCH_MONTHLY=obj.BENCH_MONTHLY||[];TNX_MONTHLY=obj.TNX_MONTHLY||[];
     updFetchStat();updTNX();await buildCache();sl('dlLog','Loaded! Ready to calculate.',true);
   }catch(err){sl('dlLog','Error: '+err.message,false);}
-  el.value='';
+    el.value='';
 }
+async function clearAndReset() {
+
+  if (!confirm('Clear all cached data and IndexedDB?')) return;
+  await indexedDB.deleteDatabase('FearlessConsoleDB');
+  WEEKLY = {}; MONTHLY = {}; DAILY = {};
+  BENCH_MONTHLY = []; TNX_MONTHLY = [];
+  CACHE_BUILT = false; CACHE_TS = null;
+  RAW_SCORES = {};
+  sl('dlLog', 'DB cleared. Please run Fetch All.', true);
+  updFetchStat([]);
+  updCacheSt();
+}
+  function debugDataLen() {
+  var keys = Object.keys(MONTHLY);
+  var msg = 'MONTHLY stocks: ' + keys.length;
+  if (keys.length) {
+    msg += '\n' + keys[0] + ': ' + MONTHLY[keys[0]].length + ' months';
+    msg += '\n' + keys[keys.length-1] + ': ' + MONTHLY[keys[keys.length-1]].length + ' months';
+  }
+  msg += '\nBENCH: ' + BENCH_MONTHLY.length + ' months';
+  msg += '\nRAW_SCORES keys: ' + Object.keys(RAW_SCORES).length;
+  if (Object.keys(RAW_SCORES).length) {
+    var k = Object.keys(RAW_SCORES)[0];
+    msg += '\n' + k + ' score months: ' + Object.keys(RAW_SCORES[k]).length;
+  }
+  alert(msg);
+}
+
+
 function pct(v,d){return(v>=0?'+':'')+(v*100).toFixed(d===undefined?1:d)+'%';}
 function median(arr){
   if(!arr.length)return 0;
