@@ -1820,8 +1820,9 @@ function dlBtCsv(){
 }
 
 // === 自動讀取邏輯 ===
-window.onload = async () => {
-  const hasData = await loadFromDB();
+window.onload = async function() {
+  initGroupToggles();
+  var hasData = await loadFromDB();
   if (!hasData) {
     console.log('No local data found in IndexedDB.');
   }
